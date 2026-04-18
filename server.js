@@ -7,17 +7,24 @@ const path       = require("path")
 
 const DATA_FILE = path.join(__dirname, "state.json")
 
-let grotaGenerals    = {}
-let grotaRegions     = {}
-let grotaSnapshots   = []
+let grotaGenerals       = {}   // aktywne piny na mapie (znalezieni generałowie)
+let grotaKilledGenerals = {}   // zabici generałowie (historia z timerami)
+let grotaRegions        = {}
+let grotaSnapshots      = []
 
 function loadData() {
   try {
     if (!fs.existsSync(DATA_FILE)) return
     const doc = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"))
-    grotaGenerals    = doc.grotaGenerals    || {}
-    grotaRegions     = doc.grotaRegions     || {}
-    grotaSnapshots   = doc.grotaSnapshots   || []
+    grotaGenerals       = doc.grotaGenerals       || {}
+    grotaKilledGenerals = doc.grotaKilledGenerals || {}
+    grotaRegions        = doc.grotaRegions        || {}
+    grotaSnapshots      = doc.grotaSnapshots      || []
+    // Wyczyść zabitych starszych niż 9h (po maksymalnym respawnie)
+    const cutoff = Date.now() - 9 * 60 * 60 * 1000
+    Object.keys(grotaKilledGenerals).forEach(id => {
+      if (grotaKilledGenerals[id].killedAt < cutoff) delete grotaKilledGenerals[id]
+    })
     console.log("Dane wczytane z:", DATA_FILE)
   } catch (e) { console.error("Błąd odczytu:", e.message) }
 }
@@ -29,7 +36,9 @@ function saveData() {
 }
 function writeNow() {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ grotaGenerals, grotaRegions, grotaSnapshots, savedAt: Date.now() }, null, 2), "utf8")
+    fs.writeFileSync(DATA_FILE, JSON.stringify({
+      grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots, savedAt: Date.now()
+    }, null, 2), "utf8")
   } catch (e) { console.error("Błąd zapisu:", e.message) }
 }
 
@@ -39,20 +48,48 @@ app.use(express.static(path.join(__dirname, "public")))
 io.on("connection", (socket) => {
   console.log("Połączenie:", socket.id)
 
-  /* ── Generałowie ── */
+  /* ── Generałowie — dodaj pin na mapie (znaleziony) ── */
   socket.on("grotaAddGeneral", (data) => {
     const id = "gen_" + Date.now() + "_" + Math.random().toString(36).slice(2,6)
-    grotaGenerals[id] = { id, x: data.x, y: data.y, ch: data.ch, startedAt: Date.now() }
+    grotaGenerals[id] = { id, x: data.x, y: data.y, ch: data.ch, foundAt: Date.now() }
     saveData()
     io.emit("grotaGeneralsUpdate", grotaGenerals)
   })
+
+  /* ── Generał zabity — usuń pin, dodaj do historii zabitych ── */
+  socket.on("grotaKillGeneral", (id) => {
+    const gen = grotaGenerals[id]
+    if (!gen) return
+    delete grotaGenerals[id]
+    // Dodaj do zabitych
+    const killedId = "killed_" + Date.now() + "_" + Math.random().toString(36).slice(2,6)
+    grotaKilledGenerals[killedId] = {
+      id: killedId,
+      ch: gen.ch,
+      x: gen.x,
+      y: gen.y,
+      killedAt: Date.now()
+    }
+    saveData()
+    io.emit("grotaGeneralsUpdate",       grotaGenerals)
+    io.emit("grotaKilledGeneralsUpdate", grotaKilledGenerals)
+  })
+
+  /* ── Usuń z historii zabitych (ręcznie) ── */
+  socket.on("grotaRemoveKilled", (id) => {
+    delete grotaKilledGenerals[id]
+    saveData()
+    io.emit("grotaKilledGeneralsUpdate", grotaKilledGenerals)
+  })
+
+  /* ── Usuń pin z mapy (bez dodawania do historii) ── */
   socket.on("grotaRemoveGeneral", (id) => {
     delete grotaGenerals[id]
     saveData()
     io.emit("grotaGeneralsUpdate", grotaGenerals)
   })
 
-  /* ── Regiony metinów ── */
+  /* ── Regiony ── */
   socket.on("grotaAddRegion", (data) => {
     const id = "reg_" + Date.now() + "_" + Math.random().toString(36).slice(2,6)
     grotaRegions[id] = { id, x1: data.x1, y1: data.y1, x2: data.x2, y2: data.y2, player: data.player, guild: data.guild, addedAt: Date.now() }
@@ -67,7 +104,12 @@ io.on("connection", (socket) => {
 
   /* ── Snapshoty ── */
   socket.on("grotaSaveSnapshot", (data) => {
-    const snap = { id: "snap_"+Date.now(), name: data.name||"Snapshot", ts: Date.now(), generals: JSON.parse(JSON.stringify(grotaGenerals)), regions: JSON.parse(JSON.stringify(grotaRegions)) }
+    const snap = {
+      id: "snap_"+Date.now(), name: data.name||"Snapshot", ts: Date.now(),
+      generals: JSON.parse(JSON.stringify(grotaGenerals)),
+      killedGenerals: JSON.parse(JSON.stringify(grotaKilledGenerals)),
+      regions: JSON.parse(JSON.stringify(grotaRegions))
+    }
     grotaSnapshots.unshift(snap)
     if (grotaSnapshots.length > 10) grotaSnapshots = grotaSnapshots.slice(0,10)
     saveData()
@@ -76,11 +118,13 @@ io.on("connection", (socket) => {
   socket.on("grotaLoadSnapshot", (snapId) => {
     const snap = grotaSnapshots.find(s => s.id === snapId)
     if (!snap) return
-    grotaGenerals = JSON.parse(JSON.stringify(snap.generals||{}))
-    grotaRegions  = JSON.parse(JSON.stringify(snap.regions||{}))
+    grotaGenerals       = JSON.parse(JSON.stringify(snap.generals||{}))
+    grotaKilledGenerals = JSON.parse(JSON.stringify(snap.killedGenerals||{}))
+    grotaRegions        = JSON.parse(JSON.stringify(snap.regions||{}))
     saveData()
-    io.emit("grotaGeneralsUpdate", grotaGenerals)
-    io.emit("grotaRegionsUpdate",  grotaRegions)
+    io.emit("grotaGeneralsUpdate",       grotaGenerals)
+    io.emit("grotaKilledGeneralsUpdate", grotaKilledGenerals)
+    io.emit("grotaRegionsUpdate",        grotaRegions)
   })
   socket.on("grotaDeleteSnapshot", (snapId) => {
     grotaSnapshots = grotaSnapshots.filter(s => s.id !== snapId)
@@ -94,9 +138,10 @@ io.on("connection", (socket) => {
   })
 
   /* ── Stan dla nowego klienta ── */
-  socket.emit("grotaGeneralsUpdate", grotaGenerals)
-  socket.emit("grotaRegionsUpdate",  grotaRegions)
-  socket.emit("grotaSnapshotsUpdate",grotaSnapshots)
+  socket.emit("grotaGeneralsUpdate",       grotaGenerals)
+  socket.emit("grotaKilledGeneralsUpdate", grotaKilledGenerals)
+  socket.emit("grotaRegionsUpdate",        grotaRegions)
+  socket.emit("grotaSnapshotsUpdate",      grotaSnapshots)
 })
 
 function shutdown(sig) {
