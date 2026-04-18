@@ -83,7 +83,7 @@
   .general-item:hover{background:rgba(100,60,200,0.06);}
   .gen-icon-small{width:32px;height:52px;flex-shrink:0;object-fit:contain;filter:drop-shadow(0 0 5px rgba(150,100,255,0.5));}
   .general-ch{font-family:'Cinzel',serif;font-size:11px;color:#c0a0ff;letter-spacing:1px;}
-  .general-time{font-family:'Cinzel',serif;font-size:13px;color:#8060c0;margin-top:2px;}
+  .general-time{font-family:'Cinzel',serif;font-size:12px;color:#a080e0;margin-top:2px;font-weight:600;}
   .general-respawn{font-family:'Cinzel',serif;font-size:11px;margin-top:2px;}
   .general-respawn.waiting{color:var(--text-dim);}.general-respawn.window{color:#ffb040;}.general-respawn.available{color:#50e070;}
   .general-remove{font-size:9px;color:#504070;background:none;font-family:'Cinzel',serif;letter-spacing:1px;padding:4px 8px;border:1px solid rgba(100,60,180,0.2);border-radius:2px;cursor:pointer;transition:all 0.2s;}
@@ -518,10 +518,23 @@ function fmt(ms){const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((
 /* ═══ GENERALS RENDER ═══ */
 const GEN_MIN=6*60*60*1000,GEN_MAX=8*60*60*1000;
 function getGenState(g){
-  const el=Date.now()-g.startedAt;
-  if(el<GEN_MIN){const l=GEN_MIN-el,h=Math.floor(l/3600000),m=Math.floor((l%3600000)/60000);return{state:'waiting',label:`Respawn za ${h}h ${m}min`};}
-  if(el<GEN_MAX){const l=GEN_MAX-el,h=Math.floor(l/3600000),m=Math.floor((l%3600000)/60000);return{state:'window',label:`⚡ Okno! (max za ${h>0?h+'h ':''}${m}min)`};}
-  return{state:'available',label:'✓ Prawdopodobnie żywy'};
+  const elapsed=Date.now()-g.startedAt;
+  // elapsed since kill — shown as "X min temu" or "Xh Ymin temu"
+  const elMin=Math.floor(elapsed/60000);
+  const elH=Math.floor(elMin/60), elM=elMin%60;
+  const elapsedStr = elH>0 ? `${elH}h ${elM}min temu` : `${elM} min temu`;
+  if(elapsed<GEN_MIN){
+    const left=GEN_MIN-elapsed;
+    const lh=Math.floor(left/3600000),lm=Math.floor((left%3600000)/60000);
+    const respawnStr=lh>0?`${lh}h ${lm}min`:`${lm}min`;
+    return{state:'waiting', elapsed:elapsedStr, label:`Respawn najwcześniej za ${respawnStr}`};
+  }
+  if(elapsed<GEN_MAX){
+    const left=GEN_MAX-elapsed;
+    const lm=Math.floor(left/60000);
+    return{state:'window', elapsed:elapsedStr, label:`⚡ W oknie respawnu! (max ${lm} min)`};
+  }
+  return{state:'available', elapsed:elapsedStr, label:'✓ Powinien już żyć'};
 }
 
 function renderGenerals(){
@@ -540,38 +553,40 @@ function placeGeneral(g){
   m.className='general-marker';
   m.style.cssText=`left:${g.x*100}%;top:${g.y*100}%;position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:9;`;
   const pw=pingSize+'px', ph=(pingSize*1.6)+'px';
-  const {state,label}=getGenState(g);
+  const {state,elapsed}=getGenState(g);
   const bc=state==='window'?' respawn':state==='available'?' soon':'';
-  m.innerHTML=`<div class="general-dot" onclick="socket.emit('grotaRemoveGeneral','${g.id}')" title="Kliknij — generał zabity" style="width:${pw};height:${ph}">
+  m.innerHTML=`<div class="general-dot" onclick="socket.emit('grotaRemoveGeneral','${g.id}')" title="Kliknij aby usunąć znacznik" style="width:${pw};height:${ph}">
     <div class="general-pulse" style="width:${pw};height:${pw};bottom:-4px;left:50%;transform:translateX(-50%);"></div>
     <img src="/general_icon.png" style="width:${pw};height:${ph};object-fit:contain;">
-    <div class="general-ch-badge">${g.ch}</div>
-    <div class="general-timer-badge${bc}" id="gpin_${g.id}">${label}</div>
+    <div class="general-ch-badge">CH${g.ch}</div>
+    <div class="general-timer-badge${bc}" id="gpin_${g.id}">${elapsed}</div>
   </div>`;
   generalLayer.appendChild(m);
 }
 
 function addGeneralSidebar(g){
-  const {state,label}=getGenState(g);
+  const {state,elapsed,label}=getGenState(g);
   const item=document.createElement('div');item.className='general-item';item.id='gitem_'+g.id;
   item.innerHTML=`
     <img src="/general_icon.png" class="gen-icon-small">
     <div style="flex:1;min-width:0;">
       <div class="general-ch">CH ${g.ch}</div>
-      <div class="general-time" id="gt_${g.id}">00:00</div>
+      <div class="general-time" id="gt_${g.id}">Zabity ${elapsed}</div>
       <div class="general-respawn ${state}" id="gr_${g.id}">${label}</div>
     </div>
-    <button class="general-remove" onclick="socket.emit('grotaRemoveGeneral','${g.id}')">✕ Zbity</button>`;
+    <button class="general-remove" onclick="socket.emit('grotaRemoveGeneral','${g.id}')">✕ Usuń</button>`;
   document.getElementById('generalList').appendChild(item);
 }
 
 function tickGeneral(g){
   function tick(){
-    const el=document.getElementById('gt_'+g.id);if(el)el.innerText=fmt(Date.now()-g.startedAt);
-    const{state,label}=getGenState(g);
-    const gr=document.getElementById('gr_'+g.id);if(gr){gr.textContent=label;gr.className='general-respawn '+state;}
+    const{state,elapsed,label}=getGenState(g);
+    const el=document.getElementById('gt_'+g.id);
+    if(el) el.innerText='Zabity '+elapsed;
+    const gr=document.getElementById('gr_'+g.id);
+    if(gr){gr.textContent=label;gr.className='general-respawn '+state;}
     const gp=document.getElementById('gpin_'+g.id);
-    if(gp){gp.textContent=label;gp.className='general-timer-badge'+(state==='window'?' respawn':state==='available'?' soon':'');}
+    if(gp){gp.textContent=elapsed;gp.className='general-timer-badge'+(state==='window'?' respawn':state==='available'?' soon':'');}
     generalRafs[g.id]=requestAnimationFrame(tick);
   }
   generalRafs[g.id]=requestAnimationFrame(tick);
