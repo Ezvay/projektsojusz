@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sojusz Gildi – Projekt Hard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="images/logo.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Ambient background particles -->
+  <div class="bg-overlay"></div>
+  <div class="embers" id="embers"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-area">
+        <img src="images/logo.png" alt="Projekt Sojusz" class="logo-img" />
+      </div>
+      <nav class="main-nav">
+        <a href="#home" class="nav-link active" data-section="home">Strona Główna</a>
+        <a href="#grota" class="nav-link" data-section="grota">Grota Wygnańców</a>
+        <a href="#" class="nav-link disabled" title="Wkrótce">Bossowie</a>
+        <a href="#" class="nav-link disabled" title="Wkrótce">Sojusznicy</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- SECTION: Home -->
+  <section id="home" class="page-section active">
+    <div class="hero">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span class="hero-top">WITAJ W</span>
+          <span class="hero-main">SOJUSZU</span>
+          <span class="hero-bottom">PROJEKT HARD</span>
+        </h1>
+        <p class="hero-desc">Platforma koordynacji gildi. Śledź respawny bossów, planuj ataki i dominuj na serwerze.</p>
+        <button class="btn-primary" onclick="navigate('grota')">
+          <span>Grota Wygnańców</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div class="hero-deco">
+        <img src="images/logo.png" alt="Projekt Sojusz" class="hero-logo-img" />
+        <div class="deco-ring ring-1"></div>
+        <div class="deco-ring ring-2"></div>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card" onclick="navigate('grota')">
+        <div class="feature-icon">🗺</div>
+        <h3>Grota Wygnańców</h3>
+        <p>Interaktywna mapa z pinowaniem Generałów i globalnymi timerami respawnów.</p>
+        <span class="feature-tag">Dostępne</span>
+      </div>
+      <div class="feature-card coming-soon">
+        <div class="feature-icon">💀</div>
+        <h3>Bossowie Metin</h3>
+        <p>Śledzenie respawnów metinów i bossów na wszystkich mapach serwera.</p>
+        <span class="feature-tag soon">Wkrótce</span>
+      </div>
+      <div class="feature-card coming-soon">
+        <div class="feature-icon">🛡</div>
+        <h3>Sojusznicy</h3>
+        <p>Lista sojuszniczych gildii, ich liderów i zasad współpracy.</p>
+        <span class="feature-tag soon">Wkrótce</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: Grota Wygnańców -->
+  <section id="grota" class="page-section">
+    <div class="section-header">
+      <div class="section-breadcrumb">
+        <button class="back-btn" onclick="navigate('home')">← Strona główna</button>
+      </div>
+      <h2 class="section-title">Grota Wygnańców</h2>
+      <p class="section-desc">Kliknij na Generała na mapie, aby oznaczyć jego zabicie. Zmiany są widoczne dla wszystkich w czasie rzeczywistym.</p>
+    </div>
+
+    <div class="grota-layout">
+      <!-- Map -->
+      <div class="map-container">
+        <div class="map-wrapper" id="mapWrapper">
+          <img src="images/grota-map.png" alt="Grota Wygnańców" class="map-img" id="grotaMap" onerror="this.onerror=null; loadFallbackMap()" />
+          <!-- General pins injected by JS -->
+          <div id="generalPins"></div>
+        </div>
+        <div class="map-legend">
+          <span class="legend-item"><span class="pin-dot alive"></span>Generał żywy / nieznany</span>
+          <span class="legend-item"><span class="pin-dot dead"></span>Generał zabity</span>
+          <span class="legend-item"><span class="pin-dot soon-spawn"></span>Respawn wkrótce</span>
+        </div>
+      </div>
+
+      <!-- Status panel -->
+      <div class="status-panel">
+        <div class="panel-header">
+          <h3>Status Generałów</h3>
+          <div class="ws-indicator" id="wsIndicator" title="Połączenie z serwerem">
+            <span class="ws-dot"></span>
+            <span class="ws-label">Łączenie...</span>
+          </div>
+        </div>
+        <div class="generals-list" id="generalsList">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal: Kill General -->
+  <div class="modal-overlay" id="killModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-icon">⚔</div>
+      <h3 class="modal-title" id="modalTitle">Zabij Generała</h3>
+      <p class="modal-sub">Wybierz kanał, na którym Generał został zabity:</p>
+      <div class="channel-grid" id="channelGrid">
+        <!-- Generated by JS -->
+      </div>
+      <div class="modal-nick">
+        <label>Twój nick (opcjonalnie):</label>
+        <input type="text" id="killerNick" placeholder="Twój nick w grze..." maxlength="30" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/generals.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
