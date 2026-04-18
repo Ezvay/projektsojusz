@@ -13,16 +13,25 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
   .bg-layer{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(40,20,80,0.12) 0%,transparent 60%),#090806;}
+
+  /* TOPBAR */
   .topbar{position:relative;z-index:300;display:flex;align-items:center;justify-content:space-between;max-width:1600px;margin:0 auto;padding:10px 20px;border-bottom:1px solid var(--border);background:linear-gradient(to bottom,rgba(17,14,9,0.97),rgba(9,8,6,0.85));}
   .topbar-left{display:flex;align-items:center;gap:14px;}
   .logo-header{height:42px;width:auto;filter:drop-shadow(0 0 10px rgba(201,168,76,0.35));cursor:pointer;}
   .page-title{font-family:'Cinzel',serif;font-size:17px;font-weight:600;color:var(--gold-light);letter-spacing:2px;text-shadow:0 0 20px rgba(201,168,76,0.35);}
   .nav-btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);border-radius:2px;padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-block;transition:all 0.2s;}
   .nav-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.6);background:rgba(201,168,76,0.12);}
-  .mode-bar{display:flex;gap:8px;align-items:center;}
-  .mode-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:6px 14px;border-radius:2px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(255,255,255,0.03);}
-  .mode-btn.active-general{color:#60b0ff;border-color:rgba(60,140,255,0.6);background:rgba(20,60,180,0.15);}
-  .mode-btn.active-region{color:#60e090;border-color:rgba(60,200,100,0.6);background:rgba(20,120,50,0.15);}
+
+  /* TAB BUTTONS */
+  .tab-bar{display:flex;gap:0;}
+  .tab-btn{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    padding:8px 20px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(201,168,76,0.2);
+    color:var(--text-dim);background:rgba(255,255,255,0.02);margin-right:2px;border-radius:2px;
+  }
+  .tab-btn.active-general{color:#a0d0ff;border-color:rgba(60,140,255,0.7);background:rgba(20,60,180,0.2);box-shadow:0 0 12px rgba(60,140,255,0.15);}
+  .tab-btn.active-region{color:#80e0a0;border-color:rgba(60,200,100,0.7);background:rgba(20,120,50,0.2);box-shadow:0 0 12px rgba(60,200,100,0.15);}
+
   .heat-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;border-radius:2px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(200,80,80,0.3);color:#c07070;background:rgba(200,80,80,0.06);}
   .vol-wrap{display:flex;align-items:center;gap:6px;}
   .vol-wrap span{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;}
@@ -31,43 +40,56 @@
   .ws-dot{width:8px;height:8px;border-radius:50%;background:#604040;transition:background 0.3s;}
   .ws-dot.ok{background:#40c060;box-shadow:0 0 6px #40c060;}
   .ws-label{font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);letter-spacing:1px;}
+
+  /* LAYOUT */
   .layout{position:relative;z-index:1;display:flex;gap:0;max-width:1600px;margin:0 auto;min-height:calc(100vh - 65px);}
   .map-wrap{flex:1;position:relative;padding:20px;min-width:0;display:flex;align-items:flex-start;justify-content:center;}
   .map-container{position:relative;display:inline-block;border:1px solid rgba(201,168,76,0.2);border-radius:3px;box-shadow:0 0 40px rgba(0,0,0,0.8);max-width:100%;}
   .map-container img{display:block;height:auto;user-select:none;pointer-events:none;image-rendering:pixelated;}
   .map-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,0.3);white-space:nowrap;pointer-events:none;}
-  #regionCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:3px;z-index:6;}
+
+  /* CANVASES */
+  #regionCanvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:3px;z-index:6;pointer-events:none;}
   #drawCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:3px;z-index:7;}
-  .general-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:10;display:flex;flex-direction:column;align-items:center;}
-  .general-dot{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.15s,filter 0.15s;animation:ping-appear 0.3s cubic-bezier(0.23,1,0.32,1);filter:drop-shadow(0 0 5px rgba(60,140,255,0.9));}
-  .general-dot img{object-fit:contain;pointer-events:none;}
-  .general-dot:hover{transform:scale(1.3);filter:drop-shadow(0 0 9px rgba(100,180,255,1));}
-  @keyframes ping-appear{0%{transform:scale(0);opacity:0;}70%{transform:scale(1.2);}100%{transform:scale(1);opacity:1;}}
-  .general-pulse{position:absolute;top:50%;left:50%;border-radius:50%;background:rgba(60,140,255,0.2);transform:translate(-50%,-50%);animation:pulse-ring 2s ease-out infinite;pointer-events:none;}
-  @keyframes pulse-ring{0%{transform:translate(-50%,-50%) scale(1);opacity:0.8;}100%{transform:translate(-50%,-50%) scale(3);opacity:0;}}
-  .general-ch-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:rgba(0,0,20,0.92);border:1.5px solid #60b0ff;border-radius:3px;font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:#a0d0ff;padding:1px 5px;pointer-events:none;white-space:nowrap;line-height:1.5;text-shadow:0 0 6px rgba(60,140,255,0.8);box-shadow:0 0 6px rgba(0,0,0,0.8);}
-  .general-timer-badge{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);background:rgba(0,10,30,0.92);border:1px solid rgba(60,140,255,0.4);border-radius:2px;font-family:'Cinzel',serif;font-size:9px;color:#6090d0;padding:1px 4px;pointer-events:none;white-space:nowrap;}
+  #clickOverlay{position:absolute;top:0;left:0;width:100%;height:100%;z-index:8;cursor:crosshair;}
+
+  /* GENERAL MARKER */
+  #generalLayer{position:absolute;inset:0;z-index:9;pointer-events:none;}
+  .general-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:all;}
+  .general-dot{position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.15s,filter 0.15s;animation:ping-appear 0.3s cubic-bezier(0.23,1,0.32,1);filter:drop-shadow(0 0 6px rgba(150,100,255,0.9)) drop-shadow(0 2px 4px rgba(0,0,0,0.8));}
+  .general-dot:hover{transform:scale(1.15);filter:drop-shadow(0 0 12px rgba(180,130,255,1)) drop-shadow(0 2px 6px rgba(0,0,0,0.9));}
+  .general-dot img{object-fit:contain;pointer-events:none;border-radius:2px;}
+  @keyframes ping-appear{0%{transform:scale(0);opacity:0;}70%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+  .general-pulse{position:absolute;bottom:-4px;left:50%;border-radius:50%;background:rgba(150,100,255,0.25);transform:translateX(-50%);animation:pulse-ring 2s ease-out infinite;pointer-events:none;}
+  @keyframes pulse-ring{0%{transform:translateX(-50%) scale(1);opacity:0.8;}100%{transform:translateX(-50%) scale(2.5);opacity:0;}}
+  .general-ch-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:rgba(10,5,20,0.95);border:1.5px solid #a080ff;border-radius:3px;font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:#c0a0ff;padding:1px 6px;pointer-events:none;white-space:nowrap;line-height:1.5;text-shadow:0 0 6px rgba(150,100,255,0.8);box-shadow:0 0 6px rgba(0,0,0,0.8);}
+  .general-timer-badge{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(10,5,20,0.95);border:1px solid rgba(120,80,220,0.4);border-radius:2px;font-family:'Cinzel',serif;font-size:9px;color:#9070d0;padding:1px 5px;pointer-events:none;white-space:nowrap;}
   .general-timer-badge.respawn{color:#ffb040;border-color:rgba(255,160,40,0.6);}
   .general-timer-badge.soon{color:#50e070;border-color:rgba(50,200,80,0.6);animation:timerPulse 1.5s ease-in-out infinite;}
   @keyframes timerPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+  /* SIDEBAR */
   .sidebar{width:310px;flex-shrink:0;border-left:1px solid var(--border);background:rgba(12,10,7,0.7);display:flex;flex-direction:column;max-height:calc(100vh - 65px);overflow-y:auto;}
   .sidebar::-webkit-scrollbar{width:4px;}
   .sidebar::-webkit-scrollbar-track{background:rgba(0,0,0,0.3);}
   .sidebar::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.25);border-radius:2px;}
   .sidebar-empty{padding:20px 16px;text-align:center;font-size:13px;color:var(--text-dim);font-style:italic;}
-  .sidebar-section-title{padding:10px 14px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dark);background:rgba(0,0,0,0.3);border-bottom:1px solid var(--border);border-top:1px solid var(--border);}
-  .sidebar-section-title.blue{color:#6090d0;border-color:rgba(60,100,180,0.3);}
+  .sidebar-section-title{padding:10px 14px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;background:rgba(0,0,0,0.3);border-bottom:1px solid var(--border);border-top:1px solid var(--border);}
+  .sidebar-section-title.blue{color:#8090d0;border-color:rgba(60,100,180,0.3);}
   .sidebar-section-title.green{color:#50c070;border-color:rgba(50,150,80,0.3);}
-  .general-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(30,60,120,0.4);transition:background 0.2s;}
-  .general-item:hover{background:rgba(60,140,255,0.05);}
-  .general-dot-small{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 5px rgba(60,140,255,0.7));}
-  .general-dot-small img{width:28px;height:28px;object-fit:contain;}
-  .general-ch{font-family:'Cinzel',serif;font-size:11px;color:#a0d0ff;letter-spacing:1px;}
-  .general-time{font-family:'Cinzel',serif;font-size:13px;color:#6090d0;margin-top:2px;}
+
+  /* GENERAL SIDEBAR ITEM */
+  .general-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(80,50,150,0.3);transition:background 0.2s;}
+  .general-item:hover{background:rgba(100,60,200,0.06);}
+  .gen-icon-small{width:32px;height:52px;flex-shrink:0;object-fit:contain;filter:drop-shadow(0 0 5px rgba(150,100,255,0.5));}
+  .general-ch{font-family:'Cinzel',serif;font-size:11px;color:#c0a0ff;letter-spacing:1px;}
+  .general-time{font-family:'Cinzel',serif;font-size:13px;color:#8060c0;margin-top:2px;}
   .general-respawn{font-family:'Cinzel',serif;font-size:11px;margin-top:2px;}
   .general-respawn.waiting{color:var(--text-dim);}.general-respawn.window{color:#ffb040;}.general-respawn.available{color:#50e070;}
-  .general-remove{font-size:9px;color:#304060;background:none;font-family:'Cinzel',serif;letter-spacing:1px;padding:4px 8px;border:1px solid rgba(60,100,180,0.2);border-radius:2px;cursor:pointer;transition:all 0.2s;}
-  .general-remove:hover{color:#60b0ff;border-color:rgba(60,140,255,0.6);background:rgba(20,60,140,0.15);}
+  .general-remove{font-size:9px;color:#504070;background:none;font-family:'Cinzel',serif;letter-spacing:1px;padding:4px 8px;border:1px solid rgba(100,60,180,0.2);border-radius:2px;cursor:pointer;transition:all 0.2s;}
+  .general-remove:hover{color:#a080ff;border-color:rgba(150,100,255,0.6);background:rgba(80,40,160,0.15);}
+
+  /* REGION SIDEBAR ITEM */
   .region-item{padding:10px 14px;border-bottom:1px solid rgba(40,100,60,0.3);transition:background 0.2s;}
   .region-item:hover{background:rgba(60,200,100,0.04);}
   .region-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
@@ -76,33 +98,37 @@
   .region-time{font-family:'Cinzel',serif;font-size:11px;color:#408050;}
   .region-remove{font-size:9px;color:#306040;background:none;font-family:'Cinzel',serif;letter-spacing:1px;padding:4px 8px;border:1px solid rgba(50,150,80,0.2);border-radius:2px;cursor:pointer;transition:all 0.2s;}
   .region-remove:hover{color:#60e090;border-color:rgba(60,200,100,0.5);background:rgba(30,120,60,0.15);}
+
+  /* SNAPSHOTS */
   .snap-panel{padding:12px 14px;border-bottom:1px solid var(--border);}
   .snap-save-row{display:flex;gap:6px;margin-bottom:8px;}
   .snap-input{flex:1;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:5px 8px;border-radius:2px;outline:none;}
   .snap-input:focus{border-color:rgba(201,168,76,0.5);}
   .snap-save-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);white-space:nowrap;}
-  .snap-save-btn:hover{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,0.16);}
+  .snap-save-btn:hover{color:var(--gold);border-color:var(--gold);}
   .snap-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(58,46,26,0.3);}
   .snap-info{flex:1;min-width:0;}
-  .snap-name{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-light);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .snap-name{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .snap-meta{font-size:11px;color:var(--text-dim);font-style:italic;margin-top:1px;}
   .snap-load-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:4px 8px;border-radius:2px;cursor:pointer;border:1px solid rgba(201,168,76,0.25);color:var(--text-dim);background:rgba(201,168,76,0.05);}
   .snap-load-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.6);}
   .snap-del-btn{font-size:10px;color:#804040;background:none;border:none;cursor:pointer;padding:3px 5px;}
   .snap-del-btn:hover{color:#ff6060;}
-  .popup-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);}
+
+  /* POPUPS */
+  .popup-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);}
   .popup-overlay.hidden{display:none;}
-  .popup-box{background:linear-gradient(160deg,#1e1810,#100d08);border:1px solid var(--gold-dark);border-radius:4px;padding:28px 32px;min-width:300px;text-align:center;box-shadow:0 0 60px rgba(0,0,0,0.9);position:relative;}
-  .popup-box::before,.popup-box::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(201,168,76,0.45);border-style:solid;}
+  .popup-box{background:linear-gradient(160deg,#1a1520,#0d0a14);border:1px solid rgba(150,100,255,0.4);border-radius:4px;padding:28px 32px;min-width:300px;text-align:center;box-shadow:0 0 60px rgba(0,0,0,0.95),0 0 30px rgba(100,60,200,0.1);position:relative;}
+  .popup-box::before,.popup-box::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(150,100,255,0.4);border-style:solid;}
   .popup-box::before{top:7px;left:7px;border-width:1px 0 0 1px;}
   .popup-box::after{bottom:7px;right:7px;border-width:0 1px 1px 0;}
-  .popup-title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+  .popup-title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:3px;color:#c0a0ff;text-transform:uppercase;margin-bottom:6px;}
   .popup-sub{font-size:13px;color:var(--text-dim);font-style:italic;margin-bottom:18px;}
   .ch-buttons{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;}
-  .ch-btn{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;width:46px;height:46px;border-radius:3px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);}
-  .ch-btn:hover{color:var(--gold-light);border-color:var(--gold);background:rgba(201,168,76,0.2);transform:scale(1.08);}
+  .ch-btn{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;width:46px;height:46px;border-radius:3px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(150,100,255,0.3);color:#9070c0;background:rgba(100,60,200,0.07);}
+  .ch-btn:hover{color:#c0a0ff;border-color:rgba(180,130,255,0.8);background:rgba(100,60,200,0.2);transform:scale(1.08);}
   .popup-cancel{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);background:none;border:1px solid rgba(255,255,255,0.08);border-radius:2px;padding:7px 20px;cursor:pointer;width:100%;margin-top:8px;}
-  .popup-cancel:hover{color:var(--text);}
+
   .rp-box{background:linear-gradient(160deg,#0e1a10,#081008);border:1px solid rgba(60,180,80,0.4);border-radius:4px;padding:26px 30px;min-width:320px;text-align:center;box-shadow:0 0 60px rgba(0,0,0,0.9);position:relative;}
   .rp-box::before,.rp-box::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(60,180,80,0.35);border-style:solid;}
   .rp-box::before{top:7px;left:7px;border-width:1px 0 0 1px;}
@@ -118,17 +144,17 @@
 <body>
 <div class="bg-layer"></div>
 
-<!-- POPUP generał -->
+<!-- POPUP: Generał -->
 <div class="popup-overlay hidden" id="popup">
   <div class="popup-box">
-    <div class="popup-title">🔵 Oznacz Generała</div>
+    <div class="popup-title">⚔ Oznacz Generała</div>
     <div class="popup-sub">Wybierz kanał</div>
     <div class="ch-buttons" id="chButtons"></div>
     <button class="popup-cancel" onclick="closePopup()">Anuluj</button>
   </div>
 </div>
 
-<!-- POPUP region -->
+<!-- POPUP: Region -->
 <div class="popup-overlay hidden" id="regionPopup">
   <div class="rp-box">
     <div class="rp-title">📦 Region metinów</div>
@@ -148,19 +174,19 @@
     <div class="page-title">Grota Wygnańców</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-    <div class="mode-bar">
-      <button class="mode-btn active-general" id="btnGeneral" onclick="setMode('general')">🔵 Generał</button>
-      <button class="mode-btn"               id="btnRegion"  onclick="setMode('region')">📦 Region metinów</button>
+    <div class="tab-bar">
+      <button class="tab-btn active-general" id="tabGeneral" onclick="setTab('general')">🔵 Generałowie</button>
+      <button class="tab-btn"               id="tabRegion"  onclick="setTab('region')">📦 Regiony metinów</button>
     </div>
     <div class="vol-wrap">
       <span>Mapa</span>
       <input type="range" id="mapSize" min="30" max="100" step="1" style="width:75px;">
       <span id="mapSizeVal">100%</span>
     </div>
-    <div class="vol-wrap">
-      <span>Pingi</span>
-      <input type="range" id="pingSize" min="8" max="40" step="1" style="width:75px;">
-      <span id="pingSizeVal">14</span>
+    <div class="vol-wrap" id="pingSizeWrap">
+      <span>Ikony</span>
+      <input type="range" id="pingSize" min="20" max="80" step="2" style="width:75px;">
+      <span id="pingSizeVal">40</span>
     </div>
     <div class="ws-wrap">
       <div class="ws-dot" id="wsDot"></div>
@@ -174,14 +200,19 @@
   <div class="map-wrap">
     <div class="map-container" id="mapContainer">
       <img src="/grota_mapa.png" id="mapImg" alt="Mapa Groty" draggable="false">
+      <!-- General view -->
+      <div id="generalLayer"></div>
+      <!-- Region view -->
       <canvas id="regionCanvas"></canvas>
       <canvas id="drawCanvas"></canvas>
-      <div id="generalLayer" style="position:absolute;inset:0;pointer-events:none;z-index:10;"></div>
-      <div class="map-hint" id="mapHint">Kliknij aby oznaczyć generała | Przeciągnij aby zaznaczyć region metinów</div>
+      <!-- Click overlay (switches pointer-events based on tab) -->
+      <div id="clickOverlay"></div>
+      <div class="map-hint" id="mapHint">Kliknij na mapę aby oznaczyć generała</div>
     </div>
   </div>
 
   <div class="sidebar">
+    <!-- SNAPSHOTS -->
     <div class="snap-panel">
       <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold-dark);text-transform:uppercase;margin-bottom:8px;">📸 Snapshoty</div>
       <div class="snap-save-row">
@@ -190,10 +221,18 @@
       </div>
       <div id="snapList"></div>
     </div>
-    <div class="sidebar-section-title blue">🔵 Generałowie (respawn 6–8h)</div>
-    <div id="generalList"><div class="sidebar-empty">Brak oznaczonych generałów</div></div>
-    <div class="sidebar-section-title green">📦 Aktywne regiony metinów</div>
-    <div id="regionList"><div class="sidebar-empty">Brak aktywnych regionów</div></div>
+
+    <!-- GENERALS PANEL -->
+    <div id="generalPanel">
+      <div class="sidebar-section-title blue">⚔ Generałowie (respawn 6–8h)</div>
+      <div id="generalList"><div class="sidebar-empty">Brak oznaczonych generałów</div></div>
+    </div>
+
+    <!-- REGIONS PANEL -->
+    <div id="regionPanel" style="display:none;">
+      <div class="sidebar-section-title green">📦 Aktywne regiony metinów</div>
+      <div id="regionList"><div class="sidebar-empty">Brak aktywnych regionów</div></div>
+    </div>
   </div>
 </div>
 
@@ -211,134 +250,180 @@
 
 <script>
 const socket=io();
-let generals={},regions={},snapshots=[],generalRafs={},regionRafs={};
-let pingMode='general',pendingClick=null;
-let isDrawing=false,drawStart=null,drawCurrent=null,pendingRegion=null;
-let pingSize=parseInt(localStorage.getItem('pingSize'))||14;
+
+/* ═══ STATE ═══ */
+let generals={}, regions={}, snapshots=[];
+let generalRafs={}, regionRafs={};
+let currentTab='general';
+let pendingClick=null;
+let isDrawing=false, drawStart=null, drawCurrent=null, pendingRegion=null;
+let pingSize=parseInt(localStorage.getItem('pingSize'))||40;
 let mapSizePct=parseInt(localStorage.getItem('mapSize'))||100;
 
+// Unique color per region (not per guild — each NEW region gets next color)
+const REGION_COLORS=[
+  [255,100,80],  // red-orange
+  [60,180,255],  // blue
+  [80,220,100],  // green
+  [255,190,40],  // yellow
+  [220,80,220],  // purple
+  [40,220,210],  // cyan
+  [255,140,40],  // orange
+  [180,255,80],  // lime
+  [255,80,160],  // pink
+  [120,180,255], // light blue
+];
+// map regionId -> colorIndex (assigned at render time, stable per session)
+const regionColorMap={};
+let regionColorCounter=0;
+function getRegionColor(id){
+  if(!(id in regionColorMap)){
+    regionColorMap[id]=regionColorCounter%REGION_COLORS.length;
+    regionColorCounter++;
+  }
+  return REGION_COLORS[regionColorMap[id]];
+}
+
+/* ═══ DOM ═══ */
 const mapContainer=document.getElementById('mapContainer');
 const mapImg=document.getElementById('mapImg');
 const generalLayer=document.getElementById('generalLayer');
 const regionCanvas=document.getElementById('regionCanvas');
 const drawCanvas=document.getElementById('drawCanvas');
+const clickOverlay=document.getElementById('clickOverlay');
 const regionCtx=regionCanvas.getContext('2d');
 const drawCtx=drawCanvas.getContext('2d');
 
-// Sliders
+/* ═══ SLIDERS ═══ */
 (function(){
   const ps=document.getElementById('pingSize'),pv=document.getElementById('pingSizeVal');
   const ms=document.getElementById('mapSize'),mv=document.getElementById('mapSizeVal');
-  ps.value=pingSize;pv.innerText=pingSize;
+  ps.value=pingSize; pv.innerText=pingSize;
   ps.oninput=()=>{pingSize=parseInt(ps.value);pv.innerText=pingSize;localStorage.setItem('pingSize',pingSize);applyPingSize();};
-  ms.value=mapSizePct;mv.innerText=mapSizePct+'%';
+  ms.value=mapSizePct; mv.innerText=mapSizePct+'%';
   applyMapSize();
   ms.oninput=()=>{mapSizePct=parseInt(ms.value);mv.innerText=mapSizePct+'%';localStorage.setItem('mapSize',mapSizePct);applyMapSize();};
 })();
 
 function applyPingSize(){
-  const sz=pingSize+'px';
-  document.querySelectorAll('.general-dot').forEach(el=>{el.style.width=sz;el.style.height=sz;});
-  document.querySelectorAll('.general-dot img,.general-pulse').forEach(el=>{el.style.width=sz;el.style.height=sz;});
+  document.querySelectorAll('.general-dot').forEach(el=>{el.style.width=pingSize+'px';el.style.height=(pingSize*1.6)+'px';});
+  document.querySelectorAll('.general-dot img').forEach(el=>{el.style.width=pingSize+'px';el.style.height=(pingSize*1.6)+'px';});
+  document.querySelectorAll('.general-pulse').forEach(el=>{el.style.width=pingSize+'px';el.style.height=pingSize+'px';});
 }
 function applyMapSize(){
   mapImg.style.width=Math.round(1080*mapSizePct/100)+'px';
   syncCanvases();
 }
 
-function setMode(m){
-  pingMode=m;
-  document.getElementById('btnGeneral').className='mode-btn'+(m==='general'?' active-general':'');
-  document.getElementById('btnRegion').className='mode-btn'+(m==='region'?' active-region':'');
-  document.getElementById('mapHint').innerText=m==='general'
-    ?'🔵 Kliknij na mapę aby oznaczyć generała'
-    :'📦 Przeciągnij na mapie aby zaznaczyć region metinów';
+/* ═══ TABS ═══ */
+function setTab(tab){
+  currentTab=tab;
+  document.getElementById('tabGeneral').className='tab-btn'+(tab==='general'?' active-general':'');
+  document.getElementById('tabRegion').className='tab-btn'+(tab==='region'?' active-region':'');
+
+  if(tab==='general'){
+    // Show generals, hide regions
+    generalLayer.style.display='block';
+    regionCanvas.style.display='none';
+    drawCanvas.style.display='none';
+    document.getElementById('generalPanel').style.display='block';
+    document.getElementById('regionPanel').style.display='none';
+    document.getElementById('pingSizeWrap').style.display='flex';
+    document.getElementById('mapHint').innerText='⚔ Kliknij na mapę aby oznaczyć generała';
+    clickOverlay.style.cursor='crosshair';
+  } else {
+    // Show regions, hide generals
+    generalLayer.style.display='none';
+    regionCanvas.style.display='block';
+    drawCanvas.style.display='block';
+    document.getElementById('generalPanel').style.display='none';
+    document.getElementById('regionPanel').style.display='block';
+    document.getElementById('pingSizeWrap').style.display='none';
+    document.getElementById('mapHint').innerText='📦 Przeciągnij myszką aby zaznaczyć region metinów';
+    clickOverlay.style.cursor='crosshair';
+  }
 }
 
-// WS status
+/* ═══ WS STATUS ═══ */
 socket.on('connect',()=>{document.getElementById('wsDot').className='ws-dot ok';document.getElementById('wsLabel').innerText='Na żywo';});
 socket.on('disconnect',()=>{document.getElementById('wsDot').className='ws-dot';document.getElementById('wsLabel').innerText='Brak połączenia';});
 
-// Get relative position on map
+/* ═══ RELATIVE POSITION ═══ */
 function getRelPos(e){
   const rect=mapImg.getBoundingClientRect();
   return{x:Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height))};
 }
 
-// ── MAP EVENTS ──
-mapContainer.addEventListener('mousedown',e=>{
-  if(e.target.closest('.general-dot')) return;
-  if(pingMode==='general'){
-    // only left click on actual map
-    if(e.target===regionCanvas) return; // handled separately
+/* ═══ CLICK OVERLAY EVENTS ═══ */
+clickOverlay.addEventListener('mousedown',e=>{
+  if(currentTab==='general'){
     const pos=getRelPos(e);
     pendingClick=pos;
-    openPopup();
-  } else if(pingMode==='region'){
-    if(e.target.closest('.general-dot')) return;
-    isDrawing=true;drawStart=getRelPos(e);drawCurrent=drawStart;
-    e.preventDefault();
-  }
-});
-
-regionCanvas.addEventListener('mousedown',e=>{
-  if(pingMode==='general'){
-    // check if clicking X on a region
-    const rect=regionCanvas.getBoundingClientRect();
-    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
-    const w=regionCanvas.width,h=regionCanvas.height;
-    for(const[id,r] of Object.entries(regions)){
-      const rx1=r.x1*w,ry1=r.y1*h,rw=(r.x2-r.x1)*w,rh=(r.y2-r.y1)*h;
-      if(mx>=rx1+rw-24&&mx<=rx1+rw&&my>=ry1&&my<=ry1+22){
-        socket.emit('grotaRemoveRegion',id);return;
-      }
-    }
-    // else treat as general click
-    const pos=getRelPos(e);
-    pendingClick=pos;
-    openPopup();
-  } else if(pingMode==='region'){
-    isDrawing=true;drawStart=getRelPos(e);drawCurrent=drawStart;
+    openGeneralPopup();
+  } else {
+    isDrawing=true;
+    drawStart=getRelPos(e);
+    drawCurrent=drawStart;
     e.preventDefault();
   }
 });
 
 document.addEventListener('mousemove',e=>{
-  if(!isDrawing||pingMode!=='region') return;
-  drawCurrent=getRelPos(e);renderDrawing();
+  if(!isDrawing||currentTab!=='region') return;
+  drawCurrent=getRelPos(e);
+  renderDrawing();
 });
 
 document.addEventListener('mouseup',e=>{
-  if(!isDrawing||pingMode!=='region') return;
+  if(!isDrawing||currentTab!=='region') return;
   isDrawing=false;
   drawCurrent=getRelPos(e);
   const dx=Math.abs(drawCurrent.x-drawStart.x),dy=Math.abs(drawCurrent.y-drawStart.y);
   if(dx<0.02&&dy<0.02){clearDrawing();return;}
-  pendingRegion={x1:Math.min(drawStart.x,drawCurrent.x),y1:Math.min(drawStart.y,drawCurrent.y),x2:Math.max(drawStart.x,drawCurrent.x),y2:Math.max(drawStart.y,drawCurrent.y)};
+  pendingRegion={
+    x1:Math.min(drawStart.x,drawCurrent.x),y1:Math.min(drawStart.y,drawCurrent.y),
+    x2:Math.max(drawStart.x,drawCurrent.x),y2:Math.max(drawStart.y,drawCurrent.y)
+  };
   document.getElementById('regionPlayer').value=localStorage.getItem('playerNick')||'';
   document.getElementById('regionGuild').value=localStorage.getItem('playerGuild')||'';
   document.getElementById('regionPopup').classList.remove('hidden');
 });
 
-// ── CANVASES ──
+// Also handle clicks on regionCanvas for deleting
+regionCanvas.addEventListener('click',e=>{
+  if(currentTab!=='region'||isDrawing) return;
+  const rect=regionCanvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const w=regionCanvas.width, h=regionCanvas.height;
+  for(const[id,r] of Object.entries(regions)){
+    const rx1=r.x1*w,ry1=r.y1*h,rw=(r.x2-r.x1)*w,rh=(r.y2-r.y1)*h;
+    if(mx>=rx1+rw-26&&mx<=rx1+rw+2&&my>=ry1-2&&my<=ry1+22){
+      socket.emit('grotaRemoveRegion',id);return;
+    }
+  }
+});
+regionCanvas.style.pointerEvents='none'; // handled via clickOverlay when in region tab
+
+/* ═══ CANVASES ═══ */
 function syncCanvases(){
   const w=mapImg.offsetWidth,h=mapImg.offsetHeight;
   if(!w||!h) return;
-  regionCanvas.width=w;regionCanvas.height=h;
-  drawCanvas.width=w;drawCanvas.height=h;
+  regionCanvas.width=w; regionCanvas.height=h;
+  drawCanvas.width=w;   drawCanvas.height=h;
   renderRegionsCanvas();
 }
 new ResizeObserver(syncCanvases).observe(mapImg);
 mapImg.addEventListener('load',syncCanvases);
 window.addEventListener('resize',syncCanvases);
 
+/* ═══ DRAW PREVIEW ═══ */
 function renderDrawing(){
   const w=drawCanvas.width,h=drawCanvas.height;
   drawCtx.clearRect(0,0,w,h);
   if(!drawStart||!drawCurrent) return;
   const x1=drawStart.x*w,y1=drawStart.y*h,x2=drawCurrent.x*w,y2=drawCurrent.y*h;
   drawCtx.strokeStyle='rgba(60,220,100,0.9)';
-  drawCtx.lineWidth=2;drawCtx.setLineDash([6,4]);
+  drawCtx.lineWidth=2; drawCtx.setLineDash([6,4]);
   drawCtx.strokeRect(Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1));
   drawCtx.fillStyle='rgba(40,180,80,0.1)';
   drawCtx.fillRect(Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1));
@@ -346,39 +431,51 @@ function renderDrawing(){
 }
 function clearDrawing(){drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height);drawStart=null;drawCurrent=null;}
 
-// Guild colors
-const GCOLS=[[60,200,100],[60,140,255],[255,160,40],[220,60,200],[255,80,80],[40,220,220],[255,220,40],[180,120,255]];
-const guildColorMap={};let guildColorIdx=0;
-function getGCol(guild){
-  if(!guildColorMap[guild]){guildColorMap[guild]=GCOLS[guildColorIdx%GCOLS.length];guildColorIdx++;}
-  return guildColorMap[guild];
-}
-
+/* ═══ REGIONS CANVAS ═══ */
 function renderRegionsCanvas(){
   const w=regionCanvas.width,h=regionCanvas.height;
   regionCtx.clearRect(0,0,w,h);
   if(!w||!h) return;
-  Object.values(regions).forEach(r=>{
+  Object.entries(regions).forEach(([id,r])=>{
+    const [cr,cg,cb]=getRegionColor(id);
     const x1=r.x1*w,y1=r.y1*h,rw=(r.x2-r.x1)*w,rh=(r.y2-r.y1)*h;
-    const [cr,cg,cb]=getGCol(r.guild||r.player||'?');
-    regionCtx.fillStyle=`rgba(${cr},${cg},${cb},0.12)`;
+    // Fill
+    regionCtx.fillStyle=`rgba(${cr},${cg},${cb},0.13)`;
     regionCtx.fillRect(x1,y1,rw,rh);
-    regionCtx.strokeStyle=`rgba(${cr},${cg},${cb},0.8)`;
-    regionCtx.lineWidth=2;regionCtx.strokeRect(x1,y1,rw,rh);
-    // label
+    // Border
+    regionCtx.strokeStyle=`rgba(${cr},${cg},${cb},0.85)`;
+    regionCtx.lineWidth=2.5;
+    regionCtx.strokeRect(x1,y1,rw,rh);
+    // Label
     const lbl=(r.player||'?')+(r.guild?' · '+r.guild:'');
     regionCtx.font='bold 12px Cinzel,serif';
     regionCtx.fillStyle=`rgba(${cr},${cg},${cb},1)`;
-    regionCtx.shadowColor='rgba(0,0,0,0.95)';regionCtx.shadowBlur=7;
-    regionCtx.fillText(lbl,x1+6,y1+16);regionCtx.shadowBlur=0;
-    // X button
-    regionCtx.fillStyle=`rgba(${cr},${cg},${cb},0.8)`;
-    regionCtx.font='bold 12px monospace';
-    regionCtx.fillText('✕',x1+rw-18,y1+15);
+    regionCtx.shadowColor='rgba(0,0,0,0.95)'; regionCtx.shadowBlur=7;
+    regionCtx.fillText(lbl,x1+6,y1+17);
+    regionCtx.shadowBlur=0;
+    // X button (top-right corner)
+    regionCtx.fillStyle=`rgba(${cr},${cg},${cb},0.9)`;
+    regionCtx.font='bold 13px monospace';
+    regionCtx.fillText('✕',x1+rw-20,y1+15);
   });
 }
 
-// Region popup
+// Allow clicking X to delete region
+clickOverlay.addEventListener('click',e=>{
+  if(currentTab!=='region') return;
+  const rect=mapImg.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const w=regionCanvas.width,h=regionCanvas.height;
+  for(const[id,r] of Object.entries(regions)){
+    const rx1=r.x1*w,ry1=r.y1*h,rw=(r.x2-r.x1)*w;
+    if(mx>=rx1+rw-26&&mx<=rx1+rw+2&&my>=ry1-2&&my<=ry1+22){
+      socket.emit('grotaRemoveRegion',id);
+      return;
+    }
+  }
+});
+
+/* ═══ REGION POPUP ═══ */
 function confirmRegion(){
   const player=document.getElementById('regionPlayer').value.trim()||'Anonim';
   const guild=document.getElementById('regionGuild').value.trim()||'';
@@ -386,31 +483,39 @@ function confirmRegion(){
   if(guild)  localStorage.setItem('playerGuild',guild);
   if(!pendingRegion) return;
   socket.emit('grotaAddRegion',{...pendingRegion,player,guild});
-  pendingRegion=null;clearDrawing();
+  pendingRegion=null; clearDrawing();
   document.getElementById('regionPopup').classList.add('hidden');
 }
 function cancelRegion(){
-  pendingRegion=null;clearDrawing();
+  pendingRegion=null; clearDrawing();
   document.getElementById('regionPopup').classList.add('hidden');
 }
 document.getElementById('regionPopup').addEventListener('click',e=>{if(e.target===document.getElementById('regionPopup'))cancelRegion();});
 
-// General popup
+/* ═══ GENERAL POPUP ═══ */
 const popup=document.getElementById('popup');
-function openPopup(){
+function openGeneralPopup(){
   document.getElementById('chButtons').innerHTML='';
-  for(let i=1;i<=8;i++){const b=document.createElement('button');b.className='ch-btn';b.innerText=i;b.onclick=()=>confirmGeneral(i);document.getElementById('chButtons').appendChild(b);}
+  for(let i=1;i<=8;i++){
+    const b=document.createElement('button');b.className='ch-btn';b.innerText=i;
+    b.onclick=()=>confirmGeneral(i);
+    document.getElementById('chButtons').appendChild(b);
+  }
   popup.classList.remove('hidden');
 }
 function closePopup(){popup.classList.add('hidden');pendingClick=null;}
 popup.addEventListener('click',e=>{if(e.target===popup)closePopup();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePopup();cancelRegion();}});
-function confirmGeneral(ch){if(!pendingClick)return;socket.emit('grotaAddGeneral',{x:pendingClick.x,y:pendingClick.y,ch});closePopup();}
+function confirmGeneral(ch){
+  if(!pendingClick) return;
+  socket.emit('grotaAddGeneral',{x:pendingClick.x,y:pendingClick.y,ch});
+  closePopup();
+}
 
-// Format
+/* ═══ FORMAT ═══ */
 function fmt(ms){const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return h>0?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;}
 
-// Generals
+/* ═══ GENERALS RENDER ═══ */
 const GEN_MIN=6*60*60*1000,GEN_MAX=8*60*60*1000;
 function getGenState(g){
   const el=Date.now()-g.startedAt;
@@ -420,9 +525,11 @@ function getGenState(g){
 }
 
 function renderGenerals(){
-  for(const id in generalRafs)cancelAnimationFrame(generalRafs[id]);generalRafs={};
+  for(const id in generalRafs)cancelAnimationFrame(generalRafs[id]);
+  generalRafs={};
   generalLayer.innerHTML='';
-  const list=document.getElementById('generalList'),ids=Object.keys(generals);
+  const list=document.getElementById('generalList');
+  const ids=Object.keys(generals);
   if(!ids.length){list.innerHTML='<div class="sidebar-empty">Brak oznaczonych generałów</div>';return;}
   list.innerHTML='';
   ids.forEach(id=>{placeGeneral(generals[id]);addGeneralSidebar(generals[id]);tickGeneral(generals[id]);});
@@ -430,14 +537,14 @@ function renderGenerals(){
 
 function placeGeneral(g){
   const m=document.createElement('div');
-  m.className='general-marker';m.id='gmarker_'+g.id;
-  m.style.cssText=`left:${g.x*100}%;top:${g.y*100}%;position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:10;`;
-  const sz=pingSize+'px';
+  m.className='general-marker';
+  m.style.cssText=`left:${g.x*100}%;top:${g.y*100}%;position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:9;`;
+  const pw=pingSize+'px', ph=(pingSize*1.6)+'px';
   const {state,label}=getGenState(g);
   const bc=state==='window'?' respawn':state==='available'?' soon':'';
-  m.innerHTML=`<div class="general-dot" onclick="socket.emit('grotaRemoveGeneral','${g.id}')" title="Kliknij — zbity" style="width:${sz};height:${sz}">
-    <div class="general-pulse" style="width:${sz};height:${sz}"></div>
-    <img src="/metin_icon.png" style="width:${sz};height:${sz};filter:hue-rotate(180deg) saturate(1.8);">
+  m.innerHTML=`<div class="general-dot" onclick="socket.emit('grotaRemoveGeneral','${g.id}')" title="Kliknij — generał zabity" style="width:${pw};height:${ph}">
+    <div class="general-pulse" style="width:${pw};height:${pw};bottom:-4px;left:50%;transform:translateX(-50%);"></div>
+    <img src="/general_icon.png" style="width:${pw};height:${ph};object-fit:contain;">
     <div class="general-ch-badge">${g.ch}</div>
     <div class="general-timer-badge${bc}" id="gpin_${g.id}">${label}</div>
   </div>`;
@@ -447,10 +554,13 @@ function placeGeneral(g){
 function addGeneralSidebar(g){
   const {state,label}=getGenState(g);
   const item=document.createElement('div');item.className='general-item';item.id='gitem_'+g.id;
-  item.innerHTML=`<div class="general-dot-small"><img src="/metin_icon.png" style="filter:hue-rotate(180deg) saturate(1.8)"></div>
-    <div style="flex:1;min-width:0;"><div class="general-ch">CH ${g.ch}</div>
-    <div class="general-time" id="gt_${g.id}">00:00</div>
-    <div class="general-respawn ${state}" id="gr_${g.id}">${label}</div></div>
+  item.innerHTML=`
+    <img src="/general_icon.png" class="gen-icon-small">
+    <div style="flex:1;min-width:0;">
+      <div class="general-ch">CH ${g.ch}</div>
+      <div class="general-time" id="gt_${g.id}">00:00</div>
+      <div class="general-respawn ${state}" id="gr_${g.id}">${label}</div>
+    </div>
     <button class="general-remove" onclick="socket.emit('grotaRemoveGeneral','${g.id}')">✕ Zbity</button>`;
   document.getElementById('generalList').appendChild(item);
 }
@@ -458,7 +568,7 @@ function addGeneralSidebar(g){
 function tickGeneral(g){
   function tick(){
     const el=document.getElementById('gt_'+g.id);if(el)el.innerText=fmt(Date.now()-g.startedAt);
-    const {state,label}=getGenState(g);
+    const{state,label}=getGenState(g);
     const gr=document.getElementById('gr_'+g.id);if(gr){gr.textContent=label;gr.className='general-respawn '+state;}
     const gp=document.getElementById('gpin_'+g.id);
     if(gp){gp.textContent=label;gp.className='general-timer-badge'+(state==='window'?' respawn':state==='available'?' soon':'');}
@@ -467,7 +577,7 @@ function tickGeneral(g){
   generalRafs[g.id]=requestAnimationFrame(tick);
 }
 
-// Region sidebar
+/* ═══ REGIONS SIDEBAR ═══ */
 function renderRegionList(){
   for(const id in regionRafs)cancelAnimationFrame(regionRafs[id]);regionRafs={};
   const list=document.getElementById('regionList'),ids=Object.keys(regions);
@@ -475,9 +585,9 @@ function renderRegionList(){
   list.innerHTML='';
   ids.forEach(id=>{
     const r=regions[id];
-    const [cr,cg,cb]=getGCol(r.guild||r.player||'?');
-    const item=document.createElement('div');item.className='region-item';item.id='ritem_'+id;
-    item.style.borderLeft=`3px solid rgba(${cr},${cg},${cb},0.7)`;
+    const[cr,cg,cb]=getRegionColor(id);
+    const item=document.createElement('div');item.className='region-item';
+    item.style.borderLeft=`3px solid rgba(${cr},${cg},${cb},0.8)`;
     item.innerHTML=`<div class="region-top">
       <span class="region-player" style="color:rgba(${cr},${cg},${cb},1)">${esc(r.player||'Anonim')}</span>
       <button class="region-remove" onclick="socket.emit('grotaRemoveRegion','${id}')">✕ Usuń</button>
@@ -485,7 +595,6 @@ function renderRegionList(){
     <div class="region-guild">${r.guild?'🛡 '+esc(r.guild):''}</div>
     <div class="region-time" id="rt_${id}">Dodano: przed chwilą</div>`;
     list.appendChild(item);
-    // tick timer
     (function tickR(){
       const el=document.getElementById('rt_'+id);if(!el)return;
       const mins=Math.floor((Date.now()-(r.addedAt||Date.now()))/60000);
@@ -494,9 +603,10 @@ function renderRegionList(){
     })();
   });
 }
+
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// Snapshots
+/* ═══ SNAPSHOTS ═══ */
 function saveSnapshot(){const n=document.getElementById('snapNameInput').value.trim()||'Snapshot';socket.emit('grotaSaveSnapshot',{name:n});document.getElementById('snapNameInput').value='';}
 function renderSnapshots(){
   const list=document.getElementById('snapList');
@@ -507,19 +617,19 @@ function renderSnapshots(){
     const t=d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
     const gc=Object.keys(snap.generals||{}).length,rc=Object.keys(snap.regions||{}).length;
     const row=document.createElement('div');row.className='snap-item';
-    row.innerHTML=`<div class="snap-info"><div class="snap-name">${snap.name}</div><div class="snap-meta">${t} · ${gc}🔵 ${rc}📦</div></div>
+    row.innerHTML=`<div class="snap-info"><div class="snap-name">${snap.name}</div><div class="snap-meta">${t} · ${gc}⚔ ${rc}📦</div></div>
       <button class="snap-load-btn" onclick="if(confirm('Wczytać?'))socket.emit('grotaLoadSnapshot','${snap.id}')">Wczytaj</button>
       <button class="snap-del-btn" onclick="socket.emit('grotaDeleteSnapshot','${snap.id}')">✕</button>`;
     list.appendChild(row);
   });
 }
 
-// Socket events
+/* ═══ SOCKET EVENTS ═══ */
 socket.on('grotaGeneralsUpdate',data=>{generals=data||{};renderGenerals();});
 socket.on('grotaRegionsUpdate', data=>{regions=data||{};renderRegionsCanvas();renderRegionList();});
 socket.on('grotaSnapshotsUpdate',data=>{snapshots=data||[];renderSnapshots();});
 
-// Reset modal
+/* ═══ RESET ═══ */
 function openResetModal(){
   const el=document.getElementById('resetOverlay');
   el.querySelector('#resetOptions').innerHTML=[
@@ -542,6 +652,9 @@ function doReset(){
   if(document.getElementById('r_snaps')?.checked)   socket.emit('grotaClearSnapshots');
   closeResetModal();
 }
+
+// Init tab
+setTab('general');
 </script>
 </body>
 </html>
