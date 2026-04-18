@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grota Wygnańców – Projekt Sojusz</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<script src="/socket.io/socket.io.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:#c9a84c; --gold-light:#f0d080; --gold-dark:#7a5f1e;
+    --bg:#090806; --border:#3a2e1a; --text:#d4c4a0; --text-dim:#7a6a50;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  .bg-layer{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(40,20,80,0.12) 0%,transparent 60%),#090806;}
+
+  /* TOP BAR */
+  .topbar{
+    position:relative;z-index:300;overflow:visible;
+    display:flex;align-items:center;justify-content:space-between;
+    max-width:1600px;margin:0 auto;padding:10px 20px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(to bottom,rgba(17,14,9,0.97),rgba(9,8,6,0.85));
+  }
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .logo-header{height:42px;width:auto;filter:drop-shadow(0 0 10px rgba(201,168,76,0.35));cursor:pointer;}
+  .page-title{font-family:'Cinzel',serif;font-size:17px;font-weight:600;color:var(--gold-light);letter-spacing:2px;text-shadow:0 0 20px rgba(201,168,76,0.35);}
+  .nav-btn{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--gold-dark);background:rgba(201,168,76,0.06);
+    border:1px solid rgba(201,168,76,0.25);border-radius:2px;
+    padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-block;transition:all 0.2s;
+  }
+  .nav-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.6);background:rgba(201,168,76,0.12);}
+
+  /* HEAT / MODE BTNS */
+  .heat-btn{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    padding:7px 14px;border-radius:2px;cursor:pointer;transition:all 0.2s;
+    border:1px solid rgba(255,160,40,0.3);color:#a06020;background:rgba(255,160,40,0.06);
+  }
+  .heat-btn.on{color:#ffb040;border-color:rgba(255,160,40,0.7);background:rgba(255,160,40,0.15);box-shadow:0 0 12px rgba(255,140,20,0.2);}
+  .mode-bar{display:flex;gap:8px;align-items:center;}
+  .mode-btn{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    padding:6px 14px;border-radius:2px;cursor:pointer;transition:all 0.2s;
+    border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(255,255,255,0.03);
+  }
+  .mode-btn.active-metin  {color:#ff8060;border-color:rgba(255,100,60,0.6);background:rgba(180,50,20,0.15);}
+  .mode-btn.active-general{color:#60b0ff;border-color:rgba(60,140,255,0.6);background:rgba(20,60,180,0.15);}
+
+  /* LAYOUT */
+  .layout{
+    position:relative;z-index:1;display:flex;gap:0;
+    max-width:1600px;margin:0 auto;min-height:calc(100vh - 65px);
+  }
+
+  /* MAP */
+  .map-wrap{flex:1;position:relative;padding:20px;min-width:0;display:flex;align-items:flex-start;justify-content:center;}
+  .map-container{
+    position:relative;display:inline-block;cursor:crosshair;
+    border:1px solid rgba(201,168,76,0.2);border-radius:3px;
+    box-shadow:0 0 40px rgba(0,0,0,0.8);max-width:100%;
+  }
+  .map-container img{display:block;height:auto;user-select:none;pointer-events:none;image-rendering:pixelated;}
+  .map-hint{
+    position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;
+    color:rgba(201,168,76,0.3);white-space:nowrap;pointer-events:none;
+  }
+  #heatCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:3px;opacity:0;transition:opacity 0.4s;}
+  #heatCanvas.visible{opacity:1;}
+
+  /* PING MARKERS */
+  .ping-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:5;display:flex;flex-direction:column;align-items:center;}
+  .ping-dot{
+    position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:transform 0.15s,filter 0.15s;animation:ping-appear 0.3s cubic-bezier(0.23,1,0.32,1);
+    filter:drop-shadow(0 0 4px rgba(255,80,40,0.9));
+  }
+  .ping-dot img{object-fit:contain;pointer-events:none;}
+  .ping-dot:hover{transform:scale(1.3);filter:drop-shadow(0 0 7px rgba(255,120,40,1));}
+  @keyframes ping-appear{0%{transform:scale(0);opacity:0;}70%{transform:scale(1.2);}100%{transform:scale(1);opacity:1;}}
+  .ping-pulse{
+    position:absolute;top:50%;left:50%;border-radius:50%;
+    background:rgba(255,60,20,0.25);transform:translate(-50%,-50%);
+    animation:pulse-ring 2s ease-out infinite;pointer-events:none;
+  }
+  @keyframes pulse-ring{0%{transform:translate(-50%,-50%) scale(1);opacity:0.8;}100%{transform:translate(-50%,-50%) scale(3);opacity:0;}}
+  .ping-ch-badge{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.92);border:1.5px solid var(--gold);border-radius:3px;
+    font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:#fff;padding:1px 5px;
+    pointer-events:none;white-space:nowrap;line-height:1.5;
+    text-shadow:0 0 6px rgba(201,168,76,0.8);box-shadow:0 0 6px rgba(0,0,0,0.8);
+  }
+
+  /* GENERAL MARKER */
+  .general-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:5;display:flex;flex-direction:column;align-items:center;}
+  .general-dot{
+    position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:transform 0.15s,filter 0.15s;animation:ping-appear 0.3s cubic-bezier(0.23,1,0.32,1);
+    filter:drop-shadow(0 0 5px rgba(60,140,255,0.9));
+  }
+  .general-dot img{object-fit:contain;pointer-events:none;}
+  .general-dot:hover{transform:scale(1.3);filter:drop-shadow(0 0 9px rgba(100,180,255,1));}
+  .general-pulse{
+    position:absolute;top:50%;left:50%;border-radius:50%;
+    background:rgba(60,140,255,0.2);transform:translate(-50%,-50%);
+    animation:pulse-ring 2s ease-out infinite;pointer-events:none;
+  }
+  .general-ch-badge{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,20,0.92);border:1.5px solid #60b0ff;border-radius:3px;
+    font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:#a0d0ff;padding:1px 5px;
+    pointer-events:none;white-space:nowrap;line-height:1.5;
+    text-shadow:0 0 6px rgba(60,140,255,0.8);box-shadow:0 0 6px rgba(0,0,0,0.8);
+  }
+  /* General timer on killed generals */
+  .general-timer-badge{
+    position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+    background:rgba(0,10,30,0.92);border:1px solid rgba(60,140,255,0.4);border-radius:2px;
+    font-family:'Cinzel',serif;font-size:9px;color:#6090d0;padding:1px 4px;
+    pointer-events:none;white-space:nowrap;
+  }
+  .general-timer-badge.respawn{color:#ffb040;border-color:rgba(255,160,40,0.6);}
+  .general-timer-badge.soon{color:#50e070;border-color:rgba(50,200,80,0.6);animation:timerPulse 1.5s ease-in-out infinite;}
+  @keyframes timerPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+  /* SIDEBAR */
+  .sidebar{
+    width:310px;flex-shrink:0;border-left:1px solid var(--border);
+    background:rgba(12,10,7,0.7);display:flex;flex-direction:column;
+    max-height:calc(100vh - 65px);overflow-y:auto;
+  }
+  .sidebar::-webkit-scrollbar{width:4px;}
+  .sidebar::-webkit-scrollbar-track{background:rgba(0,0,0,0.3);}
+  .sidebar::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.25);border-radius:2px;}
+  .sidebar-empty{padding:20px 16px;text-align:center;font-size:13px;color:var(--text-dim);font-style:italic;}
+  .sidebar-section-title{
+    padding:10px 14px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--gold-dark);background:rgba(0,0,0,0.3);
+    border-bottom:1px solid var(--border);border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .sidebar-section-title.blue{color:#6090d0;border-color:rgba(60,100,180,0.3);}
+  .sidebar-section-title.red{color:#c07070;border-color:rgba(200,80,80,0.3);}
+
+  /* PING LIST ITEM */
+  .ping-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid rgba(58,46,26,0.4);transition:background 0.2s;}
+  .ping-item:hover{background:rgba(201,168,76,0.04);}
+  .ping-dot-small{width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 5px rgba(255,80,30,0.7));}
+  .ping-dot-small img{width:30px;height:30px;object-fit:contain;}
+  .ping-info{flex:1;min-width:0;}
+  .ping-ch{font-family:'Cinzel',serif;font-size:13px;color:var(--gold-light);letter-spacing:1px;}
+  .ping-time{font-family:'Cinzel',serif;font-size:14px;color:#ff9090;margin-top:3px;}
+  .ping-remove{
+    font-size:9px;color:#804040;background:none;
+    font-family:'Cinzel',serif;letter-spacing:1px;padding:4px 8px;
+    border:1px solid rgba(180,50,50,0.2);border-radius:2px;cursor:pointer;transition:all 0.2s;
+  }
+  .ping-remove:hover{color:#ff6060;border-color:rgba(200,60,60,0.6);background:rgba(140,30,30,0.15);}
+
+  /* GENERAL ITEM */
+  .general-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(30,60,120,0.4);transition:background 0.2s;}
+  .general-item:hover{background:rgba(60,140,255,0.05);}
+  .general-dot-small{width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 5px rgba(60,140,255,0.7));}
+  .general-dot-small img{width:30px;height:30px;object-fit:contain;}
+  .general-ch{font-family:'Cinzel',serif;font-size:11px;color:#a0d0ff;letter-spacing:1px;}
+  .general-time{font-family:'Cinzel',serif;font-size:13px;color:#6090d0;margin-top:2px;}
+  .general-respawn{font-family:'Cinzel',serif;font-size:11px;margin-top:2px;}
+  .general-respawn.waiting{color:var(--text-dim);}
+  .general-respawn.window{color:#ffb040;}
+  .general-respawn.available{color:#50e070;}
+  .general-remove{font-size:9px;color:#304060;background:none;font-family:'Cinzel',serif;letter-spacing:1px;padding:4px 8px;border:1px solid rgba(60,100,180,0.2);border-radius:2px;cursor:pointer;transition:all 0.2s;}
+  .general-remove:hover{color:#60b0ff;border-color:rgba(60,140,255,0.6);background:rgba(20,60,140,0.15);}
+
+  /* DEAD HISTORY */
+  .ch-ctr{display:flex;flex-direction:column;align-items:center;padding:7px 4px;border-radius:3px;border:1px solid rgba(58,46,26,0.4);background:rgba(0,0,0,0.25);}
+  .ch-ctr-num{font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);letter-spacing:1px;}
+  .ch-ctr-val{font-family:'Cinzel',serif;font-size:18px;font-weight:700;line-height:1.2;}
+  .ch-ctr-val.c-full{color:#50d070;} .ch-ctr-val.c-mid{color:#d4b030;} .ch-ctr-val.c-low{color:#d07030;} .ch-ctr-val.c-empty{color:#c04040;}
+  .ch-ctr-sub{font-size:10px;color:var(--text-dim);}
+  .dead-grp{border-bottom:1px solid rgba(30,22,10,0.4);}
+  .dead-grp-hdr{padding:5px 12px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold-dark);background:rgba(0,0,0,0.2);display:flex;justify-content:space-between;}
+  .dead-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(30,22,10,0.2);}
+  .dead-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .dead-timer{font-family:'Cinzel',serif;font-size:13px;}
+  .dead-timer.t-fresh{color:var(--text-dim);} .dead-timer.t-yellow{color:#d4b030;} .dead-timer.t-green{color:#50c060;}
+  .dead-hint{font-size:11px;color:var(--text-dim);margin-top:2px;}
+
+  /* SNAPSHOTS */
+  .snap-panel{padding:12px 14px;border-bottom:1px solid var(--border);}
+  .snap-save-row{display:flex;gap:6px;margin-bottom:8px;}
+  .snap-input{flex:1;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:5px 8px;border-radius:2px;outline:none;}
+  .snap-input:focus{border-color:rgba(201,168,76,0.5);}
+  .snap-save-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);white-space:nowrap;}
+  .snap-save-btn:hover{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,0.16);}
+  .snap-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(58,46,26,0.3);}
+  .snap-info{flex:1;min-width:0;}
+  .snap-name{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-light);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .snap-meta{font-size:11px;color:var(--text-dim);font-style:italic;margin-top:1px;}
+  .snap-load-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:4px 8px;border-radius:2px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(201,168,76,0.25);color:var(--text-dim);background:rgba(201,168,76,0.05);}
+  .snap-load-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.6);}
+  .snap-del-btn{font-size:10px;color:#804040;background:none;border:none;cursor:pointer;padding:3px 5px;transition:color 0.2s;}
+  .snap-del-btn:hover{color:#ff6060;}
+
+  /* POPUP */
+  .popup-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);}
+  .popup-overlay.hidden{display:none;}
+  .popup-box{
+    background:linear-gradient(160deg,#1e1810,#100d08);
+    border:1px solid var(--gold-dark);border-radius:4px;
+    padding:28px 32px;min-width:300px;text-align:center;
+    box-shadow:0 0 60px rgba(0,0,0,0.9),0 0 30px rgba(201,168,76,0.06);position:relative;
+  }
+  .popup-box::before,.popup-box::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(201,168,76,0.45);border-style:solid;}
+  .popup-box::before{top:7px;left:7px;border-width:1px 0 0 1px;}
+  .popup-box::after{bottom:7px;right:7px;border-width:0 1px 1px 0;}
+  .popup-title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+  .popup-sub{font-size:13px;color:var(--text-dim);font-style:italic;margin-bottom:20px;}
+  .ch-buttons{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;}
+  .ch-btn{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;
+    width:46px;height:46px;border-radius:3px;cursor:pointer;transition:all 0.2s;
+    border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);
+  }
+  .ch-btn:hover{color:var(--gold-light);border-color:var(--gold);background:rgba(201,168,76,0.2);transform:scale(1.08);box-shadow:0 0 12px rgba(201,168,76,0.2);}
+  .popup-cancel{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--text-dim);background:none;border:1px solid rgba(255,255,255,0.08);
+    border-radius:2px;padding:7px 20px;cursor:pointer;transition:all 0.2s;width:100%;
+  }
+  .popup-cancel:hover{color:var(--text);border-color:rgba(255,255,255,0.2);}
+
+  /* HOTSPOT */
+  .hotspot-section{padding:10px 14px;border-bottom:1px solid rgba(58,46,26,0.4);}
+  .hotspot-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:#ffb040;text-transform:uppercase;margin-bottom:6px;}
+  .hotspot-item{display:flex;align-items:center;gap:8px;padding:5px 0;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;}
+  .hotspot-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .hotspot-count{color:var(--text-dim);font-size:11px;}
+
+  /* VOL WRAP */
+  .vol-wrap{display:flex;align-items:center;gap:6px;}
+  .vol-wrap span{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;}
+  input[type=range]{accent-color:var(--gold);cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+
+<!-- POPUP wyboru kanału -->
+<div class="popup-overlay hidden" id="popup">
+  <div class="popup-box">
+    <div class="popup-title" id="popupTitle">Pinguj Metina</div>
+    <div class="popup-sub">Wybierz kanał</div>
+    <div class="ch-buttons" id="chButtons"></div>
+    <button class="popup-cancel" onclick="closePopup()">Anuluj</button>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="/logo.png" alt="Projekt Sojusz" class="logo-header" onclick="location.href='/'">
+    <a class="nav-btn" href="/">⬅ Główna</a>
+    <div class="page-title">Grota Wygnańców</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div class="mode-bar">
+      <button class="mode-btn active-metin"  id="btnMetin"   onclick="setMode('metin')">⚔ Metin</button>
+      <button class="mode-btn"               id="btnGeneral" onclick="setMode('general')">🔵 Generał</button>
+    </div>
+    <div class="vol-wrap">
+      <span>Mapa</span>
+      <input type="range" id="mapSize" min="30" max="100" step="1" style="width:75px;">
+      <span id="mapSizeVal">100%</span>
+    </div>
+    <div class="vol-wrap">
+      <span>Pingi</span>
+      <input type="range" id="pingSize" min="8" max="40" step="1" style="width:75px;">
+      <span id="pingSizeVal">14</span>
+    </div>
+    <button class="heat-btn" id="heatBtn" onclick="toggleHeat()">🔥 Heatmapa OFF</button>
+    <button class="heat-btn" onclick="openResetModal()" style="color:#c07070;border-color:rgba(200,80,80,0.4);padding:6px 10px;" title="Reset">⟳</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- MAPA -->
+  <div class="map-wrap">
+    <div class="map-container" id="mapContainer">
+      <img src="/grota_mapa.png" id="mapImg" alt="Mapa Groty" draggable="false">
+      <canvas id="heatCanvas"></canvas>
+      <canvas id="routeCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;"></canvas>
+      <div id="pingLayer"></div>
+      <div id="generalLayer"></div>
+      <div class="map-hint" id="mapHint">Kliknij na mapę aby pingować metina</div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- SNAPSHOTY -->
+    <div class="snap-panel">
+      <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold-dark);text-transform:uppercase;margin-bottom:8px;">📸 Snapshoty</div>
+      <div class="snap-save-row">
+        <input class="snap-input" id="snapNameInput" placeholder="Nazwa snapshotu...">
+        <button class="snap-save-btn" onclick="saveSnapshot()">Zapisz</button>
+      </div>
+      <div id="snapList"></div>
+    </div>
+
+    <!-- METINY -->
+    <div class="sidebar-section-title">⚔ Aktywne Metiny</div>
+    <div id="pingList"><div class="sidebar-empty">Brak aktywnych pingów</div></div>
+
+    <!-- HISTORIA ZBITYCH -->
+    <div class="sidebar-section-title red">💀 Zbite Metiny (respawn 20–30 min)</div>
+    <div id="chCounters" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px 3px;border-bottom:1px solid var(--border);">
+      <span style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold-dark);text-transform:uppercase;">Historia</span>
+      <button onclick="undoLastKill()" style="font-family:'Cinzel',serif;font-size:10px;padding:3px 10px;border-radius:2px;cursor:pointer;border:1px solid rgba(201,168,76,0.25);color:var(--text-dim);background:none;">↩ Cofnij</button>
+    </div>
+    <div id="deadList"></div>
+
+    <!-- GENERAŁOWIE -->
+    <div class="sidebar-section-title blue">🔵 Generałowie (respawn 6–8h)</div>
+    <div id="generalList"><div class="sidebar-empty">Brak oznaczonych generałów</div></div>
+
+    <!-- HOTSPOT -->
+    <div class="hotspot-section" id="hotspotSection" style="display:none">
+      <div class="hotspot-title">🔥 Gorące miejsca</div>
+      <div id="hotspotList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RESET MODAL -->
+<div id="resetOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.75);backdrop-filter:blur(3px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeResetModal()">
+  <div style="background:linear-gradient(160deg,#1e1810,#100d08);border:1px solid rgba(200,80,80,0.4);border-radius:4px;padding:24px 28px;min-width:320px;max-width:420px;">
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#e07070;text-align:center;margin-bottom:16px;">⟳ Reset Groty Wygnańców</div>
+    <div id="resetOptions"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button onclick="closeResetModal()" style="flex:1;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:9px;border-radius:2px;cursor:pointer;background:none;border:1px solid rgba(58,46,26,0.4);color:var(--text-dim);">Anuluj</button>
+      <button onclick="doReset()" style="flex:1;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:9px;border-radius:2px;cursor:pointer;background:rgba(200,60,60,0.15);border:1px solid rgba(200,80,80,0.5);color:#e07070;">⟳ Resetuj zaznaczone</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const socket = io();
+
+/* ═══ STAN ═══ */
+let pings        = {};
+let generals     = {};
+let snapshots    = [];
+let history      = [];
+let deadHistory  = [];
+let undoStack    = [];
+let heatOn       = localStorage.getItem('heat') === '1';
+let pingMode     = 'metin';
+let pendingClick = null;
+let timerRafs    = {};
+let generalRafs  = {};
+
+let pingSize   = parseInt(localStorage.getItem('pingSize')) || 14;
+let mapSizePct = parseInt(localStorage.getItem('mapSize'))  || 80;
+
+/* ═══ DOM ═══ */
+const mapContainer = document.getElementById('mapContainer');
+const mapImg       = document.getElementById('mapImg');
+const pingLayer    = document.getElementById('pingLayer');
+const generalLayer = document.getElementById('generalLayer');
+const heatCanvas   = document.getElementById('heatCanvas');
+const heatCtx      = heatCanvas.getContext('2d');
+const heatBtn      = document.getElementById('heatBtn');
+
+/* ═══ SLIDERS ═══ */
+(function(){
+  const ps = document.getElementById('pingSize');
+  const pv = document.getElementById('pingSizeVal');
+  const ms = document.getElementById('mapSize');
+  const mv = document.getElementById('mapSizeVal');
+  ps.value = pingSize; pv.innerText = pingSize;
+  ps.oninput = () => { pingSize = parseInt(ps.value); pv.innerText = pingSize; localStorage.setItem('pingSize',pingSize); applyPingSize(); };
+  ms.value = mapSizePct; mv.innerText = mapSizePct+'%';
+  applyMapSize();
+  ms.oninput = () => { mapSizePct = parseInt(ms.value); mv.innerText = mapSizePct+'%'; localStorage.setItem('mapSize',mapSizePct); applyMapSize(); };
+})();
+
+function applyPingSize(){
+  const sz = pingSize+'px';
+  document.querySelectorAll('.ping-dot,.general-dot').forEach(el=>{el.style.width=sz;el.style.height=sz;});
+  document.querySelectorAll('.ping-dot img,.general-dot img').forEach(el=>{el.style.width=sz;el.style.height=sz;});
+  document.querySelectorAll('.ping-pulse,.general-pulse').forEach(el=>{el.style.width=sz;el.style.height=sz;});
+}
+function applyMapSize(){
+  mapImg.style.width = Math.round(403 * mapSizePct / 100) + 'px';
+  if(heatOn) syncCanvas();
+}
+
+/* ═══ MODE ═══ */
+function setMode(mode){
+  pingMode = mode;
+  document.getElementById('btnMetin').className   = 'mode-btn'+(mode==='metin'  ?' active-metin':'');
+  document.getElementById('btnGeneral').className = 'mode-btn'+(mode==='general'?' active-general':'');
+  document.getElementById('mapHint').innerText = mode==='metin'
+    ? 'Kliknij na mapę aby pingować metina'
+    : 'Kliknij na mapę aby oznaczyć generała';
+}
+
+updateHeatBtn();
+
+/* ═══ KLIK NA MAPĘ ═══ */
+mapContainer.addEventListener('click', e=>{
+  if(e.target.closest('.ping-dot')||e.target.closest('.general-dot')) return;
+  const rect = mapImg.getBoundingClientRect();
+  const x = (e.clientX-rect.left)/rect.width;
+  const y = (e.clientY-rect.top)/rect.height;
+  if(x<0||x>1||y<0||y>1) return;
+  pendingClick = {x,y};
+  openPopup();
+});
+
+/* ═══ POPUP ═══ */
+const popup  = document.getElementById('popup');
+const chBtns = document.getElementById('chButtons');
+
+function openPopup(){
+  chBtns.innerHTML='';
+  for(let i=1;i<=8;i++){
+    const btn=document.createElement('button');
+    btn.className='ch-btn'; btn.innerText=i;
+    btn.onclick=()=>confirmPing(i);
+    chBtns.appendChild(btn);
+  }
+  const titleEl = document.getElementById('popupTitle');
+  if(pingMode==='general'){
+    titleEl.textContent='🔵 Oznacz Generała';
+    titleEl.style.color='#a0d0ff';
+  } else {
+    titleEl.textContent='⚔ Pinguj Metina';
+    titleEl.style.color='';
+  }
+  popup.classList.remove('hidden');
+}
+function closePopup(){ popup.classList.add('hidden'); pendingClick=null; }
+popup.addEventListener('click',e=>{ if(e.target===popup) closePopup(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePopup(); });
+
+function confirmPing(ch){
+  if(!pendingClick) return;
+  if(pingMode==='general'){
+    socket.emit('grotaAddGeneral',{x:pendingClick.x,y:pendingClick.y,ch});
+  } else {
+    socket.emit('grotaAddPing',{x:pendingClick.x,y:pendingClick.y,ch});
+  }
+  closePopup();
+}
+
+/* ═══ FORMAT ═══ */
+function fmt(ms){
+  const s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  const ss=s%60;
+  if(h>0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+
+/* ═══ METINY — RENDER ═══ */
+function renderPings(){
+  for(const id in timerRafs) cancelAnimationFrame(timerRafs[id]);
+  timerRafs={};
+  pingLayer.innerHTML='';
+  const list=document.getElementById('pingList');
+  const ids=Object.keys(pings);
+  if(!ids.length){ list.innerHTML='<div class="sidebar-empty">Brak aktywnych pingów</div>'; return; }
+  list.innerHTML='';
+  ids.forEach(id=>{ placeMarker(pings[id]); addSidebarItem(pings[id]); startTicking(pings[id]); });
+}
+
+function placeMarker(p){
+  const m=document.createElement('div');
+  m.className='ping-marker'; m.id='marker_'+p.id;
+  m.style.left=(p.x*100)+'%'; m.style.top=(p.y*100)+'%';
+  const sz=pingSize+'px';
+  m.innerHTML=`<div class="ping-dot" onclick="removePing('${p.id}')" title="Kliknij — zbity" style="width:${sz};height:${sz}">
+    <div class="ping-pulse" style="width:${sz};height:${sz}"></div>
+    <img src="/metin_icon.png" style="width:${sz};height:${sz}">
+    <div class="ping-ch-badge">${p.ch}</div>
+  </div>`;
+  pingLayer.appendChild(m);
+}
+
+function addSidebarItem(p){
+  const item=document.createElement('div');
+  item.className='ping-item'; item.id='sitem_'+p.id;
+  item.innerHTML=`
+    <div class="ping-dot-small"><img src="/metin_icon.png"></div>
+    <div class="ping-info">
+      <div class="ping-ch">CH ${p.ch}</div>
+      <div class="ping-time" id="st_${p.id}">00:00</div>
+    </div>
+    <button class="ping-remove" onclick="removePing('${p.id}')">✕ Zbity</button>`;
+  document.getElementById('pingList').appendChild(item);
+}
+
+function startTicking(p){
+  function tick(){
+    const el=document.getElementById('st_'+p.id);
+    if(el) el.innerText=fmt(Date.now()-p.startedAt);
+    timerRafs[p.id]=requestAnimationFrame(tick);
+  }
+  timerRafs[p.id]=requestAnimationFrame(tick);
+}
+
+window.removePing=function(id){
+  const p=pings[id];
+  if(p){
+    const dead={id:'dead_'+Date.now()+'_'+id,ch:p.ch,killedAt:Date.now(),px:p.x,py:p.y};
+    undoStack.push({pingData:{x:p.x,y:p.y,ch:p.ch},dead});
+    if(undoStack.length>3) undoStack.shift();
+    socket.emit('grotaAddDead',dead);
+  }
+  socket.emit('grotaRemovePing',id);
+};
+
+function undoLastKill(){
+  if(!undoStack.length) return;
+  const last=undoStack.pop();
+  socket.emit('grotaRemoveDead',last.dead.id);
+  socket.emit('grotaAddPing',{x:last.pingData.x,y:last.pingData.y,ch:last.pingData.ch});
+}
+
+/* ═══ GENERAŁOWIE — RENDER ═══ */
+// Respawn: 6–8h po zabiciu
+const GEN_RESPAWN_MIN = 6*60*60*1000;
+const GEN_RESPAWN_MAX = 8*60*60*1000;
+
+function getGeneralState(g){
+  const elapsed = Date.now() - g.startedAt;
+  if(elapsed < GEN_RESPAWN_MIN){
+    const left = GEN_RESPAWN_MIN - elapsed;
+    const h=Math.floor(left/3600000);
+    const m=Math.floor((left%3600000)/60000);
+    return {state:'waiting', label:`Respawn za ${h}h ${m}min`};
+  } else if(elapsed < GEN_RESPAWN_MAX){
+    const left = GEN_RESPAWN_MAX - elapsed;
+    const h=Math.floor(left/3600000);
+    const m=Math.floor((left%3600000)/60000);
+    return {state:'window', label:`⚡ Okno respawnu! (max za ${h>0?h+'h ':''}${m}min)`};
+  } else {
+    return {state:'available', label:'✓ Prawdopodobnie żywy'};
+  }
+}
+
+function renderGenerals(){
+  for(const id in generalRafs) cancelAnimationFrame(generalRafs[id]);
+  generalRafs={};
+  generalLayer.innerHTML='';
+  const list=document.getElementById('generalList');
+  const ids=Object.keys(generals);
+  if(!ids.length){ list.innerHTML='<div class="sidebar-empty">Brak oznaczonych generałów</div>'; return; }
+  list.innerHTML='';
+  ids.forEach(id=>{ placeGeneral(generals[id]); addGeneralSidebarItem(generals[id]); startGeneralTick(generals[id]); });
+}
+
+function placeGeneral(g){
+  const m=document.createElement('div');
+  m.className='general-marker'; m.id='gmarker_'+g.id;
+  m.style.left=(g.x*100)+'%'; m.style.top=(g.y*100)+'%';
+  const sz=pingSize+'px';
+  const {state,label}=getGeneralState(g);
+  const badgeCls=state==='waiting'?'':state==='window'?'respawn':'soon';
+  m.innerHTML=`<div class="general-dot" onclick="removeGeneral('${g.id}')" title="Kliknij aby usunąć (zbity/respawn)" style="width:${sz};height:${sz}">
+    <div class="general-pulse" style="width:${sz};height:${sz}"></div>
+    <img src="/metin_icon.png" style="width:${sz};height:${sz};filter:hue-rotate(180deg) saturate(1.8);">
+    <div class="general-ch-badge">${g.ch}</div>
+    <div class="general-timer-badge ${badgeCls}" id="gpin_${g.id}">${label}</div>
+  </div>`;
+  generalLayer.appendChild(m);
+}
+
+function addGeneralSidebarItem(g){
+  const {state,label}=getGeneralState(g);
+  const item=document.createElement('div');
+  item.className='general-item'; item.id='gitem_'+g.id;
+  item.innerHTML=`
+    <div class="general-dot-small"><img src="/metin_icon.png" style="filter:hue-rotate(180deg) saturate(1.8)"></div>
+    <div class="ping-info">
+      <div class="general-ch">CH ${g.ch}</div>
+      <div class="general-time" id="gt_${g.id}">00:00</div>
+      <div class="general-respawn ${state}" id="gr_${g.id}">${label}</div>
+    </div>
+    <button class="general-remove" onclick="removeGeneral('${g.id}')">✕ Zbity</button>`;
+  document.getElementById('generalList').appendChild(item);
+}
+
+function startGeneralTick(g){
+  function tick(){
+    // elapsed timer
+    const el=document.getElementById('gt_'+g.id);
+    if(el) el.innerText=fmt(Date.now()-g.startedAt);
+    // respawn label
+    const {state,label}=getGeneralState(g);
+    const gr=document.getElementById('gr_'+g.id);
+    if(gr){ gr.textContent=label; gr.className='general-respawn '+state; }
+    const gpin=document.getElementById('gpin_'+g.id);
+    if(gpin){
+      gpin.textContent=label;
+      gpin.className='general-timer-badge'+(state==='window'?' respawn':state==='available'?' soon':'');
+    }
+    generalRafs[g.id]=requestAnimationFrame(tick);
+  }
+  generalRafs[g.id]=requestAnimationFrame(tick);
+}
+
+function removeGeneral(id){ socket.emit('grotaRemoveGeneral',id); }
+
+/* ═══ SNAPSHOTY ═══ */
+function saveSnapshot(){
+  const name=document.getElementById('snapNameInput').value.trim()||'Snapshot';
+  socket.emit('grotaSaveSnapshot',{name});
+  document.getElementById('snapNameInput').value='';
+}
+function renderSnapshots(){
+  const list=document.getElementById('snapList');
+  if(!snapshots.length){ list.innerHTML='<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 0">Brak zapisanych snapshotów</div>'; return; }
+  list.innerHTML='';
+  snapshots.forEach(snap=>{
+    const d=new Date(snap.ts);
+    const time=d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+    const mc=Object.keys(snap.pings||{}).length;
+    const gc=Object.keys(snap.generals||{}).length;
+    const row=document.createElement('div');
+    row.className='snap-item';
+    row.innerHTML=`<div class="snap-info"><div class="snap-name">${snap.name}</div><div class="snap-meta">${time} · ${mc}⚔ ${gc}🔵</div></div>
+      <button class="snap-load-btn" onclick="loadSnapshot('${snap.id}')">Wczytaj</button>
+      <button class="snap-del-btn"  onclick="deleteSnapshot('${snap.id}')">✕</button>`;
+    list.appendChild(row);
+  });
+}
+function loadSnapshot(id){ if(!confirm('Wczytać snapshot? Nadpisze aktywne pingi i generałów.')) return; socket.emit('grotaLoadSnapshot',id); }
+function deleteSnapshot(id){ socket.emit('grotaDeleteSnapshot',id); }
+
+/* ═══ DEAD HISTORY ═══ */
+const METIN_PER_CH=6;
+const YELLOW_MS=20*60*1000;
+const GREEN_MS=30*60*1000;
+const EXPIRE_MS=35*60*1000;
+
+function renderDead(){
+  const now=Date.now();
+  const active=deadHistory.filter(d=>now-d.killedAt<EXPIRE_MS);
+  // Liczniki
+  const wrap=document.getElementById('chCounters');
+  if(wrap){
+    const deadPer={};
+    for(let i=1;i<=8;i++) deadPer[i]=0;
+    active.forEach(d=>{if(d.ch>=1&&d.ch<=8) deadPer[d.ch]++;});
+    wrap.innerHTML='';
+    for(let ch=1;ch<=8;ch++){
+      const avail=Math.max(0,METIN_PER_CH-deadPer[ch]);
+      const cls=avail>=5?'c-full':avail>=3?'c-mid':avail>=1?'c-low':'c-empty';
+      const el=document.createElement('div');
+      el.className='ch-ctr'; el.title=`CH${ch}: ${avail} dostępnych`;
+      el.innerHTML=`<div class="ch-ctr-num">CH${ch}</div><div class="ch-ctr-val ${cls}">${avail}</div><div class="ch-ctr-sub">/${METIN_PER_CH}</div>`;
+      wrap.appendChild(el);
+    }
+  }
+  // Lista
+  const list=document.getElementById('deadList');
+  if(!list) return;
+  if(!active.length){ list.innerHTML='<div class="sidebar-empty">Brak zbitych</div>'; return; }
+  const byCh={};
+  active.forEach(d=>{ (byCh[d.ch]=byCh[d.ch]||[]).push(d); });
+  list.innerHTML='';
+  Object.keys(byCh).sort((a,b)=>a-b).forEach(ch=>{
+    const grp=document.createElement('div');
+    grp.className='dead-grp';
+    const hdr=document.createElement('div');
+    hdr.className='dead-grp-hdr';
+    hdr.innerHTML=`<span>Kanał ${ch}</span><span>${byCh[ch].length} zbitych</span>`;
+    grp.appendChild(hdr);
+    byCh[ch].sort((a,b)=>b.killedAt-a.killedAt).forEach(d=>{
+      const el=now-d.killedAt;
+      const mins=Math.floor(el/60000);
+      const secs=Math.floor((el%60000)/1000);
+      const cls=el>=GREEN_MS?'t-green':el>=YELLOW_MS?'t-yellow':'t-fresh';
+      const col=el>=GREEN_MS?'#409040':el>=YELLOW_MS?'#907030':'#604040';
+      const hint=el>=GREEN_MS?'✓ Można szukać':el>=YELLOW_MS?'⚡ Może być':'✗ Świeżo zbity';
+      const row=document.createElement('div');
+      row.className='dead-row';
+      row.innerHTML=`<div class="dead-dot" style="background:${col}"></div>
+        <div><div class="dead-timer ${cls}">${mins}m ${secs}s temu</div><div class="dead-hint">${hint}</div></div>`;
+      grp.appendChild(row);
+    });
+    list.appendChild(grp);
+  });
+}
+setInterval(renderDead,1000);
+renderDead();
+
+/* ═══ HEATMAPA ═══ */
+const CLUSTER_R=0.04;
+function clusterPoints(pts){
+  const clusters=[];
+  for(const pt of pts){
+    let found=false;
+    for(const cl of clusters){
+      const dx=cl.x-pt.x,dy=cl.y-pt.y;
+      if(Math.sqrt(dx*dx+dy*dy)<CLUSTER_R){ cl.count++; cl.x=(cl.x*(cl.count-1)+pt.x)/cl.count; cl.y=(cl.y*(cl.count-1)+pt.y)/cl.count; found=true; break; }
+    }
+    if(!found) clusters.push({x:pt.x,y:pt.y,count:1});
+  }
+  return clusters.sort((a,b)=>b.count-a.count);
+}
+function drawHeatmap(){
+  const w=heatCanvas.width,h=heatCanvas.height;
+  heatCtx.clearRect(0,0,w,h);
+  if(!heatOn||history.length===0) return;
+  const clusters=clusterPoints(history);
+  if(!clusters.length) return;
+  const maxCount=clusters[0].count;
+  for(const cl of clusters){
+    const cx=cl.x*w,cy=cl.y*h;
+    const intensity=cl.count/maxCount;
+    const radius=(0.04+intensity*0.04)*w;
+    const alpha=0.25+intensity*0.55;
+    const grad=heatCtx.createRadialGradient(cx,cy,0,cx,cy,radius);
+    if(intensity>0.7){ grad.addColorStop(0,`rgba(255,220,40,${alpha})`); grad.addColorStop(0.4,`rgba(255,140,20,${alpha*0.7})`); grad.addColorStop(1,'rgba(255,80,0,0)'); }
+    else if(intensity>0.35){ grad.addColorStop(0,`rgba(255,140,30,${alpha})`); grad.addColorStop(0.5,`rgba(200,80,10,${alpha*0.6})`); grad.addColorStop(1,'rgba(180,40,0,0)'); }
+    else { grad.addColorStop(0,`rgba(180,80,20,${alpha})`); grad.addColorStop(0.5,`rgba(120,40,10,${alpha*0.5})`); grad.addColorStop(1,'rgba(80,20,0,0)'); }
+    heatCtx.beginPath(); heatCtx.arc(cx,cy,radius,0,Math.PI*2); heatCtx.fillStyle=grad; heatCtx.fill();
+  }
+  updateHotspots(clusters.slice(0,5),maxCount);
+}
+function updateHotspots(top,maxCount){
+  const sec=document.getElementById('hotspotSection');
+  const list=document.getElementById('hotspotList');
+  if(!heatOn||!top.length){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  list.innerHTML=top.map((cl,i)=>{
+    const intensity=cl.count/maxCount;
+    const color=intensity>0.7?'#ffda28':intensity>0.35?'#ff8c1e':'#b45014';
+    return `<div class="hotspot-item"><div class="hotspot-dot" style="background:${color};box-shadow:0 0 6px ${color}66"></div><span style="color:${color}">Miejsce ${i+1}</span><span class="hotspot-count">&nbsp;— ${cl.count}× pingowano</span></div>`;
+  }).join('');
+}
+function syncCanvas(){
+  const rect=mapImg.getBoundingClientRect();
+  heatCanvas.width=rect.width; heatCanvas.height=rect.height;
+  drawHeatmap();
+}
+function toggleHeat(){
+  heatOn=!heatOn; localStorage.setItem('heat',heatOn?'1':'0');
+  updateHeatBtn(); syncCanvas();
+  if(heatOn) heatCanvas.classList.add('visible');
+  else { heatCanvas.classList.remove('visible'); document.getElementById('hotspotSection').style.display='none'; }
+}
+function updateHeatBtn(){
+  if(heatOn){ heatBtn.textContent='🔥 Heatmapa ON'; heatBtn.classList.add('on'); heatCanvas.classList.add('visible'); }
+  else { heatBtn.textContent='🔥 Heatmapa OFF'; heatBtn.classList.remove('on'); heatCanvas.classList.remove('visible'); }
+}
+new ResizeObserver(()=>{ if(heatOn) syncCanvas(); }).observe(mapImg);
+mapImg.addEventListener('load',()=>{ if(heatOn) syncCanvas(); });
+
+/* ═══ SOCKET EVENTS ═══ */
+socket.on('grotaPingsUpdate',   data=>{ pings=data; renderPings(); });
+socket.on('grotaHistoryUpdate', data=>{ history=data; if(heatOn) syncCanvas(); });
+socket.on('grotaGeneralsUpdate',data=>{ generals=data; renderGenerals(); });
+socket.on('grotaSnapshotsUpdate',data=>{ snapshots=data; renderSnapshots(); });
+socket.on('grotaDeadHistoryUpdate',data=>{ deadHistory=Array.isArray(data)?data:[]; renderDead(); });
+
+/* ═══ RESET MODAL ═══ */
+function openResetModal(){
+  const el=document.getElementById('resetOverlay');
+  if(!el) return;
+  el.querySelector('#resetOptions').innerHTML=[
+    ['r_dead','Historia zbitych & timery','Czyści liczniki CH i historię zbitych metinów',true],
+    ['r_pings','Aktywne pingi metinów','Usuwa wszystkie znaczniki metinów z mapy',true],
+    ['r_generals','Generałowie','Usuwa wszystkie znaczniki generałów',false],
+    ['r_heat','Heatmapa','Usuwa historię pingów (heatmapa → zero)',false],
+    ['r_snaps','Snapshoty','Usuwa wszystkie zapisane snapshoty mapy',false],
+  ].map(([id,name,desc,checked])=>`
+    <div onclick="document.getElementById('${id}').checked=!document.getElementById('${id}').checked"
+      style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:3px;border:1px solid rgba(58,46,26,0.3);margin-bottom:6px;cursor:pointer;"
+      onmouseover="this.style.borderColor='rgba(200,80,80,0.4)';this.style.background='rgba(200,80,80,0.06)'"
+      onmouseout="this.style.borderColor='rgba(58,46,26,0.3)';this.style.background='transparent'">
+      <input type="checkbox" id="${id}" ${checked?'checked':''} onclick="event.stopPropagation()" style="width:16px;height:16px;accent-color:#c07070;cursor:pointer;flex-shrink:0;">
+      <div style="flex:1;"><div style="font-family:'Cinzel',serif;font-size:11px;color:var(--text);letter-spacing:1px;">${name}</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${desc}</div></div>
+    </div>`).join('');
+  el.style.display='flex';
+}
+function closeResetModal(){ document.getElementById('resetOverlay').style.display='none'; }
+function doReset(){
+  try{ new Audio('/reset.mp3').play(); }catch(e){}
+  if(document.getElementById('r_dead')?.checked){ deadHistory.forEach(d=>socket.emit('grotaRemoveDead',d.id)); deadHistory=[]; renderDead(); }
+  if(document.getElementById('r_pings')?.checked){ Object.keys(pings).forEach(id=>socket.emit('grotaRemovePing',id)); }
+  if(document.getElementById('r_generals')?.checked){ Object.keys(generals).forEach(id=>socket.emit('grotaRemoveGeneral',id)); }
+  if(document.getElementById('r_heat')?.checked){ socket.emit('grotaResetHistory'); }
+  if(document.getElementById('r_snaps')?.checked){ socket.emit('grotaClearSnapshots'); }
+  closeResetModal();
+}
+</script>
+</body>
+</html>
