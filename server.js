@@ -7,14 +7,13 @@ const path       = require("path")
 
 /* ======================
    PLIK DANYCH
+   Render.com darmowy plan nie ma persistent dysku,
+   więc zapisujemy obok server.js (w /opt/render/project/src/)
+   Dane przeżywają restarty ale NIE nowych deployów.
+   To wystarczy do normalnego użytkowania.
 ====================== */
 
-// Na Render.com z dyskiem montujemy /data, lokalnie używamy katalogu projektu
-const DATA_DIR  = process.env.DATA_DIR || path.join(__dirname, "data")
-const DATA_FILE = path.join(DATA_DIR, "state.json")
-
-// Utwórz folder jeśli nie istnieje
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
+const DATA_FILE = path.join(__dirname, "state.json")
 
 /* ======================
    STAN W PAMIĘCI
@@ -27,42 +26,50 @@ let grotaSnapshots   = []
 let grotaDeadHistory = []
 
 /* ======================
-   ODCZYT / ZAPIS PLIKU
+   ODCZYT PLIKU
 ====================== */
 
 function loadData() {
   try {
-    if (!fs.existsSync(DATA_FILE)) return
-    const raw  = fs.readFileSync(DATA_FILE, "utf8")
-    const doc  = JSON.parse(raw)
+    if (!fs.existsSync(DATA_FILE)) {
+      console.log("Brak pliku state.json — start od zera")
+      return
+    }
+    const raw = fs.readFileSync(DATA_FILE, "utf8")
+    const doc = JSON.parse(raw)
     grotaPings       = doc.grotaPings       || {}
     grotaHistory     = doc.grotaHistory     || []
     grotaGenerals    = doc.grotaGenerals    || {}
     grotaSnapshots   = doc.grotaSnapshots   || []
-    // Odfiltruj wygasłe dead (>35min)
     grotaDeadHistory = (doc.grotaDeadHistory || [])
       .filter(d => Date.now() - d.killedAt < 35 * 60 * 1000)
-    console.log("Dane wczytane z pliku:", DATA_FILE)
+    console.log("Dane wczytane z:", DATA_FILE)
   } catch (e) {
-    console.error("Błąd odczytu danych:", e.message)
+    console.error("Błąd odczytu — start od zera:", e.message)
   }
 }
+
+/* ======================
+   ZAPIS PLIKU (debounced)
+====================== */
 
 let saveTimer = null
 function saveData() {
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    try {
-      const payload = JSON.stringify({
-        grotaPings, grotaHistory, grotaGenerals,
-        grotaSnapshots, grotaDeadHistory,
-        savedAt: Date.now()
-      }, null, 2)
-      fs.writeFileSync(DATA_FILE, payload, "utf8")
-    } catch (e) {
-      console.error("Błąd zapisu:", e.message)
+  saveTimer = setTimeout(writeNow, 500)
+}
+
+function writeNow() {
+  try {
+    const payload = {
+      grotaPings, grotaHistory, grotaGenerals,
+      grotaSnapshots, grotaDeadHistory,
+      savedAt: Date.now()
     }
-  }, 500)
+    fs.writeFileSync(DATA_FILE, JSON.stringify(payload, null, 2), "utf8")
+  } catch (e) {
+    console.error("Błąd zapisu:", e.message)
+  }
 }
 
 // Wczytaj dane przy starcie
@@ -72,15 +79,16 @@ loadData()
    SERWER STATYCZNY
 ====================== */
 
-app.use(express.static("public"))
+app.use(express.static(path.join(__dirname, "public")))
 
 /* ======================
    SOCKET.IO
 ====================== */
 
 io.on("connection", (socket) => {
+  console.log("Nowe połączenie:", socket.id)
 
-  /* ─── Grota — Metiny ─── */
+  /* ─── Metiny ─── */
   socket.on("grotaAddPing", (data) => {
     const id = "g_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6)
     grotaPings[id] = { id, x: data.x, y: data.y, ch: data.ch, startedAt: Date.now() }
@@ -97,7 +105,7 @@ io.on("connection", (socket) => {
     io.emit("grotaPingsUpdate", grotaPings)
   })
 
-  /* ─── Grota — Dead history ─── */
+  /* ─── Dead history ─── */
   socket.on("grotaAddDead", (dead) => {
     if (!dead || !dead.id) return
     grotaDeadHistory.push(dead)
@@ -113,7 +121,7 @@ io.on("connection", (socket) => {
     saveData()
   })
 
-  /* ─── Grota — Generałowie ─── */
+  /* ─── Generałowie ─── */
   socket.on("grotaAddGeneral", (data) => {
     const id = "gen_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6)
     grotaGenerals[id] = { id, x: data.x, y: data.y, ch: data.ch, startedAt: Date.now() }
@@ -127,7 +135,7 @@ io.on("connection", (socket) => {
     io.emit("grotaGeneralsUpdate", grotaGenerals)
   })
 
-  /* ─── Grota — Snapshoty ─── */
+  /* ─── Snapshoty ─── */
   socket.on("grotaSaveSnapshot", (data) => {
     const snap = {
       id:       "snap_" + Date.now(),
@@ -175,9 +183,9 @@ io.on("connection", (socket) => {
   socket.emit("grotaHistoryUpdate",  grotaHistory)
   socket.emit("grotaGeneralsUpdate", grotaGenerals)
   socket.emit("grotaSnapshotsUpdate",grotaSnapshots)
-  const freshDead = grotaDeadHistory
-    .filter(d => Date.now() - d.killedAt < 35 * 60 * 1000)
-  socket.emit("grotaDeadHistoryUpdate", freshDead)
+  socket.emit("grotaDeadHistoryUpdate",
+    grotaDeadHistory.filter(d => Date.now() - d.killedAt < 35 * 60 * 1000)
+  )
 })
 
 /* ======================
@@ -185,20 +193,10 @@ io.on("connection", (socket) => {
 ====================== */
 
 function shutdown(signal) {
-  console.log(`Zamykanie (${signal}) — zapisuję dane...`)
-  if (saveTimer) {
-    clearTimeout(saveTimer)
-    try {
-      fs.writeFileSync(DATA_FILE, JSON.stringify({
-        grotaPings, grotaHistory, grotaGenerals,
-        grotaSnapshots, grotaDeadHistory,
-        savedAt: Date.now()
-      }, null, 2), "utf8")
-      console.log("Dane zapisane.")
-    } catch (e) {
-      console.error("Błąd zapisu przy zamknięciu:", e.message)
-    }
-  }
+  console.log(`Zamykanie (${signal}) — zapisuję...`)
+  if (saveTimer) clearTimeout(saveTimer)
+  writeNow()
+  console.log("Zapisano. Do widzenia!")
   process.exit(0)
 }
 process.on("SIGTERM", () => shutdown("SIGTERM"))
@@ -209,7 +207,6 @@ process.on("SIGINT",  () => shutdown("SIGINT"))
 ====================== */
 
 const PORT = process.env.PORT || 3000
-http.listen(PORT, () => {
-  console.log(`Serwer działa na porcie ${PORT}`)
-  console.log(`Plik danych: ${DATA_FILE}`)
+http.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ Serwer działa na porcie ${PORT}`)
 })
