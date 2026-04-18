@@ -175,8 +175,8 @@
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
     <div class="tab-bar">
-      <button class="tab-btn active-general" id="tabGeneral" onclick="setTab('general')">🔵 Generałowie</button>
-      <button class="tab-btn"               id="tabRegion"  onclick="setTab('region')">📦 Regiony metinów</button>
+      <button class="tab-btn active-region" id="tabRegion" onclick="setTab('region')">📦 Regiony metinów</button>
+      <button class="tab-btn" id="tabGeneral" onclick="setTab('general')">⚔ Generałowie</button>
     </div>
     <div class="vol-wrap">
       <span>Mapa</span>
@@ -654,7 +654,7 @@ function doReset(){
 }
 
 // Init tab
-setTab('general');
+setTab('region');
 </script>
 </body>
 </html>

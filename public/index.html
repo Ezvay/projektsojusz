@@ -8,130 +8,54 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --gold:#c9a84c; --gold-light:#f0d080; --gold-dark:#7a5f1e;
-    --bg:#080705; --border:#3a2e1a; --text:#d4c4a0; --text-dim:#7a6a50;
-    --red:#b01c1c; --red-bright:#e53030;
-  }
+  :root{--gold:#c9a84c;--gold-light:#f0d080;--gold-dark:#7a5f1e;--bg:#080705;--border:#3a2e1a;--text:#d4c4a0;--text-dim:#7a6a50;}
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
-
-  /* Background */
-  .bg-layer{
-    position:fixed;inset:0;z-index:0;pointer-events:none;
-    background:
-      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(60,30,10,0.25) 0%, transparent 70%),
-      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(40,20,8,0.2) 0%, transparent 60%),
-      radial-gradient(ellipse 30% 40% at 90% 60%, rgba(50,25,8,0.15) 0%, transparent 60%),
-      #080705;
-  }
-  /* Ember particles */
+  .bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(60,30,10,0.25) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 10% 80%,rgba(40,20,8,0.2) 0%,transparent 60%),#080705;}
   .embers{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
   .ember{position:absolute;border-radius:50%;background:var(--gold);opacity:0;animation:floatEmber linear infinite;}
-  @keyframes floatEmber{
-    0%{transform:translateY(100vh) scale(0);opacity:0;}
-    10%{opacity:0.7;}90%{opacity:0.2;}
-    100%{transform:translateY(-20px) translateX(var(--drift,30px)) scale(0.5);opacity:0;}
-  }
+  @keyframes floatEmber{0%{transform:translateY(100vh) scale(0);opacity:0;}10%{opacity:0.7;}90%{opacity:0.2;}100%{transform:translateY(-20px) translateX(var(--drift,30px)) scale(0.5);opacity:0;}}
 
-  /* HEADER */
-  header{
-    position:relative;z-index:10;
-    border-bottom:1px solid rgba(58,46,26,0.5);
-    background:linear-gradient(to bottom, rgba(8,7,5,0.98), rgba(8,7,5,0.7));
-    backdrop-filter:blur(10px);
-  }
-  .header-inner{
-    max-width:1400px;margin:0 auto;padding:0 2rem;
-    height:72px;display:flex;align-items:center;justify-content:space-between;
-  }
-  .logo-img{
-    height:54px;width:auto;object-fit:contain;
-    filter:drop-shadow(0 0 16px rgba(201,168,76,0.4));
-    transition:filter 0.3s;cursor:pointer;
-  }
+  header{position:relative;z-index:10;border-bottom:1px solid rgba(58,46,26,0.5);background:linear-gradient(to bottom,rgba(8,7,5,0.98),rgba(8,7,5,0.7));backdrop-filter:blur(10px);}
+  .header-inner{max-width:1400px;margin:0 auto;padding:0 2rem;height:72px;display:flex;align-items:center;justify-content:space-between;}
+  .logo-img{height:54px;width:auto;object-fit:contain;filter:drop-shadow(0 0 16px rgba(201,168,76,0.4));transition:filter 0.3s;cursor:pointer;}
   .logo-img:hover{filter:drop-shadow(0 0 28px rgba(201,168,76,0.75));}
   .nav{display:flex;gap:6px;}
-  .nav-link{
-    font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;
-    color:var(--text-dim);background:rgba(201,168,76,0.04);
-    border:1px solid rgba(201,168,76,0.18);border-radius:2px;
-    padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-block;transition:all 0.2s;
-  }
+  .nav-link{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.18);border-radius:2px;padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-block;transition:all 0.2s;}
   .nav-link:hover,.nav-link.active{color:var(--gold);border-color:rgba(201,168,76,0.55);background:rgba(201,168,76,0.1);}
   .nav-link.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none;}
 
-  /* HERO */
-  .hero{
-    position:relative;z-index:2;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    min-height:calc(100vh - 72px);
-    padding:4rem 2rem;
-    text-align:center;
-  }
-  .hero-logo{
-    width:min(500px,80vw);height:auto;
-    filter:drop-shadow(0 0 40px rgba(201,168,76,0.35)) drop-shadow(0 0 80px rgba(201,168,76,0.15));
-    animation:heroFloat 5s ease-in-out infinite;
-    margin-bottom:2.5rem;
-  }
-  @keyframes heroFloat{
-    0%,100%{transform:translateY(0);filter:drop-shadow(0 0 40px rgba(201,168,76,0.35)) drop-shadow(0 0 80px rgba(201,168,76,0.15));}
-    50%{transform:translateY(-10px);filter:drop-shadow(0 0 60px rgba(201,168,76,0.55)) drop-shadow(0 0 100px rgba(201,168,76,0.25));}
-  }
-  .hero-subtitle{
-    font-family:'Cinzel',serif;font-size:clamp(0.7rem,1.5vw,0.9rem);
-    letter-spacing:0.4em;color:var(--text-dim);text-transform:uppercase;
-    margin-bottom:3rem;
-  }
+  .hero{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 72px);padding:4rem 2rem;text-align:center;}
+  .hero-logo{width:min(500px,80vw);height:auto;filter:drop-shadow(0 0 40px rgba(201,168,76,0.35)) drop-shadow(0 0 80px rgba(201,168,76,0.15));animation:heroFloat 5s ease-in-out infinite;margin-bottom:2.5rem;}
+  @keyframes heroFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+  .hero-subtitle{font-family:'Cinzel',serif;font-size:clamp(0.7rem,1.5vw,0.9rem);letter-spacing:0.4em;color:var(--text-dim);text-transform:uppercase;margin-bottom:3rem;}
   .hero-subtitle span{color:var(--gold);opacity:0.7;}
 
   /* CARDS */
-  .cards{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;max-width:900px;}
-  .card{
-    position:relative;
-    background:linear-gradient(135deg,rgba(25,18,8,0.9),rgba(12,9,4,0.95));
-    border:1px solid rgba(201,168,76,0.2);
-    width:260px;padding:2rem 1.75rem;
-    text-decoration:none;color:inherit;
-    clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
-    transition:all 0.25s;
-    cursor:pointer;
-  }
-  .card::before{
-    content:'';position:absolute;inset:0;
-    background:linear-gradient(135deg,rgba(201,168,76,0.05) 0%,transparent 60%);
-    opacity:0;transition:opacity 0.25s;
-  }
+  .cards{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;max-width:1100px;}
+  .card{position:relative;background:linear-gradient(135deg,rgba(25,18,8,0.9),rgba(12,9,4,0.95));border:1px solid rgba(201,168,76,0.2);width:260px;padding:2rem 1.75rem;text-decoration:none;color:inherit;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));transition:all 0.25s;cursor:pointer;display:block;}
+  .card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,0.05) 0%,transparent 60%);opacity:0;transition:opacity 0.25s;}
   .card:hover{border-color:rgba(201,168,76,0.55);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.5),0 0 20px rgba(201,168,76,0.1);}
   .card:hover::before{opacity:1;}
   .card.disabled{opacity:0.45;cursor:not-allowed;pointer-events:none;}
+  .card.guild-card{width:320px;cursor:default;}
+  .card.guild-card:hover{transform:none;box-shadow:none;}
   .card-icon{font-size:2.2rem;margin-bottom:1rem;}
   .card-title{font-family:'Cinzel',serif;font-size:1rem;font-weight:600;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.6rem;}
   .card-desc{font-size:0.95rem;color:var(--text-dim);line-height:1.65;margin-bottom:1.2rem;}
-  .card-badge{
-    display:inline-block;
-    font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.15em;
-    padding:0.2rem 0.65rem;border-radius:1px;
-    background:rgba(45,138,78,0.18);color:#3fbf6a;border:1px solid rgba(45,138,78,0.4);
-  }
+  .card-badge{display:inline-block;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.15em;padding:0.2rem 0.65rem;border-radius:1px;background:rgba(45,138,78,0.18);color:#3fbf6a;border:1px solid rgba(45,138,78,0.4);}
   .card-badge.soon{background:rgba(201,168,76,0.12);color:var(--gold);border-color:rgba(201,168,76,0.3);}
 
-  /* DIVIDER */
-  .divider{
-    position:relative;z-index:2;
-    width:min(700px,90%);margin:0 auto;
-    height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,0.3),transparent);
-  }
+  /* GUILD LIST */
+  .guild-list{display:flex;flex-direction:column;gap:0.6rem;}
+  .guild-entry{display:flex;align-items:center;gap:0.85rem;padding:0.55rem 0;border-bottom:1px solid rgba(58,46,26,0.35);}
+  .guild-entry:last-child{border-bottom:none;}
+  .guild-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:0 0 8px currentColor;}
+  .guild-name{font-family:'Cinzel',serif;font-size:0.9rem;letter-spacing:0.05em;}
+  .guild-note{font-size:0.8rem;font-style:italic;opacity:0.6;margin-left:auto;}
 
-  /* FOOTER */
-  footer{
-    position:relative;z-index:2;
-    text-align:center;padding:2rem;
-    font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.2em;
-    color:var(--text-dim);opacity:0.5;
-    border-top:1px solid rgba(58,46,26,0.3);
-  }
+  .divider{position:relative;z-index:2;width:min(700px,90%);margin:0 auto;height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,0.3),transparent);}
+  footer{position:relative;z-index:2;text-align:center;padding:2rem;font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.2em;color:var(--text-dim);opacity:0.5;border-top:1px solid rgba(58,46,26,0.3);}
 </style>
 </head>
 <body>
@@ -155,13 +79,16 @@
   <div class="hero-subtitle">Platforma koordynacji sojuszu &nbsp;<span>·</span>&nbsp; Metin2 Projekt Hard</div>
 
   <div class="cards">
+
+    <!-- Grota -->
     <a href="/grota.html" class="card">
       <div class="card-icon">🗺</div>
       <div class="card-title">Grota Wygnańców</div>
-      <div class="card-desc">Interaktywna mapa z pingowaniem metinów i generałów. Globalne timery respawnów widoczne dla wszystkich.</div>
+      <div class="card-desc">Interaktywna mapa z regionami metinów i znacznikami generałów. Globalne timery respawnów widoczne dla wszystkich.</div>
       <span class="card-badge">Dostępne</span>
     </a>
 
+    <!-- Bossowie -->
     <div class="card disabled">
       <div class="card-icon">💀</div>
       <div class="card-title">Bossowie</div>
@@ -169,26 +96,51 @@
       <span class="card-badge soon">Wkrótce</span>
     </div>
 
-    <div class="card disabled">
+    <!-- Sojusznicy -->
+    <div class="card guild-card">
       <div class="card-icon">🛡</div>
       <div class="card-title">Sojusznicy</div>
-      <div class="card-desc">Lista sojuszniczych gildii, ich liderów, statusów i zasad wzajemnej współpracy.</div>
-      <span class="card-badge soon">Wkrótce</span>
+      <div class="guild-list">
+
+        <div class="guild-entry">
+          <div class="guild-dot" style="background:#e03030;color:#e03030;"></div>
+          <span class="guild-name" style="color:#e85555;">Zakapiory</span>
+          <span class="guild-note">Czerwoni</span>
+        </div>
+
+        <div class="guild-entry">
+          <div class="guild-dot" style="background:#3080e0;color:#3080e0;"></div>
+          <span class="guild-name" style="color:#5599ee;">TwardeMecenasy</span>
+          <span class="guild-note">Niebiescy</span>
+        </div>
+
+        <div class="guild-entry">
+          <div class="guild-dot" style="background:#d4b030;color:#d4b030;"></div>
+          <span class="guild-name" style="color:#e8cc44;">Patologia</span>
+          <span class="guild-note">Żółci</span>
+        </div>
+
+        <div class="guild-entry">
+          <div class="guild-dot" style="background:#d4b030;color:#d4b030;"></div>
+          <span class="guild-name" style="color:#e8cc44;">MementoMori</span>
+          <span class="guild-note">Żółci</span>
+        </div>
+
+      </div>
     </div>
+
   </div>
 </main>
 
 <div class="divider"></div>
-<footer>PROJEKT SOJUSZ &nbsp;·&nbsp; METIN2 PROJEKT HARD &nbsp;·&nbsp; WSZELKIE PRAWA ZASTRZEŻONE</footer>
+<footer>PROJEKT SOJUSZ &nbsp;·&nbsp; METIN2 PROJEKT HARD</footer>
 
 <script>
-  // Embers
   (function(){
-    const c = document.getElementById('embers');
+    const c=document.getElementById('embers');
     for(let i=0;i<30;i++){
       setTimeout(()=>{
-        const e=document.createElement('div');
-        e.className='ember';
+        const e=document.createElement('div');e.className='ember';
         const sz=(1+Math.random()*3)+'px';
         e.style.cssText=`left:${Math.random()*100}%;width:${sz};height:${sz};animation-duration:${7+Math.random()*10}s;animation-delay:${Math.random()*8}s;--drift:${(Math.random()-.5)*80}px`;
         c.appendChild(e);
