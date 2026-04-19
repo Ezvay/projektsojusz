@@ -46,7 +46,7 @@
   #generalLayer{position:absolute;inset:0;z-index:9;pointer-events:none;}
 
   /* GENERAL PIN — alive (found on map) */
-  .general-marker{position:absolute;transform:translate(-50%,-100%);pointer-events:all;}
+  .general-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:all;}
   .general-dot{position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.15s,filter 0.15s;animation:ping-appear 0.3s cubic-bezier(0.23,1,0.32,1);filter:drop-shadow(0 0 8px rgba(255,200,80,0.7)) drop-shadow(0 2px 6px rgba(0,0,0,0.9));}
   .general-dot:hover{transform:scale(1.12);filter:drop-shadow(0 0 16px rgba(255,220,80,1)) drop-shadow(0 2px 8px rgba(0,0,0,0.9));}
   .general-dot img{object-fit:contain;pointer-events:none;}
@@ -500,7 +500,7 @@ function renderGenerals(){
 function placeGeneralPin(g){
   const m=document.createElement('div');
   m.className='general-marker';
-  m.style.cssText=`left:${g.x*100}%;top:${g.y*100}%;position:absolute;transform:translate(-50%,-100%);pointer-events:all;z-index:9;`;
+  m.style.cssText=`left:${g.x*100}%;top:${g.y*100}%;position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:9;`;
   const pw=pingSize+'px', ph=(pingSize*1.6)+'px';
   m.innerHTML=`
     <div class="general-dot" onclick="openKillPopup('${g.id}')" title="Kliknij — generał zabity">
