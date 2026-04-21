@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kraina Gigantów – Projekt Sojusz</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<script src="/socket.io/socket.io.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#c9a84c;--gold-light:#f0d080;--gold-dark:#7a5f1e;
+    --bg:#090806;--border:#3a2e1a;--text:#d4c4a0;--text-dim:#7a6a50;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .bg-layer{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 100% 40% at 50% 0%,rgba(139,26,26,0.12) 0%,transparent 60%),#090806;}
+
+  /* TOPBAR */
+  .topbar{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;padding:12px 20px;border-bottom:1px solid var(--border);background:linear-gradient(to bottom,rgba(17,14,9,0.97),rgba(9,8,6,0.85));}
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .logo-header{height:42px;width:auto;filter:drop-shadow(0 0 10px rgba(201,168,76,0.35));cursor:pointer;}
+  .page-title{font-family:'Cinzel',serif;font-size:17px;font-weight:600;color:var(--gold-light);letter-spacing:2px;text-shadow:0 0 20px rgba(201,168,76,0.35);}
+  .nav-btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);border-radius:2px;padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-block;transition:all 0.2s;}
+  .nav-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.6);background:rgba(201,168,76,0.12);}
+  .vol-wrap{display:flex;align-items:center;gap:8px;}
+  .vol-wrap label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;}
+  input[type=range]{accent-color:var(--gold);cursor:pointer;width:80px;}
+  .ws-wrap{display:flex;align-items:center;gap:6px;}
+  .ws-dot{width:8px;height:8px;border-radius:50%;background:#604040;}
+  .ws-dot.ok{background:#40c060;box-shadow:0 0 6px #40c060;}
+  .ws-label{font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);letter-spacing:1px;}
+
+  /* MAIN */
+  .main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:24px 20px;}
+
+  /* SECTION — Góra / Dół */
+  .section-wrap{margin-bottom:24px;border:1px solid rgba(201,168,76,0.15);border-radius:3px;overflow:hidden;}
+  .section-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 18px;cursor:pointer;
+    background:linear-gradient(to right,rgba(20,15,8,0.9),rgba(12,10,6,0.7));
+    border-bottom:1px solid rgba(201,168,76,0.15);
+    transition:background 0.2s;
+  }
+  .section-header:hover{background:linear-gradient(to right,rgba(30,22,10,0.9),rgba(18,14,8,0.7));}
+  .section-header-left{display:flex;align-items:center;gap:14px;}
+  .section-badge{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--gold);letter-spacing:2px;}
+  .section-badge.top-badge{color:#e09040;}
+  .section-badge.bot-badge{color:#6090e0;}
+
+  /* WHO IS PLAYING — signature box */
+  .who-box{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 18px;
+    background:rgba(10,8,4,0.6);
+    border-bottom:1px solid rgba(201,168,76,0.1);
+  }
+  .who-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;}
+  .who-input{
+    flex:1;max-width:260px;
+    background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.2);
+    color:var(--text);font-family:'Crimson Text',serif;font-size:14px;
+    padding:5px 10px;border-radius:2px;outline:none;transition:border-color 0.2s;
+  }
+  .who-input:focus{border-color:rgba(201,168,76,0.6);}
+  .who-input::placeholder{color:var(--text-dim);}
+  .who-set-btn{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    padding:6px 14px;border-radius:2px;cursor:pointer;transition:all 0.2s;
+    border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);
+    white-space:nowrap;
+  }
+  .who-set-btn:hover{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,0.15);}
+  .who-current{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;
+    padding:3px 12px;border-radius:2px;
+    background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);
+    color:var(--gold-light);white-space:nowrap;
+  }
+  .who-current.empty{color:var(--text-dim);background:transparent;border-color:transparent;}
+  .who-clear-btn{
+    font-size:10px;color:var(--text-dim);background:none;
+    border:1px solid rgba(201,168,76,0.12);border-radius:2px;padding:4px 8px;cursor:pointer;
+    font-family:'Cinzel',serif;transition:all 0.2s;
+  }
+  .who-clear-btn:hover{color:#e07070;border-color:rgba(200,60,60,0.4);}
+
+  /* LAYOUT BAR */
+  .layout-bar{display:flex;gap:4px;align-items:center;}
+  .layout-tile{
+    width:22px;height:22px;display:grid;gap:1px;padding:2px;
+    border:1px solid rgba(201,168,76,0.2);border-radius:2px;cursor:pointer;
+    background:rgba(255,255,255,0.02);transition:all 0.15s;
+  }
+  .layout-tile:hover{background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.5);}
+  .layout-tile.active-layout{background:rgba(201,168,76,0.15);border-color:var(--gold);}
+  .layout-tile div{background:rgba(201,168,76,0.6);border-radius:1px;}
+  .toggle-btn{font-family:'Cinzel',serif;font-size:14px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:4px 8px;transition:color 0.2s;}
+  .toggle-btn:hover{color:var(--gold);}
+
+  /* TIMER GRID */
+  .timer-grid{display:grid;gap:12px;padding:16px 18px;}
+  .layout-2x4-horizontal{grid-template-columns:repeat(4,1fr);}
+  .layout-2x4-vertical  {grid-template-columns:repeat(2,1fr);}
+  .layout-1x8-horizontal{grid-template-columns:repeat(8,1fr);}
+  .layout-1x8-vertical  {grid-template-columns:1fr;}
+
+  /* TIMER CARD */
+  .timer-card{
+    border:1px solid #3a3530;border-radius:3px;padding:14px 10px 12px;
+    background:linear-gradient(160deg,#1e1c18,#0f0e0b);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    transition:border-color 0.4s,background 0.4s,box-shadow 0.4s;
+    position:relative;
+  }
+  .timer-card::before{content:'';position:absolute;inset:0;border-radius:3px;background:linear-gradient(135deg,rgba(201,168,76,0.03) 0%,transparent 60%);pointer-events:none;}
+  .timer-card.state-red   {border-color:#6a2020;background:linear-gradient(160deg,#200a0a,#130505);box-shadow:0 0 15px rgba(139,26,26,0.2);}
+  .timer-card.state-yellow{border-color:#7a6020;background:linear-gradient(160deg,#1e1a08,#0f0d04);box-shadow:0 0 15px rgba(180,140,30,0.15);}
+  .timer-card.state-green {border-color:#2a6a35;background:linear-gradient(160deg,#081a0c,#040f06);box-shadow:0 0 20px rgba(42,160,70,0.2);}
+  .timer-name{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--text-dim);text-align:center;}
+  .timer-display{font-family:'Cinzel',serif;font-size:22px;font-weight:600;color:var(--text);letter-spacing:2px;text-align:center;transition:color 0.4s,text-shadow 0.4s;}
+  .state-red    .timer-display{color:#ff6060;text-shadow:0 0 12px rgba(255,80,80,0.4);}
+  .state-yellow .timer-display{color:#f0c060;text-shadow:0 0 12px rgba(240,180,60,0.4);}
+  .state-green  .timer-display{color:#60e080;text-shadow:0 0 12px rgba(80,220,100,0.5);}
+  .timer-btns{display:flex;gap:4px;justify-content:center;margin-top:4px;flex-wrap:wrap;}
+  .btn{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all 0.2s;background:none;}
+  .btn-start{color:#60a060;border:1px solid rgba(60,140,70,0.35);}
+  .btn-stop {color:#a06060;border:1px solid rgba(140,60,60,0.35);}
+  .btn-reset{color:var(--text-dim);border:1px solid rgba(201,168,76,0.15);}
+  .btn-start:hover{color:#80ff80;border-color:#40a050;background:rgba(60,140,70,0.15);}
+  .btn-stop:hover {color:#ff8080;border-color:#a04040;background:rgba(140,40,40,0.15);}
+  .btn-reset:hover{color:var(--gold);border-color:var(--gold-dark);}
+  .comment-input{
+    width:100%;margin-top:4px;
+    background:rgba(0,0,0,0.3);border:1px solid rgba(201,168,76,0.12);
+    color:var(--text);font-family:'Crimson Text',serif;font-size:12px;
+    padding:3px 6px;border-radius:2px;outline:none;text-align:center;
+  }
+  .comment-input:focus{border-color:rgba(201,168,76,0.4);}
+  .comment-input::placeholder{color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="/logo.png" alt="Projekt Sojusz" class="logo-header" onclick="location.href='/'">
+    <a class="nav-btn" href="/">⬅ Główna</a>
+    <div class="page-title">Kraina Gigantów</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div class="vol-wrap">
+      <label>Głośność</label>
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.2">
+    </div>
+    <div class="ws-wrap">
+      <div class="ws-dot" id="wsDot"></div>
+      <span class="ws-label" id="wsLabel">Łączenie...</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ══ GÓRA ══ -->
+  <div class="section-wrap" id="sectionTop">
+    <div class="section-header" onclick="toggleSection('top')">
+      <div class="section-header-left">
+        <span class="section-badge top-badge">🔥 Góra</span>
+        <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;" onclick="event.stopPropagation()">
+        <div class="layout-bar" id="layoutBarTop">
+          <div class="layout-tile" onclick="setLayout('top','layout-2x4-horizontal')" style="grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr)"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          <div class="layout-tile" onclick="setLayout('top','layout-2x4-vertical')"   style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr)"><div></div><div></div><div></div><div></div></div>
+          <div class="layout-tile" onclick="setLayout('top','layout-1x8-horizontal')" style="grid-template-columns:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
+          <div class="layout-tile" onclick="setLayout('top','layout-1x8-vertical')"   style="grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <button class="toggle-btn" id="toggleTop">▾</button>
+      </div>
+    </div>
+
+    <!-- KTO BIJE GÓRĘ -->
+    <div class="who-box" id="whoBoxTop">
+      <span class="who-label">Kto bije górę:</span>
+      <input class="who-input" id="whoInputTop" placeholder="Nick / gildia..." maxlength="50">
+      <button class="who-set-btn" onclick="setWho('top')">✓ Ustaw</button>
+      <span class="who-current empty" id="whoCurrentTop">— nikt nie bije —</span>
+      <button class="who-clear-btn" onclick="clearWho('top')">✕</button>
+    </div>
+
+    <div class="timer-grid layout-2x4-horizontal" id="timersTop"></div>
+  </div>
+
+  <!-- ══ DÓŁ ══ -->
+  <div class="section-wrap" id="sectionBottom">
+    <div class="section-header" onclick="toggleSection('bottom')">
+      <div class="section-header-left">
+        <span class="section-badge bot-badge">🌊 Dół</span>
+        <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;" onclick="event.stopPropagation()">
+        <div class="layout-bar" id="layoutBarBottom">
+          <div class="layout-tile" onclick="setLayout('bottom','layout-2x4-horizontal')" style="grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr)"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          <div class="layout-tile" onclick="setLayout('bottom','layout-2x4-vertical')"   style="grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr)"><div></div><div></div><div></div><div></div></div>
+          <div class="layout-tile" onclick="setLayout('bottom','layout-1x8-horizontal')" style="grid-template-columns:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
+          <div class="layout-tile" onclick="setLayout('bottom','layout-1x8-vertical')"   style="grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <button class="toggle-btn" id="toggleBottom">▾</button>
+      </div>
+    </div>
+
+    <!-- KTO BIJE DÓŁ -->
+    <div class="who-box" id="whoBoxBottom">
+      <span class="who-label">Kto bije dół:</span>
+      <input class="who-input" id="whoInputBottom" placeholder="Nick / gildia..." maxlength="50">
+      <button class="who-set-btn" onclick="setWho('bottom')">✓ Ustaw</button>
+      <span class="who-current empty" id="whoCurrentBottom">— nikt nie bije —</span>
+      <button class="who-clear-btn" onclick="clearWho('bottom')">✕</button>
+    </div>
+
+    <div class="timer-grid layout-2x4-horizontal" id="timersBottom"></div>
+  </div>
+
+</div>
+
+<script>
+const socket = io();
+
+/* ═══ WS STATUS ═══ */
+socket.on('connect',    ()=>{ document.getElementById('wsDot').className='ws-dot ok'; document.getElementById('wsLabel').innerText='Na żywo'; });
+socket.on('disconnect', ()=>{ document.getElementById('wsDot').className='ws-dot';    document.getElementById('wsLabel').innerText='Brak połączenia'; });
+
+/* ═══ VOLUME ═══ */
+let volume = parseFloat(localStorage.getItem('volume')) || 0.2;
+const volSlider = document.getElementById('volumeSlider');
+volSlider.value = volume;
+volSlider.oninput = () => { volume = parseFloat(volSlider.value); localStorage.setItem('volume', volume); };
+
+/* ═══ AUDIO ═══ */
+let audioCtx = null;
+function getAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function beep(freq=800, dur=0.15){
+  const ctx=getAudio(), osc=ctx.createOscillator(), gain=ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.frequency.value=freq; osc.start();
+  gain.gain.setValueAtTime(volume, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
+  osc.stop(ctx.currentTime+dur);
+}
+function tripleBeep(){ beep(800); setTimeout(()=>beep(800),250); setTimeout(()=>beep(800),500); }
+function singleBeep(){ beep(600,0.7); }
+
+/* ═══ TOGGLE SECTION ═══ */
+function toggleSection(s){
+  const grid = document.getElementById(s==='top'?'timersTop':'timersBottom');
+  const btn  = document.getElementById(s==='top'?'toggleTop':'toggleBottom');
+  const who  = document.getElementById(s==='top'?'whoBoxTop':'whoBoxBottom');
+  const hidden = grid.style.display==='none';
+  grid.style.display = hidden ? 'grid' : 'none';
+  who.style.display  = hidden ? 'flex' : 'none';
+  btn.innerText = hidden ? '▾' : '▸';
+}
+
+/* ═══ LAYOUT ═══ */
+const layoutMap = { top: 'layout-2x4-horizontal', bottom: 'layout-2x4-horizontal' };
+function setLayout(section, layout){
+  const grid = document.getElementById(section==='top'?'timersTop':'timersBottom');
+  grid.className = 'timer-grid ' + layout;
+  layoutMap[section] = layout;
+  localStorage.setItem('layout_'+section, layout);
+  highlightLayout(section, layout);
+}
+function highlightLayout(section, layout){
+  const bar = document.getElementById('layoutBar'+(section==='top'?'Top':'Bottom'));
+  const layouts = ['layout-2x4-horizontal','layout-2x4-vertical','layout-1x8-horizontal','layout-1x8-vertical'];
+  [...bar.children].forEach((el,i) => el.classList.toggle('active-layout', layouts[i]===layout));
+}
+['top','bottom'].forEach(s => {
+  const saved = localStorage.getItem('layout_'+s);
+  if(saved) setLayout(s, saved);
+  else highlightLayout(s, layoutMap[s]);
+});
+
+/* ═══ FORMAT ═══ */
+function format(sec){
+  return String(Math.floor(sec/3600)).padStart(2,'0')+':'+
+         String(Math.floor((sec%3600)/60)).padStart(2,'0')+':'+
+         String(sec%60).padStart(2,'0');
+}
+
+/* ═══ CREATE TIMER CARD ═══ */
+const displays = {};
+
+function createTimer(id, section){
+  const label = id.replace('KG_','CH ').replace('KGD_','CH ');
+  const card = document.createElement('div');
+  card.className = 'timer-card state-grey';
+
+  const name = document.createElement('div');
+  name.className = 'timer-name';
+  name.innerText = label;
+
+  const disp = document.createElement('div');
+  disp.className = 'timer-display';
+  disp.innerText = '00:00:00';
+
+  const btns = document.createElement('div');
+  btns.className = 'timer-btns';
+
+  const bStart = document.createElement('button');
+  bStart.className='btn btn-start'; bStart.innerText='Start';
+  const bStop  = document.createElement('button');
+  bStop.className='btn btn-stop';  bStop.innerText='Stop';
+  const bReset = document.createElement('button');
+  bReset.className='btn btn-reset'; bReset.innerText='Reset';
+
+  const comment = document.createElement('input');
+  comment.className='comment-input'; comment.placeholder='Notatka...';
+  comment.maxLength=40;
+
+  bStart.onclick = () => socket.emit('start', id);
+  bStop.onclick  = () => socket.emit('stop',  id);
+  bReset.onclick = () => { comment.value=''; socket.emit('reset', id); };
+
+  btns.append(bStart, bStop, bReset);
+  card.append(name, disp, btns, comment);
+
+  return { card, disp, section, beepYellow:false, beepGreen:false };
+}
+
+// Build top timers (CH1-CH8)
+for(let i=1;i<=8;i++){
+  const id='KG_CH'+i;
+  const t=createTimer(id,'top');
+  document.getElementById('timersTop').appendChild(t.card);
+  displays[id]=t;
+}
+// Build bottom timers (CH1-CH8)
+for(let i=1;i<=8;i++){
+  const id='KGD_CH'+i;
+  const t=createTimer(id,'bottom');
+  document.getElementById('timersBottom').appendChild(t.card);
+  displays[id]=t;
+}
+
+/* ═══ TIMER UPDATE ═══ */
+socket.on('update', data => {
+  for(const id in data){
+    if(!displays[id]) continue;
+    const sec=data[id], t=displays[id];
+    t.disp.innerText = format(sec);
+    const state = sec===0?'state-grey':sec<1500?'state-red':sec<1800?'state-yellow':'state-green';
+    t.card.className = 'timer-card ' + state;
+    if(sec>=1500&&sec<1502&&!t.beepYellow){ tripleBeep(); t.beepYellow=true; }
+    if(sec>=1800&&sec<1802&&!t.beepGreen) { singleBeep(); t.beepGreen=true; }
+    if(sec===0){ t.beepYellow=false; t.beepGreen=false; }
+  }
+});
+
+/* ═══ WHO IS PLAYING ═══ */
+// State: who is playing top/bottom (global, stored on server)
+let whoState = { top: '', bottom: '' };
+
+function renderWho(section){
+  const val = whoState[section] || '';
+  const el  = document.getElementById('whoCurrent'+(section==='top'?'Top':'Bottom'));
+  if(val){
+    el.textContent = '⚔ ' + val;
+    el.className = 'who-current';
+  } else {
+    el.textContent = '— nikt nie bije —';
+    el.className = 'who-current empty';
+  }
+}
+
+function setWho(section){
+  const input = document.getElementById('whoInput'+(section==='top'?'Top':'Bottom'));
+  const val = input.value.trim();
+  if(!val) return;
+  socket.emit('gigWhoSet', { section, who: val });
+  input.value = '';
+}
+
+function clearWho(section){
+  socket.emit('gigWhoClear', { section });
+}
+
+// Allow Enter key in who inputs
+['Top','Bottom'].forEach(s => {
+  const input = document.getElementById('whoInput'+s);
+  input.addEventListener('keydown', e => {
+    if(e.key==='Enter') setWho(s.toLowerCase());
+  });
+});
+
+socket.on('gigWhoUpdate', data => {
+  whoState = data || { top:'', bottom:'' };
+  renderWho('top');
+  renderWho('bottom');
+});
+</script>
+</body>
+</html>
