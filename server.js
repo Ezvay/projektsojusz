@@ -237,13 +237,25 @@ process.on("SIGTERM", () => shutdown("SIGTERM"))
 process.on("SIGINT",  () => shutdown("SIGINT"))
 
 /* ═══ START ═══ */
-connectDB().then(() => {
+function startServer() {
   // Wznów timery gigantów które działały przed restartem
   gigRunning.forEach(id => { startGig(id); console.log("Wznowiono timer:", id) })
-
   const PORT = process.env.PORT || 3000
   http.listen(PORT, "0.0.0.0", () => console.log(`✅ Serwer na porcie ${PORT}`))
+}
+
+// Próbuj połączyć z MongoDB, ale jeśli się nie uda — i tak startuj serwer
+const dbTimeout = setTimeout(() => {
+  console.warn("⚠️ MongoDB timeout — startujemy bez bazy (dane będą w pamięci)")
+  startServer()
+}, 15000)
+
+connectDB().then(() => {
+  clearTimeout(dbTimeout)
+  startServer()
 }).catch(err => {
-  console.error("❌ Błąd połączenia z MongoDB:", err.message)
-  process.exit(1)
+  clearTimeout(dbTimeout)
+  console.error("❌ Błąd MongoDB:", err.message)
+  console.warn("⚠️ Startujemy bez bazy danych")
+  startServer()
 })

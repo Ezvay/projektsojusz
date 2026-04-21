@@ -11,56 +11,124 @@
   :root{--gold:#c9a84c;--gold-light:#f0d080;--gold-dark:#7a5f1e;--bg:#080705;--border:#3a2e1a;--text:#d4c4a0;--text-dim:#7a6a50;}
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
-  .bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(60,30,10,0.25) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 10% 80%,rgba(40,20,8,0.2) 0%,transparent 60%),#080705;}
-  .embers{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
-  .ember{position:absolute;border-radius:50%;background:var(--gold);opacity:0;animation:floatEmber linear infinite;}
-  @keyframes floatEmber{0%{transform:translateY(100vh) scale(0);opacity:0;}10%{opacity:0.7;}90%{opacity:0.2;}100%{transform:translateY(-20px) translateX(var(--drift,30px)) scale(0.5);opacity:0;}}
 
-  header{position:relative;z-index:10;border-bottom:1px solid rgba(58,46,26,0.5);background:linear-gradient(to bottom,rgba(8,7,5,0.98),rgba(8,7,5,0.7));backdrop-filter:blur(10px);}
+  /* ═══ BACKGROUND ═══ */
+  .bg-image{position:fixed;inset:0;z-index:0;background:url('/background.jpg') center center/cover no-repeat;transform:scale(1.05);animation:bgBreath 12s ease-in-out infinite;}
+  @keyframes bgBreath{0%,100%{transform:scale(1.05);}50%{transform:scale(1.08);}}
+  .bg-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse 100% 100% at 50% 50%,rgba(5,4,3,0.5) 0%,rgba(5,4,3,0.78) 100%),
+               linear-gradient(to bottom,rgba(5,4,3,0.65) 0%,rgba(5,4,3,0.2) 30%,rgba(5,4,3,0.2) 70%,rgba(5,4,3,0.8) 100%);}
+  .bg-glow{position:fixed;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(ellipse 30% 20% at 54% 32%,rgba(180,30,20,0.13) 0%,transparent 70%);
+    animation:glowPulse 4s ease-in-out infinite;}
+  @keyframes glowPulse{0%,100%{opacity:0.6;}50%{opacity:1;}}
+  #particleCanvas{position:fixed;inset:0;z-index:3;pointer-events:none;}
+
+  /* ═══ HEADER ═══ */
+  header{position:relative;z-index:20;border-bottom:1px solid rgba(201,168,76,0.2);background:linear-gradient(to bottom,rgba(5,4,3,0.95),rgba(5,4,3,0.6));backdrop-filter:blur(14px);}
   .header-inner{max-width:1400px;margin:0 auto;padding:0 2rem;height:72px;display:flex;align-items:center;justify-content:space-between;}
-  .logo-img{height:54px;width:auto;object-fit:contain;filter:drop-shadow(0 0 16px rgba(201,168,76,0.4));transition:filter 0.3s;cursor:pointer;}
-  .logo-img:hover{filter:drop-shadow(0 0 28px rgba(201,168,76,0.75));}
+  .logo-img{height:54px;width:auto;filter:drop-shadow(0 0 14px rgba(201,168,76,0.5));cursor:pointer;transition:filter 0.3s;}
+  .logo-img:hover{filter:drop-shadow(0 0 26px rgba(201,168,76,0.85));}
   .nav{display:flex;gap:6px;}
-  .nav-link{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.18);border-radius:2px;padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-block;transition:all 0.2s;}
+  .nav-link{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,0.55);background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.18);border-radius:2px;padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-block;transition:all 0.25s;}
   .nav-link:hover,.nav-link.active{color:var(--gold);border-color:rgba(201,168,76,0.55);background:rgba(201,168,76,0.1);}
-  .nav-link.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none;}
+  .nav-link.disabled{opacity:0.28;cursor:not-allowed;pointer-events:none;}
 
-  .hero{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 72px);padding:4rem 2rem;text-align:center;}
-  .hero-logo{width:min(500px,80vw);height:auto;filter:drop-shadow(0 0 40px rgba(201,168,76,0.35)) drop-shadow(0 0 80px rgba(201,168,76,0.15));animation:heroFloat 5s ease-in-out infinite;margin-bottom:2.5rem;}
+  /* ═══ HERO ═══ */
+  .hero{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 72px);padding:3rem 2rem;text-align:center;}
+  .hero-logo{width:min(460px,72vw);height:auto;filter:drop-shadow(0 0 40px rgba(201,168,76,0.5)) drop-shadow(0 0 80px rgba(201,168,76,0.2));animation:heroFloat 5s ease-in-out infinite;margin-bottom:1.2rem;}
   @keyframes heroFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
-  .hero-subtitle{font-family:'Cinzel',serif;font-size:clamp(0.7rem,1.5vw,0.9rem);letter-spacing:0.4em;color:var(--text-dim);text-transform:uppercase;margin-bottom:3rem;}
-  .hero-subtitle span{color:var(--gold);opacity:0.7;}
+  .hero-subtitle{font-family:'Cinzel',serif;font-size:clamp(0.6rem,1.2vw,0.82rem);letter-spacing:0.45em;color:rgba(201,168,76,0.45);text-transform:uppercase;margin-bottom:3rem;}
 
-  /* CARDS */
-  .cards{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;max-width:1100px;}
-  .card{position:relative;background:linear-gradient(135deg,rgba(25,18,8,0.9),rgba(12,9,4,0.95));border:1px solid rgba(201,168,76,0.2);width:260px;padding:2rem 1.75rem;text-decoration:none;color:inherit;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));transition:all 0.25s;cursor:pointer;display:block;}
-  .card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,0.05) 0%,transparent 60%);opacity:0;transition:opacity 0.25s;}
-  .card:hover{border-color:rgba(201,168,76,0.55);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.5),0 0 20px rgba(201,168,76,0.1);}
-  .card:hover::before{opacity:1;}
-  .card.disabled{opacity:0.45;cursor:not-allowed;pointer-events:none;}
-  .card.guild-card{width:320px;cursor:default;}
-  .card.guild-card:hover{transform:none;box-shadow:none;}
-  .card-icon{font-size:2.2rem;margin-bottom:1rem;}
-  .card-title{font-family:'Cinzel',serif;font-size:1rem;font-weight:600;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.6rem;}
-  .card-desc{font-size:0.95rem;color:var(--text-dim);line-height:1.65;margin-bottom:1.2rem;}
-  .card-badge{display:inline-block;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.15em;padding:0.2rem 0.65rem;border-radius:1px;background:rgba(45,138,78,0.18);color:#3fbf6a;border:1px solid rgba(45,138,78,0.4);}
-  .card-badge.soon{background:rgba(201,168,76,0.12);color:var(--gold);border-color:rgba(201,168,76,0.3);}
+  /* ═══ CARDS ROW ═══ */
+  .cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:1200px;width:100%;}
 
-  /* GUILD LIST */
-  .guild-list{display:flex;flex-direction:column;gap:0.6rem;}
-  .guild-entry{display:flex;align-items:center;gap:0.85rem;padding:0.55rem 0;border-bottom:1px solid rgba(58,46,26,0.35);}
-  .guild-entry:last-child{border-bottom:none;}
-  .guild-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:0 0 8px currentColor;}
-  .guild-name{font-family:'Cinzel',serif;font-size:0.9rem;letter-spacing:0.05em;}
-  .guild-note{font-size:0.8rem;font-style:italic;opacity:0.6;margin-left:auto;}
+  /* ═══ GAME CARD (with image) ═══ */
+  .game-card{
+    position:relative;
+    width:260px;
+    background:linear-gradient(180deg,#0e0c09 0%,#060504 100%);
+    border:1px solid rgba(201,168,76,0.3);
+    text-decoration:none;color:inherit;
+    display:flex;flex-direction:column;
+    transition:all 0.3s;cursor:pointer;
+    overflow:hidden;
+  }
+  /* Corner ornaments */
+  .game-card::before,.game-card::after{
+    content:'';position:absolute;width:18px;height:18px;
+    border-color:rgba(201,168,76,0.6);border-style:solid;z-index:2;
+    transition:border-color 0.3s;
+  }
+  .game-card::before{top:6px;left:6px;border-width:2px 0 0 2px;}
+  .game-card::after{bottom:6px;right:6px;border-width:0 2px 2px 0;}
+  .game-card:hover{border-color:rgba(201,168,76,0.7);transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 30px rgba(201,168,76,0.1);}
+  .game-card:hover::before,.game-card:hover::after{border-color:rgba(201,168,76,0.9);}
+  .game-card.disabled{opacity:0.38;cursor:not-allowed;pointer-events:none;filter:grayscale(0.4);}
 
-  .divider{position:relative;z-index:2;width:min(700px,90%);margin:0 auto;height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,0.3),transparent);}
-  footer{position:relative;z-index:2;text-align:center;padding:2rem;font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.2em;color:var(--text-dim);opacity:0.5;border-top:1px solid rgba(58,46,26,0.3);}
+  /* Image area */
+  .card-img-wrap{
+    position:relative;width:100%;height:240px;overflow:hidden;
+    background:#0a0807;
+  }
+  .card-img-wrap img{
+    width:100%;height:100%;object-fit:cover;object-position:top center;
+    transition:transform 0.5s ease;filter:brightness(0.85) contrast(1.05);
+  }
+  .game-card:hover .card-img-wrap img{transform:scale(1.06);}
+  /* Gradient fade at bottom of image */
+  .card-img-wrap::after{
+    content:'';position:absolute;bottom:0;left:0;right:0;height:60%;
+    background:linear-gradient(to bottom,transparent 0%,rgba(6,5,4,0.95) 100%);
+    pointer-events:none;
+  }
+
+  /* Card body */
+  .card-body{
+    padding:14px 18px 18px;
+    background:linear-gradient(to bottom,#0a0807,#060504);
+    flex:1;display:flex;flex-direction:column;gap:6px;
+    border-top:1px solid rgba(201,168,76,0.15);
+  }
+  .card-title{font-family:'Cinzel',serif;font-size:1.05rem;font-weight:600;color:var(--gold-light);letter-spacing:0.06em;}
+  .card-tags{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.1em;color:var(--text-dim);}
+  .card-enter{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:10px;width:100%;
+    font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;
+    padding:9px 0;
+    border:1px solid rgba(201,168,76,0.35);color:var(--gold-dark);
+    background:rgba(201,168,76,0.06);cursor:pointer;
+    transition:all 0.25s;text-decoration:none;
+  }
+  .game-card:hover .card-enter{border-color:rgba(201,168,76,0.7);color:var(--gold);background:rgba(201,168,76,0.13);}
+  .card-enter-arrow{opacity:0.5;transition:transform 0.25s,opacity 0.25s;}
+  .game-card:hover .card-enter-arrow{transform:translateX(4px);opacity:1;}
+
+  /* ═══ GUILD CARD ═══ */
+  .guild-card{
+    width:220px;background:linear-gradient(135deg,rgba(12,10,6,0.9),rgba(7,6,4,0.95));
+    border:1px solid rgba(201,168,76,0.22);padding:20px 18px;
+    display:flex;flex-direction:column;gap:12px;position:relative;
+  }
+  .guild-card::before,.guild-card::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(201,168,76,0.35);border-style:solid;}
+  .guild-card::before{top:6px;left:6px;border-width:1px 0 0 1px;}
+  .guild-card::after{bottom:6px;right:6px;border-width:0 1px 1px 0;}
+  .guild-card-title{font-family:'Cinzel',serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid rgba(201,168,76,0.15);padding-bottom:8px;}
+  .guild-list{display:flex;flex-direction:column;gap:8px;}
+  .guild-entry{display:flex;align-items:center;gap:10px;}
+  .guild-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 7px currentColor;}
+  .guild-name{font-family:'Cinzel',serif;font-size:0.82rem;letter-spacing:0.04em;}
+
+  footer{position:relative;z-index:10;text-align:center;padding:1.5rem;font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.25em;color:rgba(122,106,80,0.35);border-top:1px solid rgba(58,46,26,0.2);}
 </style>
 </head>
 <body>
-<div class="bg-layer"></div>
-<div class="embers" id="embers"></div>
+
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+<div class="bg-glow"></div>
+<canvas id="particleCanvas"></canvas>
 
 <header>
   <div class="header-inner">
@@ -70,88 +138,91 @@
       <a href="/grota.html" class="nav-link">Grota Wygnańców</a>
       <a href="/giganty.html" class="nav-link">Kraina Gigantów</a>
       <span class="nav-link disabled">Bossowie</span>
-      <span class="nav-link disabled">Sojusznicy</span>
     </nav>
   </div>
 </header>
 
 <main class="hero">
   <img src="/logo.png" alt="Projekt Sojusz" class="hero-logo">
-  <div class="hero-subtitle">Platforma koordynacji sojuszu &nbsp;<span>·</span>&nbsp; Metin2 Projekt Hard</div>
+  <div class="hero-subtitle">Platforma koordynacji sojuszu &nbsp;·&nbsp; Metin2 Projekt Hard</div>
 
   <div class="cards">
 
-    <!-- Grota -->
-    <a href="/grota.html" class="card">
-      <div class="card-icon">🗺</div>
-      <div class="card-title">Grota Wygnańców</div>
-      <div class="card-desc">Interaktywna mapa z regionami metinów i znacznikami generałów. Globalne timery respawnów widoczne dla wszystkich.</div>
-      <span class="card-badge">Dostępne</span>
+    <!-- Kraina Gigantów -->
+    <a href="/giganty.html" class="game-card">
+      <div class="card-img-wrap">
+        <img src="/giants_logo.jpg" alt="Kraina Gigantów">
+      </div>
+      <div class="card-body">
+        <div class="card-title">Kraina Gigantów</div>
+        <div class="card-tags">16 timerów &nbsp;•&nbsp; Góra &amp; Dół</div>
+        <span class="card-enter">Wejdź <span class="card-enter-arrow">›</span></span>
+      </div>
     </a>
 
-    <!-- Giganty -->
-    <a href="/giganty.html" class="card">
-      <div class="card-icon">⚔</div>
-      <div class="card-title">Kraina Gigantów</div>
-      <div class="card-desc">Globalne timery dla Góry i Dołu z 8 kanałami. Podpisz się kto aktualnie bije dany obszar.</div>
-      <span class="card-badge">Dostępne</span>
+    <!-- Grota Wygnańców -->
+    <a href="/grota.html" class="game-card">
+      <div class="card-img-wrap">
+        <img src="/grota_logo.png" alt="Grota Wygnańców">
+      </div>
+      <div class="card-body">
+        <div class="card-title">Grota Wygnańców</div>
+        <div class="card-tags">Mapa &nbsp;•&nbsp; Pingi metinów</div>
+        <span class="card-enter">Wejdź <span class="card-enter-arrow">›</span></span>
+      </div>
     </a>
 
     <!-- Bossowie -->
-    <div class="card disabled">
-      <div class="card-icon">💀</div>
-      <div class="card-title">Bossowie</div>
-      <div class="card-desc">Śledzenie respawnów bossów na wszystkich mapach serwera. Globalne alerty dla sojuszu.</div>
-      <span class="card-badge soon">Wkrótce</span>
+    <div class="game-card disabled">
+      <div class="card-img-wrap" style="display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:4rem;opacity:0.3;">💀</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Bossowie</div>
+        <div class="card-tags">Wkrótce</div>
+        <span class="card-enter" style="opacity:0.4;">Wkrótce <span class="card-enter-arrow">›</span></span>
+      </div>
     </div>
 
     <!-- Sojusznicy -->
-    <div class="card guild-card">
-      <div class="card-icon">🛡</div>
-      <div class="card-title">Sojusznicy</div>
+    <div class="guild-card">
+      <div class="guild-card-title">🛡 Sojusznicy</div>
       <div class="guild-list">
-
         <div class="guild-entry">
           <div class="guild-dot" style="background:#e03030;color:#e03030;"></div>
           <span class="guild-name" style="color:#e85555;">Zakapiory</span>
         </div>
-
         <div class="guild-entry">
           <div class="guild-dot" style="background:#3080e0;color:#3080e0;"></div>
           <span class="guild-name" style="color:#5599ee;">TwardeMecenasy</span>
         </div>
-
         <div class="guild-entry">
           <div class="guild-dot" style="background:#d4b030;color:#d4b030;"></div>
           <span class="guild-name" style="color:#e8cc44;">Patologia</span>
         </div>
-
         <div class="guild-entry">
           <div class="guild-dot" style="background:#d4b030;color:#d4b030;"></div>
           <span class="guild-name" style="color:#e8cc44;">MementoMori</span>
         </div>
-
       </div>
     </div>
 
   </div>
 </main>
 
-<div class="divider"></div>
 <footer>PROJEKT SOJUSZ &nbsp;·&nbsp; METIN2 PROJEKT HARD</footer>
 
 <script>
-  (function(){
-    const c=document.getElementById('embers');
-    for(let i=0;i<30;i++){
-      setTimeout(()=>{
-        const e=document.createElement('div');e.className='ember';
-        const sz=(1+Math.random()*3)+'px';
-        e.style.cssText=`left:${Math.random()*100}%;width:${sz};height:${sz};animation-duration:${7+Math.random()*10}s;animation-delay:${Math.random()*8}s;--drift:${(Math.random()-.5)*80}px`;
-        c.appendChild(e);
-      },i*200);
-    }
-  })();
+/* ═══ PARTICLES ═══ */
+const canvas=document.getElementById('particleCanvas'),ctx=canvas.getContext('2d');
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+const pts=[];
+for(let i=0;i<110;i++) pts.push(newP());
+function newP(){const t=Math.random()<0.72?'a':'e';return{t,x:Math.random()*canvas.width,y:Math.random()*canvas.height,s:t==='a'?1.5+Math.random()*3.5:1+Math.random()*2.2,vy:0.22+Math.random()*0.75,vx:Math.random()*0.35-0.175,w:Math.random()*Math.PI*2,ws:0.005+Math.random()*0.016,o:0.08+Math.random()*0.38,od:1,gs:3+Math.random()*9};}
+function upd(p){p.w+=p.ws;p.vx+=(Math.random()-0.5)*0.015;p.vx=Math.max(-0.55,Math.min(0.55,p.vx));p.x+=p.vx+Math.sin(p.w)*0.28;p.y+=p.vy;if(p.t==='e'){p.o+=p.od*0.007;if(p.o>0.52||p.o<0.06)p.od*=-1;}if(p.y>canvas.height+20||p.x<-20||p.x>canvas.width+20){p.x=Math.random()*canvas.width;p.y=-10;p.o=0.08+Math.random()*0.32;}}
+function draw(p){ctx.save();if(p.t==='a'){ctx.globalAlpha=p.o;ctx.fillStyle=`rgba(185,175,165,${p.o})`;ctx.beginPath();ctx.ellipse(p.x,p.y,p.s,p.s*0.55,p.w,0,Math.PI*2);ctx.fill();}else{const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.gs);g.addColorStop(0,`rgba(255,145,45,${p.o*0.9})`);g.addColorStop(1,'rgba(180,40,10,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.gs,0,Math.PI*2);ctx.fill();ctx.globalAlpha=p.o;ctx.fillStyle='rgba(255,205,110,0.9)';ctx.beginPath();ctx.arc(p.x,p.y,p.s*0.42,0,Math.PI*2);ctx.fill();}ctx.restore();}
+(function loop(){ctx.clearRect(0,0,canvas.width,canvas.height);pts.forEach(p=>{upd(p);draw(p);});requestAnimationFrame(loop);})();
 </script>
 </body>
 </html>

@@ -12,10 +12,12 @@
   :root{--gold:#c9a84c;--gold-light:#f0d080;--gold-dark:#7a5f1e;--bg:#090806;--border:#3a2e1a;--text:#d4c4a0;--text-dim:#7a6a50;}
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
-  .bg-layer{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(40,20,80,0.12) 0%,transparent 60%),#090806;}
+  .bg-image{position:fixed;inset:0;z-index:0;background:url('/background.jpg') center center / cover no-repeat;transform:scale(1.05);}
+  .bg-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 100% 100% at 50% 50%,rgba(5,4,3,0.6) 0%,rgba(5,4,3,0.82) 100%);}
+  #particleCanvas{position:fixed;inset:0;z-index:2;pointer-events:none;}
 
   /* TOPBAR */
-  .topbar{position:relative;z-index:300;display:flex;align-items:center;justify-content:space-between;max-width:1600px;margin:0 auto;padding:10px 20px;border-bottom:1px solid var(--border);background:linear-gradient(to bottom,rgba(17,14,9,0.97),rgba(9,8,6,0.85));}
+  .topbar{position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;max-width:1600px;margin:0 auto;padding:10px 20px;border-bottom:1px solid var(--border);background:linear-gradient(to bottom,rgba(17,14,9,0.97),rgba(9,8,6,0.85));}
   .topbar-left{display:flex;align-items:center;gap:14px;}
   .logo-header{height:42px;width:auto;filter:drop-shadow(0 0 10px rgba(201,168,76,0.35));cursor:pointer;}
   .page-title{font-family:'Cinzel',serif;font-size:17px;font-weight:600;color:var(--gold-light);letter-spacing:2px;text-shadow:0 0 20px rgba(201,168,76,0.35);}
@@ -35,7 +37,7 @@
   .ws-label{font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);letter-spacing:1px;}
 
   /* LAYOUT */
-  .layout{position:relative;z-index:1;display:flex;max-width:1600px;margin:0 auto;min-height:calc(100vh - 65px);}
+  .layout{position:relative;z-index:10;display:flex;max-width:1600px;margin:0 auto;min-height:calc(100vh - 65px);}
   .map-wrap{flex:1;position:relative;padding:20px;min-width:0;display:flex;align-items:flex-start;justify-content:center;}
   .map-container{position:relative;display:inline-block;border:1px solid rgba(201,168,76,0.2);border-radius:3px;box-shadow:0 0 40px rgba(0,0,0,0.8);max-width:100%;}
   .map-container img{display:block;height:auto;user-select:none;pointer-events:none;image-rendering:pixelated;}
@@ -153,7 +155,9 @@
 </style>
 </head>
 <body>
-<div class="bg-layer"></div>
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+<canvas id="particleCanvas"></canvas>
 
 <!-- POPUP: dodaj generała (wybór kanału) -->
 <div class="popup-overlay hidden" id="popup">
@@ -657,6 +661,19 @@ function doReset(){
 
 // Init
 setTab('region');
+</script>
+
+<script>
+/* Particles */
+const _pc=document.getElementById('particleCanvas'),_px=_pc.getContext('2d');
+function _pr(){_pc.width=window.innerWidth;_pc.height=window.innerHeight;}
+_pr();window.addEventListener('resize',_pr);
+const _ps=[];
+for(let i=0;i<80;i++)_ps.push(_pnew());
+function _pnew(){const t=Math.random()<0.7?'a':'e';return{t,x:Math.random()*_pc.width,y:Math.random()*_pc.height,s:t==='a'?1.5+Math.random()*3:1+Math.random()*2,vy:0.25+Math.random()*0.7,vx:Math.random()*0.4-0.2,w:Math.random()*Math.PI*2,ws:0.005+Math.random()*0.015,o:0.1+Math.random()*0.35,od:1,gs:3+Math.random()*8};}
+function _pu(p){p.w+=p.ws;p.vx+=(-0.01+Math.random()*0.02);p.vx=Math.max(-0.5,Math.min(0.5,p.vx));p.x+=p.vx+Math.sin(p.w)*0.25;p.y+=p.vy;if(p.t==='e'){p.o+=p.od*0.007;if(p.o>0.5||p.o<0.07)p.od*=-1;}if(p.y>_pc.height+20||p.x<-20||p.x>_pc.width+20){p.x=Math.random()*_pc.width;p.y=-10;p.o=0.1+Math.random()*0.3;}}
+function _pd(p){_px.save();if(p.t==='a'){_px.globalAlpha=p.o;_px.fillStyle=`rgba(180,170,160,${p.o})`;_px.beginPath();_px.ellipse(p.x,p.y,p.s,p.s*0.55,p.w,0,Math.PI*2);_px.fill();}else{const g=_px.createRadialGradient(p.x,p.y,0,p.x,p.y,p.gs);g.addColorStop(0,`rgba(255,140,40,${p.o*0.9})`);g.addColorStop(1,'rgba(180,40,10,0)');_px.fillStyle=g;_px.beginPath();_px.arc(p.x,p.y,p.gs,0,Math.PI*2);_px.fill();_px.globalAlpha=p.o;_px.fillStyle='rgba(255,200,100,0.9)';_px.beginPath();_px.arc(p.x,p.y,p.s*0.4,0,Math.PI*2);_px.fill();}_px.restore();}
+(function _loop(){_px.clearRect(0,0,_pc.width,_pc.height);_ps.forEach(p=>{_pu(p);_pd(p);});requestAnimationFrame(_loop);})();
 </script>
 </body>
 </html>
