@@ -38,7 +38,15 @@
   .main{position:relative;z-index:10;max-width:1400px;margin:0 auto;padding:24px 20px;}
 
   /* SECTION — Góra / Dół */
-  .section-wrap{margin-bottom:24px;border:1px solid rgba(201,168,76,0.15);border-radius:3px;overflow:hidden;}
+  .section-wrap{margin-bottom:24px;border:1px solid rgba(201,168,76,0.15);border-radius:3px;overflow:hidden;transition:border-color 0.6s,box-shadow 0.6s;}
+  .section-wrap.glow-top{
+    border-color:rgba(255,140,40,0.6);
+    box-shadow:0 0 25px rgba(255,120,20,0.25),0 0 60px rgba(255,100,10,0.12),inset 0 0 30px rgba(255,100,10,0.05);
+  }
+  .section-wrap.glow-bottom{
+    border-color:rgba(60,140,255,0.6);
+    box-shadow:0 0 25px rgba(40,120,255,0.25),0 0 60px rgba(20,90,255,0.12),inset 0 0 30px rgba(20,90,255,0.05);
+  }
   .section-header{
     display:flex;align-items:center;justify-content:space-between;
     padding:12px 18px;cursor:pointer;
@@ -370,14 +378,20 @@ socket.on('update', data => {
 let whoState = { top: '', bottom: '' };
 
 function renderWho(section){
-  const val = whoState[section] || '';
-  const el  = document.getElementById('whoCurrent'+(section==='top'?'Top':'Bottom'));
+  const val  = whoState[section] || '';
+  const el   = document.getElementById('whoCurrent'+(section==='top'?'Top':'Bottom'));
+  const wrap = document.getElementById(section==='top'?'sectionTop':'sectionBottom');
   if(val){
     el.textContent = '⚔ ' + val;
-    el.className = 'who-current';
+    el.className   = 'who-current';
+    // Add glow
+    wrap.classList.remove('glow-top','glow-bottom');
+    wrap.classList.add(section==='top'?'glow-top':'glow-bottom');
   } else {
     el.textContent = '— nikt nie bije —';
-    el.className = 'who-current empty';
+    el.className   = 'who-current empty';
+    // Remove glow
+    wrap.classList.remove('glow-top','glow-bottom');
   }
 }
 
