@@ -391,14 +391,14 @@
       <div class="scroll-corner bl"></div><div class="scroll-corner br"></div>
       <div class="scroll-title">⚔ Poradnik</div>
       <div class="scroll-divider"></div>
-      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>Timer żółty</strong> — metiny respawnują się</span></div>
-      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>Timer zielony</strong> — pełna fala, bić!</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong style="color:#f0c060;">Timer żółty</strong> — metin może się już pojawiać</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong style="color:#60e080;">Timer zielony</strong> — metin już jest</span></div>
       <div class="scroll-divider"></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Wpisz nick i godzinę do kiedy bijesz</span></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Dźwięk osobny dla Góry i Dołu</span></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Zapisz się do kolejki — następny gracz czeka</span></div>
       <div class="scroll-divider"></div>
-      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>1 pip</strong> = żółty &nbsp;|&nbsp; <strong>3 pipy</strong> = zielony</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong style="color:#f0c060;">1 pip</strong> = żółty &nbsp;|&nbsp; <strong style="color:#60e080;">3 pipy</strong> = zielony</span></div>
     </div>
 
     <div class="map-legend">
@@ -700,9 +700,9 @@ function renderWho(section){
       svgLabel.setAttribute('fill', 'rgba(80,170,255,0.95)');
       svgLabel.setAttribute('stroke','rgba(0,0,0,0.7)');
     }
-    // Legend
+    // Legend — pokaż nick + godzinę
     legend.classList.add('active');
-    legendWho.textContent = '⚔ ' + val;
+    legendWho.textContent = '⚔ ' + nick + (until ? ' (do '+until+')' : '');
     legendWho.className   = 'legend-who has-player';
   } else {
     el.textContent = '— nikt nie bije —';
