@@ -296,7 +296,7 @@ function format(sec){
 const displays = {};
 
 function createTimer(id, section){
-  const label = id.replace('KG_','CH ').replace('KGD_','CH ');
+  const label = id.replace('KG_CH','CH ').replace('KGD_CH','CH ');
   const card = document.createElement('div');
   card.className = 'timer-card state-grey';
 
