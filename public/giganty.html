@@ -154,7 +154,7 @@
   /* ═══ MAPA GIGANTÓW ═══ */
   .map-widget{
     display:flex;align-items:center;justify-content:center;
-    padding:24px 20px 0;gap:28px;flex-wrap:wrap;
+    padding:24px 20px 16px;gap:28px;flex-wrap:wrap;
   }
   /* Outer decorative wrapper */
   .map-outer{
@@ -235,6 +235,52 @@
   .legend-zone{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--gold-dark);}
   .legend-who{font-family:'Cinzel',serif;font-size:12px;color:var(--text-dim);margin-top:3px;font-style:italic;}
   .legend-who.has-player{color:var(--text);font-style:normal;}
+
+  /* ═══ ZWÓJ ═══ */
+  .scroll-widget{
+    position:relative;
+    min-width:200px;max-width:260px;
+    padding:28px 22px 24px;
+    background:linear-gradient(160deg,#2a1e0e,#1a1208,#2a1e0e);
+    border:1px solid rgba(201,168,76,0.35);
+    box-shadow:0 0 0 1px rgba(201,168,76,0.08),0 4px 24px rgba(0,0,0,0.7),inset 0 0 24px rgba(0,0,0,0.4);
+    display:flex;flex-direction:column;gap:0;
+  }
+  /* Górna i dolna rolka zwoju */
+  .scroll-widget::before,.scroll-widget::after{
+    content:'';position:absolute;left:-4px;right:-4px;height:14px;
+    background:linear-gradient(to right,#3a2810,#c9a84c,#8a6020,#c9a84c,#3a2810);
+    border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,0.7),inset 0 1px 2px rgba(255,220,100,0.3);
+  }
+  .scroll-widget::before{top:-7px;}
+  .scroll-widget::after{bottom:-7px;}
+  /* Narożniki zwoju */
+  .scroll-corner{
+    position:absolute;width:10px;height:10px;border-radius:50%;
+    background:radial-gradient(circle,#f0d080,#8a6020);
+    box-shadow:0 0 6px rgba(201,168,76,0.5);
+  }
+  .scroll-corner.tl{top:-11px;left:-11px;}
+  .scroll-corner.tr{top:-11px;right:-11px;}
+  .scroll-corner.bl{bottom:-11px;left:-11px;}
+  .scroll-corner.br{bottom:-11px;right:-11px;}
+  .scroll-title{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--gold);text-align:center;margin-bottom:12px;
+    text-shadow:0 0 10px rgba(201,168,76,0.4);
+  }
+  .scroll-divider{
+    height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,0.4),transparent);
+    margin:8px 0;
+  }
+  .scroll-item{
+    display:flex;align-items:flex-start;gap:8px;
+    padding:5px 0;font-size:12px;color:rgba(212,196,160,0.85);line-height:1.5;
+  }
+  .scroll-bullet{
+    flex-shrink:0;color:var(--gold-dark);font-size:10px;margin-top:2px;
+  }
+  .scroll-item strong{color:var(--gold-light);font-style:normal;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;}
 </style>
 </head>
 <body>
@@ -249,10 +295,6 @@
     <div class="page-title">Kraina Gigantów</div>
   </div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-    <div class="vol-wrap">
-      <label>Głośność</label>
-      <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.2">
-    </div>
     <div class="ws-wrap">
       <div class="ws-dot" id="wsDot"></div>
       <span class="ws-label" id="wsLabel">Łączenie...</span>
@@ -300,6 +342,21 @@
       <div class="map-title-banner">Osada Tysięcy</div>
     </div>
 
+    <div class="scroll-widget">
+      <div class="scroll-corner tl"></div><div class="scroll-corner tr"></div>
+      <div class="scroll-corner bl"></div><div class="scroll-corner br"></div>
+      <div class="scroll-title">⚔ Poradnik</div>
+      <div class="scroll-divider"></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>Timer żółty</strong> — metiny respawnują się</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>Timer zielony</strong> — pełna fala, bić!</span></div>
+      <div class="scroll-divider"></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Wpisz nick aby oznaczyć swój region</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Dźwięk osobny dla Góry i Dołu</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Notatka w timerze = numer kanału</span></div>
+      <div class="scroll-divider"></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>1 pip</strong> = żółty &nbsp;|&nbsp; <strong>3 pipy</strong> = zielony</span></div>
+    </div>
+
     <div class="map-legend">
       <div class="map-legend-item legend-top" id="legendTop">
         <div class="legend-dot top-dot"></div>
@@ -331,6 +388,10 @@
           <div class="layout-tile" onclick="setLayout('top','layout-1x8-horizontal')" style="grid-template-columns:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
           <div class="layout-tile" onclick="setLayout('top','layout-1x8-vertical')"   style="grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;" onclick="event.stopPropagation()">
+          <button class="toggle-btn" id="muteTop" onclick="toggleMute('top')" title="Wycisz Górę" style="font-size:13px;">🔊</button>
+          <input type="range" id="volTop" min="0" max="1" step="0.05" style="width:60px;accent-color:#e09040;" title="Głośność Góry">
+        </div>
         <button class="toggle-btn" id="toggleTop">▾</button>
       </div>
     </div>
@@ -361,6 +422,10 @@
           <div class="layout-tile" onclick="setLayout('bottom','layout-1x8-horizontal')" style="grid-template-columns:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
           <div class="layout-tile" onclick="setLayout('bottom','layout-1x8-vertical')"   style="grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;" onclick="event.stopPropagation()">
+          <button class="toggle-btn" id="muteBottom" onclick="toggleMute('bottom')" title="Wycisz Dół" style="font-size:13px;">🔊</button>
+          <input type="range" id="volBottom" min="0" max="1" step="0.05" style="width:60px;accent-color:#6090e0;" title="Głośność Dołu">
+        </div>
         <button class="toggle-btn" id="toggleBottom">▾</button>
       </div>
     </div>
@@ -386,25 +451,48 @@ const socket = io();
 socket.on('connect',    ()=>{ document.getElementById('wsDot').className='ws-dot ok'; document.getElementById('wsLabel').innerText='Na żywo'; });
 socket.on('disconnect', ()=>{ document.getElementById('wsDot').className='ws-dot';    document.getElementById('wsLabel').innerText='Brak połączenia'; });
 
-/* ═══ VOLUME ═══ */
-let volume = parseFloat(localStorage.getItem('volume')) || 0.2;
-const volSlider = document.getElementById('volumeSlider');
-volSlider.value = volume;
-volSlider.oninput = () => { volume = parseFloat(volSlider.value); localStorage.setItem('volume', volume); };
+/* ═══ VOLUME — osobne dla Góry i Dołu ═══ */
+const sectionVol  = { top: parseFloat(localStorage.getItem('vol_top'))  || 0.3,
+                      bottom: parseFloat(localStorage.getItem('vol_bot')) || 0.3 };
+const sectionMute = { top: localStorage.getItem('mute_top')==='1',
+                      bottom: localStorage.getItem('mute_bot')==='1' };
+
+// Init sliders after DOM ready
+(function(){
+  const vt = document.getElementById('volTop');
+  const vb = document.getElementById('volBottom');
+  if(vt){ vt.value = sectionVol.top;    vt.oninput = ()=>{ sectionVol.top=parseFloat(vt.value); localStorage.setItem('vol_top',vt.value); }; }
+  if(vb){ vb.value = sectionVol.bottom; vb.oninput = ()=>{ sectionVol.bottom=parseFloat(vb.value); localStorage.setItem('vol_bot',vb.value); }; }
+  updateMuteBtn('top');
+  updateMuteBtn('bottom');
+})();
+
+function updateMuteBtn(s){
+  const btn = document.getElementById(s==='top'?'muteTop':'muteBottom');
+  if(btn) btn.textContent = sectionMute[s] ? '🔇' : '🔊';
+}
+function toggleMute(s){
+  sectionMute[s] = !sectionMute[s];
+  localStorage.setItem(s==='top'?'mute_top':'mute_bot', sectionMute[s]?'1':'0');
+  updateMuteBtn(s);
+}
 
 /* ═══ AUDIO ═══ */
 let audioCtx = null;
 function getAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
-function beep(freq=800, dur=0.15){
+function beepFor(section, freq=800, dur=0.15){
+  if(sectionMute[section]) return;
+  const vol = sectionVol[section];
+  if(vol <= 0) return;
   const ctx=getAudio(), osc=ctx.createOscillator(), gain=ctx.createGain();
   osc.connect(gain); gain.connect(ctx.destination);
   osc.frequency.value=freq; osc.start();
-  gain.gain.setValueAtTime(volume, ctx.currentTime);
+  gain.gain.setValueAtTime(vol, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
   osc.stop(ctx.currentTime+dur);
 }
-function tripleBeep(){ beep(800); setTimeout(()=>beep(800),250); setTimeout(()=>beep(800),500); }
-function singleBeep(){ beep(600,0.7); }
+function tripleBeep(s){ beepFor(s,820,0.12); setTimeout(()=>beepFor(s,820,0.12),220); setTimeout(()=>beepFor(s,820,0.12),440); }
+function singleBeep(s){ beepFor(s,600,0.65); }
 
 /* ═══ TOGGLE SECTION ═══ */
 function toggleSection(s){
@@ -507,8 +595,9 @@ socket.on('update', data => {
     t.disp.innerText = format(sec);
     const state = sec===0?'state-grey':sec<1500?'state-red':sec<1800?'state-yellow':'state-green';
     t.card.className = 'timer-card ' + state;
-    if(sec>=1500&&sec<1502&&!t.beepYellow){ tripleBeep(); t.beepYellow=true; }
-    if(sec>=1800&&sec<1802&&!t.beepGreen) { singleBeep(); t.beepGreen=true; }
+    // Dźwięki osobne dla sekcji — żółty=1pip, zielony=3pipy
+    if(sec>=1500&&sec<1502&&!t.beepYellow){ singleBeep(t.section); t.beepYellow=true; }
+    if(sec>=1800&&sec<1802&&!t.beepGreen) { tripleBeep(t.section); t.beepGreen=true; }
     if(sec===0){ t.beepYellow=false; t.beepGreen=false; }
   }
 });
