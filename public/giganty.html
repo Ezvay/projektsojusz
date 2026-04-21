@@ -150,6 +150,54 @@
   }
   .comment-input:focus{border-color:rgba(201,168,76,0.4);}
   .comment-input::placeholder{color:var(--text-dim);}
+
+  /* ═══ MAPA GIGANTÓW ═══ */
+  .map-widget{
+    display:flex;align-items:center;justify-content:center;
+    padding:20px 20px 0;gap:24px;flex-wrap:wrap;
+  }
+  .map-frame{
+    position:relative;width:280px;flex-shrink:0;
+    border:1px solid rgba(201,168,76,0.2);border-radius:3px;
+    overflow:hidden;background:#0a0807;
+    box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  }
+  .map-frame img{
+    display:block;width:100%;height:auto;
+    filter:brightness(0.85) saturate(0.9);
+    image-rendering:pixelated;
+  }
+  /* SVG overlay on top of map */
+  .map-frame svg{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    pointer-events:none;
+  }
+  /* Region label boxes next to map */
+  .map-legend{display:flex;flex-direction:column;gap:12px;min-width:160px;}
+  .map-legend-item{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 14px;border-radius:3px;
+    border:1px solid rgba(201,168,76,0.12);
+    background:rgba(10,8,5,0.7);
+    transition:border-color 0.5s,box-shadow 0.5s,background 0.5s;
+  }
+  .map-legend-item.legend-top.active{
+    border-color:rgba(255,140,40,0.7);
+    background:rgba(40,20,5,0.85);
+    box-shadow:0 0 14px rgba(255,120,20,0.2);
+  }
+  .map-legend-item.legend-bottom.active{
+    border-color:rgba(60,140,255,0.7);
+    background:rgba(5,15,35,0.85);
+    box-shadow:0 0 14px rgba(40,120,255,0.2);
+  }
+  .legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:0 0 8px currentColor;}
+  .legend-dot.top-dot{background:#ff8c28;color:#ff8c28;}
+  .legend-dot.bot-dot{background:#3c8cff;color:#3c8cff;}
+  .legend-label{flex:1;}
+  .legend-zone{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--gold-dark);}
+  .legend-who{font-family:'Cinzel',serif;font-size:12px;color:var(--text-dim);margin-top:3px;font-style:italic;}
+  .legend-who.has-player{color:var(--text);font-style:normal;}
 </style>
 </head>
 <body>
@@ -178,7 +226,55 @@
 <div class="main">
 
   <!-- ══ GÓRA ══ -->
-  <div class="section-wrap" id="sectionTop">
+  
+  <!-- ═══ MAPA GIGANTÓW ═══ -->
+  <div class="map-widget">
+    <div class="map-frame">
+      <img src="/giganty_mapa.jpg" alt="Osada Tysięcy">
+      <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <!-- GÓRA region — pomarańczowy, zgodnie z rysunkiem na mapie -->
+        <rect id="svgTop"
+          x="68" y="22" width="380" height="158" rx="28"
+          fill="rgba(255,120,20,0)" stroke="rgba(255,140,40,0)"
+          stroke-width="3.5"
+          style="transition:fill 0.5s,stroke 0.5s;"/>
+        <!-- DÓŁ region — niebieski -->
+        <rect id="svgBot"
+          x="40" y="195" width="415" height="200" rx="28"
+          fill="rgba(40,120,255,0)" stroke="rgba(60,140,255,0)"
+          stroke-width="3.5"
+          style="transition:fill 0.5s,stroke 0.5s;"/>
+        <!-- Labels on map -->
+        <text id="svgTopLabel" x="258" y="112"
+          text-anchor="middle" font-family="Cinzel,serif" font-size="18" font-weight="600"
+          fill="rgba(255,160,60,0)" style="transition:fill 0.5s;"
+          stroke="rgba(0,0,0,0)" stroke-width="3" paint-order="stroke">GÓRA</text>
+        <text id="svgBotLabel" x="258" y="300"
+          text-anchor="middle" font-family="Cinzel,serif" font-size="18" font-weight="600"
+          fill="rgba(80,160,255,0)" style="transition:fill 0.5s;"
+          stroke="rgba(0,0,0,0)" stroke-width="3" paint-order="stroke">DÓŁ</text>
+      </svg>
+    </div>
+
+    <div class="map-legend">
+      <div class="map-legend-item legend-top" id="legendTop">
+        <div class="legend-dot top-dot"></div>
+        <div class="legend-label">
+          <div class="legend-zone">🔥 GÓRA</div>
+          <div class="legend-who" id="legendWhoTop">— nikt nie bije —</div>
+        </div>
+      </div>
+      <div class="map-legend-item legend-bottom" id="legendBot">
+        <div class="legend-dot bot-dot"></div>
+        <div class="legend-label">
+          <div class="legend-zone">🌊 DÓŁ</div>
+          <div class="legend-who" id="legendWhoBot">— nikt nie bije —</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="section-wrap" id="sectionTop">
     <div class="section-header" onclick="toggleSection('top')">
       <div class="section-header-left">
         <span class="section-badge top-badge">🔥 Góra</span>
@@ -381,17 +477,46 @@ function renderWho(section){
   const val  = whoState[section] || '';
   const el   = document.getElementById('whoCurrent'+(section==='top'?'Top':'Bottom'));
   const wrap = document.getElementById(section==='top'?'sectionTop':'sectionBottom');
+  // Map SVG elements
+  const svgRect  = document.getElementById(section==='top'?'svgTop':'svgBot');
+  const svgLabel = document.getElementById(section==='top'?'svgTopLabel':'svgBotLabel');
+  const legend   = document.getElementById(section==='top'?'legendTop':'legendBot');
+  const legendWho= document.getElementById(section==='top'?'legendWhoTop':'legendWhoBot');
+
   if(val){
     el.textContent = '⚔ ' + val;
     el.className   = 'who-current';
-    // Add glow
     wrap.classList.remove('glow-top','glow-bottom');
     wrap.classList.add(section==='top'?'glow-top':'glow-bottom');
+    // Activate map region
+    if(section==='top'){
+      svgRect.setAttribute('fill',  'rgba(255,120,20,0.18)');
+      svgRect.setAttribute('stroke','rgba(255,140,40,0.85)');
+      svgLabel.setAttribute('fill', 'rgba(255,170,70,0.95)');
+      svgLabel.setAttribute('stroke','rgba(0,0,0,0.7)');
+    } else {
+      svgRect.setAttribute('fill',  'rgba(40,120,255,0.18)');
+      svgRect.setAttribute('stroke','rgba(60,140,255,0.85)');
+      svgLabel.setAttribute('fill', 'rgba(80,170,255,0.95)');
+      svgLabel.setAttribute('stroke','rgba(0,0,0,0.7)');
+    }
+    // Legend
+    legend.classList.add('active');
+    legendWho.textContent = '⚔ ' + val;
+    legendWho.className   = 'legend-who has-player';
   } else {
     el.textContent = '— nikt nie bije —';
     el.className   = 'who-current empty';
-    // Remove glow
     wrap.classList.remove('glow-top','glow-bottom');
+    // Deactivate map region
+    svgRect.setAttribute('fill',  'rgba(0,0,0,0)');
+    svgRect.setAttribute('stroke','rgba(0,0,0,0)');
+    svgLabel.setAttribute('fill', 'rgba(0,0,0,0)');
+    svgLabel.setAttribute('stroke','rgba(0,0,0,0)');
+    // Legend
+    legend.classList.remove('active');
+    legendWho.textContent = '— nikt nie bije —';
+    legendWho.className   = 'legend-who';
   }
 }
 
