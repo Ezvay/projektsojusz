@@ -18,6 +18,7 @@ let grotaSnapshots      = []
 let gigTimers           = {}
 let gigRunning          = new Set()
 let gigWho              = { top: '', bottom: '' }
+let gigQueue            = { top: [], bottom: [] }  // kolejka graczy
 
 /* ═══ MONGODB ═══ */
 let col = null
@@ -38,6 +39,7 @@ async function connectDB() {
     gigTimers           = doc.gigTimers           || {}
     gigRunning          = new Set(doc.gigRunning  || [])
     gigWho              = doc.gigWho              || { top:'', bottom:'' }
+    gigQueue            = doc.gigQueue            || { top:[], bottom:[] }
 
     // Wyczyść zabitych generałów starszych niż 9h
     const cutoff = Date.now() - 9*60*60*1000
@@ -68,7 +70,7 @@ async function saveNow() {
       {
         _id: DOC_ID,
         grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
-        gigTimers, gigRunning: [...gigRunning], gigWho,
+        gigTimers, gigRunning: [...gigRunning], gigWho, gigQueue,
         savedAt: Date.now()
       },
       { upsert: true }
@@ -123,17 +125,41 @@ io.on("connection", socket => {
   socket.on('reset', id => resetGig(id))
 
   // ── Kto bije górę/dół ──
-  socket.on('gigWhoSet', ({ section, who }) => {
+  socket.on('gigWhoSet', ({ section, who, until }) => {
     if (section !== 'top' && section !== 'bottom') return
-    gigWho[section] = String(who).slice(0, 60)
+    gigWho[section] = { nick: String(who).slice(0, 40), until: String(until||'').slice(0,5) }
     saveData()
     io.emit('gigWhoUpdate', gigWho)
   })
   socket.on('gigWhoClear', ({ section }) => {
     if (section !== 'top' && section !== 'bottom') return
-    gigWho[section] = ''
+    gigWho[section] = null
     saveData()
     io.emit('gigWhoUpdate', gigWho)
+  })
+
+  /* ── Kolejka ── */
+  socket.on('gigQueueJoin', ({ section, nick, until }) => {
+    if (section !== 'top' && section !== 'bottom') return
+    if (!gigQueue[section]) gigQueue[section] = []
+    // Nie dodawaj duplikatów tego samego nicka
+    if (gigQueue[section].find(e => e.nick === nick)) return
+    if (gigQueue[section].length >= 8) return  // max 8 w kolejce
+    gigQueue[section].push({ nick: String(nick).slice(0,40), until: String(until||'').slice(0,5), joinedAt: Date.now() })
+    saveData()
+    io.emit('gigQueueUpdate', gigQueue)
+  })
+  socket.on('gigQueueLeave', ({ section, nick }) => {
+    if (section !== 'top' && section !== 'bottom') return
+    gigQueue[section] = (gigQueue[section]||[]).filter(e => e.nick !== nick)
+    saveData()
+    io.emit('gigQueueUpdate', gigQueue)
+  })
+  socket.on('gigQueueClear', ({ section }) => {
+    if (section !== 'top' && section !== 'bottom') return
+    gigQueue[section] = []
+    saveData()
+    io.emit('gigQueueUpdate', gigQueue)
   })
 
   // ── Grota generałowie ──
@@ -213,6 +239,7 @@ io.on("connection", socket => {
   // ── Wyślij stan nowemu klientowi ──
   socket.emit('update',                    gigTimers)
   socket.emit('gigWhoUpdate',              gigWho)
+  socket.emit('gigQueueUpdate',            gigQueue)
   socket.emit('grotaGeneralsUpdate',       grotaGenerals)
   socket.emit('grotaKilledGeneralsUpdate', grotaKilledGenerals)
   socket.emit('grotaRegionsUpdate',        grotaRegions)

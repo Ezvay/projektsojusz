@@ -281,6 +281,50 @@
     flex-shrink:0;color:var(--gold-dark);font-size:10px;margin-top:2px;
   }
   .scroll-item strong{color:var(--gold-light);font-style:normal;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;}
+
+  /* ═══ KOLEJKA ═══ */
+  .who-box{flex-wrap:wrap;gap:6px;}
+  .who-until-wrap{display:flex;align-items:center;gap:5px;}
+  .who-until-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;}
+  .who-until-input{
+    width:70px;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.2);
+    color:var(--text);font-family:'Crimson Text',serif;font-size:14px;
+    padding:5px 8px;border-radius:2px;outline:none;text-align:center;
+  }
+  .who-until-input:focus{border-color:rgba(201,168,76,0.5);}
+  .queue-box{
+    padding:8px 18px 10px;
+    background:rgba(0,0,0,0.2);
+    border-top:1px solid rgba(201,168,76,0.08);
+  }
+  .queue-title{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--text-dim);margin-bottom:6px;display:flex;align-items:center;gap:8px;
+  }
+  .queue-list{display:flex;flex-wrap:wrap;gap:6px;}
+  .queue-entry{
+    display:flex;align-items:center;gap:6px;
+    padding:4px 10px;border-radius:2px;
+    background:rgba(20,15,8,0.7);border:1px solid rgba(201,168,76,0.15);
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;
+    color:var(--text);transition:all 0.2s;
+  }
+  .queue-pos{color:var(--gold-dark);font-size:9px;min-width:14px;}
+  .queue-nick{color:var(--gold-light);}
+  .queue-until{color:var(--text-dim);font-size:9px;}
+  .queue-remove{
+    background:none;border:none;color:rgba(180,80,80,0.5);cursor:pointer;
+    font-size:11px;padding:0 2px;transition:color 0.2s;
+  }
+  .queue-remove:hover{color:#e07070;}
+  .queue-join-btn{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;
+    padding:4px 12px;border-radius:2px;cursor:pointer;transition:all 0.2s;
+    border:1px solid rgba(201,168,76,0.25);color:var(--text-dim);background:rgba(201,168,76,0.05);
+    white-space:nowrap;
+  }
+  .queue-join-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .queue-empty{font-size:11px;color:var(--text-dim);font-style:italic;}
 </style>
 </head>
 <body>
@@ -350,9 +394,9 @@
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>Timer żółty</strong> — metiny respawnują się</span></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>Timer zielony</strong> — pełna fala, bić!</span></div>
       <div class="scroll-divider"></div>
-      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Wpisz nick aby oznaczyć swój region</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Wpisz nick i godzinę do kiedy bijesz</span></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Dźwięk osobny dla Góry i Dołu</span></div>
-      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Notatka w timerze = numer kanału</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Zapisz się do kolejki — następny gracz czeka</span></div>
       <div class="scroll-divider"></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong>1 pip</strong> = żółty &nbsp;|&nbsp; <strong>3 pipy</strong> = zielony</span></div>
     </div>
@@ -399,10 +443,20 @@
     <!-- KTO BIJE GÓRĘ -->
     <div class="who-box" id="whoBoxTop">
       <span class="who-label">Kto bije górę:</span>
-      <input class="who-input" id="whoInputTop" placeholder="Nick / gildia..." maxlength="50">
+      <input class="who-input" id="whoInputTop" placeholder="Nick / gildia..." maxlength="40" style="max-width:180px;">
+      <div class="who-until-wrap">
+        <span class="who-until-label">do</span>
+        <input class="who-until-input" id="whoUntilTop" placeholder="18:30" maxlength="5" type="text">
+      </div>
       <button class="who-set-btn" onclick="setWho('top')">✓ Ustaw</button>
+      <button class="who-set-btn" onclick="joinQueue('top')" style="border-color:rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(0,0,0,0.2);">+ Kolejka</button>
       <span class="who-current empty" id="whoCurrentTop">— nikt nie bije —</span>
       <button class="who-clear-btn" onclick="clearWho('top')">✕</button>
+    </div>
+    <!-- KOLEJKA GÓRA -->
+    <div class="queue-box" id="queueBoxTop">
+      <div class="queue-title">📋 Kolejka <span id="queueCountTop" style="color:var(--gold-dark);"></span></div>
+      <div class="queue-list" id="queueListTop"><span class="queue-empty">— brak graczy w kolejce —</span></div>
     </div>
 
     <div class="timer-grid layout-2x4-horizontal" id="timersTop"></div>
@@ -433,10 +487,20 @@
     <!-- KTO BIJE DÓŁ -->
     <div class="who-box" id="whoBoxBottom">
       <span class="who-label">Kto bije dół:</span>
-      <input class="who-input" id="whoInputBottom" placeholder="Nick / gildia..." maxlength="50">
+      <input class="who-input" id="whoInputBottom" placeholder="Nick / gildia..." maxlength="40" style="max-width:180px;">
+      <div class="who-until-wrap">
+        <span class="who-until-label">do</span>
+        <input class="who-until-input" id="whoUntilBottom" placeholder="18:30" maxlength="5" type="text">
+      </div>
       <button class="who-set-btn" onclick="setWho('bottom')">✓ Ustaw</button>
+      <button class="who-set-btn" onclick="joinQueue('bottom')" style="border-color:rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(0,0,0,0.2);">+ Kolejka</button>
       <span class="who-current empty" id="whoCurrentBottom">— nikt nie bije —</span>
       <button class="who-clear-btn" onclick="clearWho('bottom')">✕</button>
+    </div>
+    <!-- KOLEJKA DÓŁ -->
+    <div class="queue-box" id="queueBoxBottom">
+      <div class="queue-title">📋 Kolejka <span id="queueCountBottom" style="color:var(--gold-dark);"></span></div>
+      <div class="queue-list" id="queueListBottom"><span class="queue-empty">— brak graczy w kolejce —</span></div>
     </div>
 
     <div class="timer-grid layout-2x4-horizontal" id="timersBottom"></div>
@@ -604,7 +668,8 @@ socket.on('update', data => {
 
 /* ═══ WHO IS PLAYING ═══ */
 // State: who is playing top/bottom (global, stored on server)
-let whoState = { top: '', bottom: '' };
+let whoState = { top: null, bottom: null };
+let queueState = { top: [], bottom: [] };
 
 function renderWho(section){
   const val  = whoState[section] || '';
@@ -616,8 +681,10 @@ function renderWho(section){
   const legend   = document.getElementById(section==='top'?'legendTop':'legendBot');
   const legendWho= document.getElementById(section==='top'?'legendWhoTop':'legendWhoBot');
 
-  if(val){
-    el.textContent = '⚔ ' + val;
+  const nick  = val ? (val.nick || val) : '';
+  const until = val ? (val.until || '') : '';
+  if(nick){
+    el.textContent = '⚔ ' + nick + (until ? '  (do '+until+')' : '');
     el.className   = 'who-current';
     wrap.classList.remove('glow-top','glow-bottom');
     wrap.classList.add(section==='top'?'glow-top':'glow-bottom');
@@ -654,15 +721,27 @@ function renderWho(section){
 }
 
 function setWho(section){
-  const input = document.getElementById('whoInput'+(section==='top'?'Top':'Bottom'));
-  const val = input.value.trim();
-  if(!val) return;
-  socket.emit('gigWhoSet', { section, who: val });
-  input.value = '';
+  const s    = section==='top'?'Top':'Bottom';
+  const nick = document.getElementById('whoInput'+s).value.trim();
+  const until= document.getElementById('whoUntil'+s).value.trim();
+  if(!nick) return;
+  socket.emit('gigWhoSet', { section, who: nick, until });
+  document.getElementById('whoInput'+s).value  = '';
+  document.getElementById('whoUntil'+s).value  = '';
 }
 
 function clearWho(section){
   socket.emit('gigWhoClear', { section });
+}
+
+function joinQueue(section){
+  const s    = section==='top'?'Top':'Bottom';
+  const nick = document.getElementById('whoInput'+s).value.trim();
+  const until= document.getElementById('whoUntil'+s).value.trim();
+  if(!nick){ alert('Wpisz najpierw swój nick!'); return; }
+  socket.emit('gigQueueJoin', { section, nick, until });
+  document.getElementById('whoInput'+s).value  = '';
+  document.getElementById('whoUntil'+s).value  = '';
 }
 
 // Allow Enter key in who inputs
@@ -671,6 +750,45 @@ function clearWho(section){
   input.addEventListener('keydown', e => {
     if(e.key==='Enter') setWho(s.toLowerCase());
   });
+  const until = document.getElementById('whoUntil'+s);
+  if(until) until.addEventListener('keydown', e => {
+    if(e.key==='Enter') setWho(s.toLowerCase());
+  });
+});
+
+// Init queue render
+renderQueue('top');
+renderQueue('bottom');
+
+/* ═══ QUEUE ═══ */
+function renderQueue(section){
+  const s    = section==='top'?'Top':'Bottom';
+  const list = document.getElementById('queueList'+s);
+  const cnt  = document.getElementById('queueCount'+s);
+  const arr  = queueState[section] || [];
+  if(cnt) cnt.textContent = arr.length ? `(${arr.length})` : '';
+  if(!list) return;
+  if(!arr.length){
+    list.innerHTML = '<span class="queue-empty">— brak graczy w kolejce —</span>';
+    return;
+  }
+  list.innerHTML = '';
+  arr.forEach((entry,i)=>{
+    const div = document.createElement('div');
+    div.className='queue-entry';
+    div.innerHTML=`<span class="queue-pos">${i+1}.</span>
+      <span class="queue-nick">${esc(entry.nick)}</span>
+      ${entry.until?`<span class="queue-until">do ${esc(entry.until)}</span>`:''}
+      <button class="queue-remove" onclick="socket.emit('gigQueueLeave',{section:'${section}',nick:'${esc(entry.nick)}'})" title="Usuń z kolejki">✕</button>`;
+    list.appendChild(div);
+  });
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+socket.on('gigQueueUpdate', data=>{
+  queueState = data || { top:[], bottom:[] };
+  renderQueue('top');
+  renderQueue('bottom');
 });
 
 socket.on('gigWhoUpdate', data => {
