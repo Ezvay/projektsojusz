@@ -742,8 +742,8 @@ function buildTimeOptions(selectEl){
   let startSlot;
   if(curM < 30) startSlot = curH * 60 + 30;        // np. 18:10 → pierwsze: 18:30
   else          startSlot = (curH + 1) * 60 + 0;   // np. 18:40 → pierwsze: 19:00
-  // Generuj 16 opcji (8 godzin co 30 min)
-  for(let i=0;i<16;i++){
+  // Generuj 48 opcji (24 godziny co 30 min)
+  for(let i=0;i<48;i++){
     const totalMins = startSlot + i*30;
     const h = Math.floor(totalMins/60)%24;
     const m = totalMins%60;
