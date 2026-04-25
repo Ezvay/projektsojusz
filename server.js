@@ -92,6 +92,54 @@ app.get('/giganty', (req,res) => res.redirect(301, '/giganty.html'))
 /* ═══ GIGANTY TIMER ENGINE ═══ */
 const gigIntervals = {}
 
+/* ═══ AUTO-KOLEJKA: sprawdzaj co minutę czy minęła godzina gracza ═══ */
+function parsePolandTime(hhmm){
+  // hhmm = "18:30" — zamień na timestamp dzisiejszego dnia w strefie PL
+  if(!hhmm || !hhmm.includes(':')) return null;
+  const [h,m] = hhmm.split(':').map(Number);
+  if(isNaN(h)||isNaN(m)) return null;
+  const now = new Date();
+  // Czas polski
+  const plStr = now.toLocaleString('en-US',{timeZone:'Europe/Warsaw'});
+  const plNow = new Date(plStr);
+  const result = new Date(plNow);
+  result.setHours(h, m, 0, 0);
+  // Jeśli godzina już minęła dzisiaj — to może być jutro (przeskoczona północ)
+  if(result < plNow) result.setDate(result.getDate()+1);
+  return result;
+}
+
+function checkQueueRotation(){
+  const nowPl = new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Warsaw'}));
+  let changed = false;
+  ['top','bottom'].forEach(function(section){
+    const who = gigWho[section];
+    if(!who || !who.until) return;
+    const expiry = parsePolandTime(who.until);
+    if(!expiry) return;
+    if(nowPl >= expiry){
+      console.log('[Kolejka] Czas ' + who.nick + ' minal na ' + section);
+      const queue = gigQueue[section] || [];
+      if(queue.length > 0){
+        const next = queue.shift();
+        gigWho[section] = { nick: next.nick, until: next.until };
+        gigQueue[section] = queue;
+        io.emit('gigWhoUpdate', gigWho);
+        io.emit('gigQueueUpdate', gigQueue);
+        console.log('[Kolejka] ' + next.nick + ' wchodzi na ' + section);
+      } else {
+        gigWho[section] = null;
+        io.emit('gigWhoUpdate', gigWho);
+      }
+      changed = true;
+    }
+  });
+  if(changed) saveData();
+}
+
+// Sprawdzaj co 30 sekund
+setInterval(checkQueueRotation, 30000);
+
 function startGig(id) {
   if (gigIntervals[id]) return
   if (gigTimers[id] === undefined) gigTimers[id] = 0

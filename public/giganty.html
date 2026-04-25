@@ -286,12 +286,14 @@
   .who-box{flex-wrap:wrap;gap:6px;}
   .who-until-wrap{display:flex;align-items:center;gap:5px;}
   .who-until-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;}
-  .who-until-input{
-    width:70px;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.2);
-    color:var(--text);font-family:'Crimson Text',serif;font-size:14px;
-    padding:5px 8px;border-radius:2px;outline:none;text-align:center;
+  .who-until-select{
+    background:rgba(0,0,0,0.7);border:1px solid rgba(201,168,76,0.3);
+    color:var(--gold-light);font-family:'Cinzel',serif;font-size:12px;
+    padding:5px 8px;border-radius:2px;outline:none;cursor:pointer;
+    letter-spacing:1px;
   }
-  .who-until-input:focus{border-color:rgba(201,168,76,0.5);}
+  .who-until-select:focus{border-color:rgba(201,168,76,0.6);}
+  .who-until-select option{background:#1a1208;color:var(--gold-light);}
   .queue-box{
     padding:8px 18px 10px;
     background:rgba(0,0,0,0.2);
@@ -446,7 +448,7 @@
       <input class="who-input" id="whoInputTop" placeholder="Nick / gildia..." maxlength="40" style="max-width:180px;">
       <div class="who-until-wrap">
         <span class="who-until-label">do</span>
-        <input class="who-until-input" id="whoUntilTop" placeholder="18:30" maxlength="5" type="text">
+        <select class="who-until-select" id="whoUntilTop"></select>
       </div>
       <button class="who-set-btn" onclick="setWho('top')">✓ Ustaw</button>
       <button class="who-set-btn" onclick="joinQueue('top')" style="border-color:rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(0,0,0,0.2);">+ Kolejka</button>
@@ -490,7 +492,7 @@
       <input class="who-input" id="whoInputBottom" placeholder="Nick / gildia..." maxlength="40" style="max-width:180px;">
       <div class="who-until-wrap">
         <span class="who-until-label">do</span>
-        <input class="who-until-input" id="whoUntilBottom" placeholder="18:30" maxlength="5" type="text">
+        <select class="who-until-select" id="whoUntilBottom"></select>
       </div>
       <button class="who-set-btn" onclick="setWho('bottom')">✓ Ustaw</button>
       <button class="who-set-btn" onclick="joinQueue('bottom')" style="border-color:rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(0,0,0,0.2);">+ Kolejka</button>
@@ -720,14 +722,57 @@ function renderWho(section){
   }
 }
 
+/* ═══ CZAS POLSKI — generuj opcje co 15 min ═══ */
+function getPolandTime(){
+  // Czas polski (UTC+1 zimą, UTC+2 latem)
+  const now = new Date();
+  const pl = new Date(now.toLocaleString('en-US',{timeZone:'Europe/Warsaw'}));
+  return pl;
+}
+
+function buildTimeOptions(selectEl){
+  const pl = getPolandTime();
+  const curH = pl.getHours(), curM = pl.getMinutes();
+  selectEl.innerHTML = '';
+  // Generuj opcje co 15 min na następne 6 godzin
+  for(let i=1;i<=24;i++){
+    const totalMins = (curH*60 + curM) + i*15;
+    const h = Math.floor(totalMins/60)%24;
+    const m = totalMins%60;
+    const label = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+    const opt = document.createElement('option');
+    opt.value = label;
+    opt.textContent = label;
+    selectEl.appendChild(opt);
+  }
+}
+
+// Inicjalizuj selecty przy starcie i odświeżaj co minutę
+function initTimeSelects(){
+  ['Top','Bottom'].forEach(s=>{
+    const sel = document.getElementById('whoUntil'+s);
+    if(sel) buildTimeOptions(sel);
+  });
+}
+initTimeSelects();
+setInterval(initTimeSelects, 60000);
+
+function getUntilVal(s){
+  const sel = document.getElementById('whoUntil'+s);
+  return sel ? sel.value : '';
+}
+
 function setWho(section){
-  const s    = section==='top'?'Top':'Bottom';
-  const nick = document.getElementById('whoInput'+s).value.trim();
-  const until= document.getElementById('whoUntil'+s).value.trim();
-  if(!nick) return;
+  const s     = section==='top'?'Top':'Bottom';
+  const nick  = document.getElementById('whoInput'+s).value.trim();
+  const until = getUntilVal(s);
+  if(!nick){ 
+    document.getElementById('whoInput'+s).style.borderColor='rgba(255,80,80,0.7)';
+    setTimeout(()=>document.getElementById('whoInput'+s).style.borderColor='',1500);
+    return; 
+  }
   socket.emit('gigWhoSet', { section, who: nick, until });
-  document.getElementById('whoInput'+s).value  = '';
-  document.getElementById('whoUntil'+s).value  = '';
+  document.getElementById('whoInput'+s).value = '';
 }
 
 function clearWho(section){
@@ -735,13 +780,16 @@ function clearWho(section){
 }
 
 function joinQueue(section){
-  const s    = section==='top'?'Top':'Bottom';
-  const nick = document.getElementById('whoInput'+s).value.trim();
-  const until= document.getElementById('whoUntil'+s).value.trim();
-  if(!nick){ alert('Wpisz najpierw swój nick!'); return; }
+  const s     = section==='top'?'Top':'Bottom';
+  const nick  = document.getElementById('whoInput'+s).value.trim();
+  const until = getUntilVal(s);
+  if(!nick){ 
+    document.getElementById('whoInput'+s).style.borderColor='rgba(255,80,80,0.7)';
+    setTimeout(()=>document.getElementById('whoInput'+s).style.borderColor='',1500);
+    return; 
+  }
   socket.emit('gigQueueJoin', { section, nick, until });
-  document.getElementById('whoInput'+s).value  = '';
-  document.getElementById('whoUntil'+s).value  = '';
+  document.getElementById('whoInput'+s).value = '';
 }
 
 // Allow Enter key in who inputs
@@ -750,10 +798,7 @@ function joinQueue(section){
   input.addEventListener('keydown', e => {
     if(e.key==='Enter') setWho(s.toLowerCase());
   });
-  const until = document.getElementById('whoUntil'+s);
-  if(until) until.addEventListener('keydown', e => {
-    if(e.key==='Enter') setWho(s.toLowerCase());
-  });
+
 });
 
 // Init queue render
