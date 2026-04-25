@@ -733,16 +733,25 @@ function getPolandTime(){
 function buildTimeOptions(selectEl){
   const pl = getPolandTime();
   const curH = pl.getHours(), curM = pl.getMinutes();
+  const currentVal = selectEl.value; // zachowaj aktualny wybór jeśli istnieje
   selectEl.innerHTML = '';
-  // Generuj opcje co 15 min na następne 6 godzin
-  for(let i=1;i<=24;i++){
-    const totalMins = (curH*60 + curM) + i*15;
+  // Znajdź najbliższą pełną lub półgodzinę ПІСЛЯ teraz
+  const totalNow = curH * 60 + curM;
+  // Pierwsze słupki: 0 i 30 minut
+  // Znajdź pierwszy slot po "teraz"
+  let startSlot;
+  if(curM < 30) startSlot = curH * 60 + 30;        // np. 18:10 → pierwsze: 18:30
+  else          startSlot = (curH + 1) * 60 + 0;   // np. 18:40 → pierwsze: 19:00
+  // Generuj 16 opcji (8 godzin co 30 min)
+  for(let i=0;i<16;i++){
+    const totalMins = startSlot + i*30;
     const h = Math.floor(totalMins/60)%24;
     const m = totalMins%60;
     const label = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
     const opt = document.createElement('option');
     opt.value = label;
     opt.textContent = label;
+    if(label === currentVal) opt.selected = true;
     selectEl.appendChild(opt);
   }
 }

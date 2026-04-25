@@ -47,14 +47,7 @@ async function connectDB() {
       if (grotaKilledGenerals[id].killedAt < cutoff) delete grotaKilledGenerals[id]
     })
 
-    // Nadrabiaj czas przestoju dla uruchomionych timerów gigantów
-    if (doc.shutdownAt && gigRunning.size > 0) {
-      const elapsed = Math.floor((Date.now() - doc.shutdownAt) / 1000)
-      if (elapsed > 0 && elapsed < 7200) {
-        gigRunning.forEach(id => { if (gigTimers[id] !== undefined) gigTimers[id] += elapsed })
-        console.log(`Nadrobiono ${elapsed}s przestoju`)
-      }
-    }
+    // Format timerów jest już poprawny — elapsed zapisany przy shutdown
     console.log("✅ Dane wczytane z MongoDB")
   } else {
     console.log("Brak dokumentu — start od zera")
@@ -90,21 +83,39 @@ app.get('/grota',   (req,res) => res.redirect(301, '/grota.html'))
 app.get('/giganty', (req,res) => res.redirect(301, '/giganty.html'))
 
 /* ═══ GIGANTY TIMER ENGINE ═══ */
+// Timery są przechowywane jako { startedAt: timestamp, elapsed: sekundy_gdy_zatrzymany }
+// Aktywny timer: elapsed + (now - startedAt) / 1000
+// Zatrzymany timer: elapsed tylko
+
 const gigIntervals = {}
 
-/* ═══ AUTO-KOLEJKA: sprawdzaj co minutę czy minęła godzina gracza ═══ */
+function getTimerSeconds(id) {
+  const t = gigTimers[id]
+  if (!t) return 0
+  if (typeof t === 'number') return t // stary format — zostaw
+  if (t.running && t.startedAt) {
+    return Math.floor(t.elapsed + (Date.now() - t.startedAt) / 1000)
+  }
+  return t.elapsed || 0
+}
+
+function getTimersSnapshot() {
+  const snap = {}
+  for (const id in gigTimers) snap[id] = getTimerSeconds(id)
+  return snap
+}
+
+/* ═══ AUTO-KOLEJKA ═══ */
 function parsePolandTime(hhmm){
-  // hhmm = "18:30" — zamień na timestamp dzisiejszego dnia w strefie PL
   if(!hhmm || !hhmm.includes(':')) return null;
-  const [h,m] = hhmm.split(':').map(Number);
+  const parts = hhmm.split(':').map(Number);
+  const h = parts[0], m = parts[1];
   if(isNaN(h)||isNaN(m)) return null;
   const now = new Date();
-  // Czas polski
   const plStr = now.toLocaleString('en-US',{timeZone:'Europe/Warsaw'});
   const plNow = new Date(plStr);
   const result = new Date(plNow);
   result.setHours(h, m, 0, 0);
-  // Jeśli godzina już minęła dzisiaj — to może być jutro (przeskoczona północ)
   if(result < plNow) result.setDate(result.getDate()+1);
   return result;
 }
@@ -142,25 +153,38 @@ setInterval(checkQueueRotation, 30000);
 
 function startGig(id) {
   if (gigIntervals[id]) return
-  if (gigTimers[id] === undefined) gigTimers[id] = 0
+  // Migrate old number format
+  if (!gigTimers[id] || typeof gigTimers[id] === 'number') {
+    gigTimers[id] = { elapsed: gigTimers[id] || 0, running: true, startedAt: Date.now() }
+  } else {
+    gigTimers[id].running = true
+    gigTimers[id].startedAt = Date.now()
+  }
   gigRunning.add(id)
   gigIntervals[id] = setInterval(() => {
-    gigTimers[id]++
-    saveData()
-    io.emit('update', gigTimers)
+    io.emit('update', getTimersSnapshot())
+    // Periodically save (every 10s to reduce DB writes)
+    if(Math.floor((Date.now() - gigTimers[id].startedAt) / 1000) % 10 === 0) saveData()
   }, 1000)
 }
 function stopGig(id) {
   clearInterval(gigIntervals[id])
   delete gigIntervals[id]
   gigRunning.delete(id)
+  if (gigTimers[id] && typeof gigTimers[id] === 'object') {
+    gigTimers[id].elapsed = getTimerSeconds(id)
+    gigTimers[id].running = false
+    delete gigTimers[id].startedAt
+  }
   saveData()
 }
 function resetGig(id) {
-  gigTimers[id] = 0
-  stopGig(id)
+  clearInterval(gigIntervals[id])
+  delete gigIntervals[id]
+  gigRunning.delete(id)
+  gigTimers[id] = { elapsed: 0, running: false }
   saveData()
-  io.emit('update', gigTimers)
+  io.emit('update', getTimersSnapshot())
 }
 
 /* ═══ SOCKET.IO ═══ */
@@ -285,7 +309,7 @@ io.on("connection", socket => {
   })
 
   // ── Wyślij stan nowemu klientowi ──
-  socket.emit('update',                    gigTimers)
+  socket.emit('update',                    getTimersSnapshot())
   socket.emit('gigWhoUpdate',              gigWho)
   socket.emit('gigQueueUpdate',            gigQueue)
   socket.emit('grotaGeneralsUpdate',       grotaGenerals)
@@ -299,11 +323,14 @@ async function shutdown(sig) {
   console.log(`Zamykanie (${sig}) — zapisuję...`)
   if (saveTimer) clearTimeout(saveTimer)
   // Zapisz timestamp zamknięcia żeby nadrobić czas po restarcie
-  if (col) {
-    try {
-      await col.updateOne({ _id: DOC_ID }, { $set: { shutdownAt: Date.now() } })
-    } catch(e) {}
-  }
+  // Zapisz aktualny elapsed dla wszystkich działających timerów
+  gigRunning.forEach(id => {
+    if (gigTimers[id] && typeof gigTimers[id] === 'object') {
+      gigTimers[id].elapsed = getTimerSeconds(id)
+      gigTimers[id].running = false
+      delete gigTimers[id].startedAt
+    }
+  })
   await saveNow()
   console.log("Dane zapisane. Do widzenia!")
   process.exit(0)
@@ -314,7 +341,17 @@ process.on("SIGINT",  () => shutdown("SIGINT"))
 /* ═══ START ═══ */
 function startServer() {
   // Wznów timery gigantów które działały przed restartem
-  gigRunning.forEach(id => { startGig(id); console.log("Wznowiono timer:", id) })
+  // Czas przestoju jest już uwzględniony w elapsed przy shutdown
+  const toResume = [...gigRunning]
+  gigRunning.clear()
+  toResume.forEach(id => {
+    // Upewnij się że format jest poprawny
+    if (!gigTimers[id] || typeof gigTimers[id] === 'number') {
+      gigTimers[id] = { elapsed: gigTimers[id] || 0, running: false }
+    }
+    startGig(id)
+    console.log("Wznowiono timer:", id, "od", getTimerSeconds(id), "s")
+  })
   const PORT = process.env.PORT || 3000
   http.listen(PORT, "0.0.0.0", () => console.log(`✅ Serwer na porcie ${PORT}`))
 }
