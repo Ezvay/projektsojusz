@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalendarz – Projekt Sojusz</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root{--gold:#c9a84c;--gold-light:#f0d080;--gold-dark:#7a5f1e;--bg:#090806;--border:#3a2e1a;--text:#d4c4a0;--text-dim:#7a6a50;--red:#c04040;--green:#3a9a5a;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.bg-image{position:fixed;inset:0;z-index:0;background:url('/background.jpg') center/cover no-repeat;}
+.bg-overlay{position:fixed;inset:0;z-index:1;background:rgba(5,4,3,0.82);}
+#particleCanvas{position:fixed;inset:0;z-index:2;pointer-events:none;}
+
+/* TOPBAR */
+.topbar{position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:linear-gradient(to bottom,rgba(17,14,9,0.97),rgba(9,8,6,0.85));}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.logo-header{height:42px;filter:drop-shadow(0 0 10px rgba(201,168,76,0.35));cursor:pointer;}
+.page-title{font-family:'Cinzel',serif;font-size:17px;font-weight:600;color:var(--gold-light);letter-spacing:2px;}
+.nav-btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dark);background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);border-radius:2px;padding:7px 14px;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+.nav-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.6);}
+.ws-dot{width:8px;height:8px;border-radius:50%;background:#604040;display:inline-block;}
+.ws-dot.ok{background:#40c060;box-shadow:0 0 6px #40c060;}
+
+/* AUTH PANEL */
+.auth-panel{position:relative;z-index:10;max-width:400px;margin:40px auto;padding:28px 32px;background:linear-gradient(160deg,#1e1810,#100d08);border:1px solid rgba(201,168,76,0.3);border-radius:3px;}
+.auth-panel::before,.auth-panel::after{content:'';position:absolute;width:16px;height:16px;border-color:rgba(201,168,76,0.5);border-style:solid;}
+.auth-panel::before{top:6px;left:6px;border-width:2px 0 0 2px;}
+.auth-panel::after{bottom:6px;right:6px;border-width:0 2px 2px 0;}
+.auth-title{font-family:'Cinzel',serif;font-size:14px;letter-spacing:3px;color:var(--gold);text-align:center;margin-bottom:20px;}
+.auth-tabs{display:flex;gap:4px;margin-bottom:20px;}
+.auth-tab{flex:1;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:8px;border:1px solid rgba(201,168,76,0.2);background:none;color:var(--text-dim);cursor:pointer;transition:all 0.2s;}
+.auth-tab.active{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,0.1);}
+.form-field{margin-bottom:12px;}
+.form-field label{display:block;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;}
+.form-input{width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:15px;padding:8px 10px;border-radius:2px;outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:rgba(201,168,76,0.6);}
+.form-btn{width:100%;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px;border:1px solid rgba(201,168,76,0.4);color:var(--gold);background:rgba(201,168,76,0.1);cursor:pointer;margin-top:8px;transition:all 0.2s;}
+.form-btn:hover{background:rgba(201,168,76,0.2);}
+.auth-error{color:#e07070;font-size:13px;text-align:center;margin-top:8px;min-height:20px;}
+
+/* MAIN APP */
+.app{position:relative;z-index:10;max-width:1400px;margin:0 auto;padding:20px;}
+.user-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(10,8,5,0.7);border:1px solid rgba(201,168,76,0.15);border-radius:2px;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
+.user-info{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-light);letter-spacing:1px;}
+.user-info span{color:var(--text-dim);font-size:10px;}
+.user-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.action-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;transition:all 0.2s;background:none;}
+.btn-gold{border:1px solid rgba(201,168,76,0.35);color:var(--gold-dark);}
+.btn-gold:hover{color:var(--gold);border-color:var(--gold);}
+.btn-red{border:1px solid rgba(180,60,60,0.35);color:#c07070;}
+.btn-red:hover{color:#e08080;border-color:rgba(200,60,60,0.7);}
+.btn-blue{border:1px solid rgba(60,120,200,0.35);color:#7090d0;}
+.btn-blue:hover{color:#90b0ff;border-color:rgba(60,120,200,0.7);}
+
+/* WEEK NAV */
+.week-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:16px;}
+.week-btn{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;padding:6px 16px;border:1px solid rgba(201,168,76,0.25);color:var(--text-dim);background:none;cursor:pointer;border-radius:2px;transition:all 0.2s;}
+.week-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.6);}
+.week-label{font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;color:var(--gold);}
+
+/* CALENDAR GRID */
+.cal-section-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:8px 0 6px;margin-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.15);}
+.cal-section-label.top-lbl{color:#e09040;}
+.cal-section-label.bot-lbl{color:#6090e0;}
+
+.cal-grid{display:grid;grid-template-columns:50px repeat(7,1fr);gap:1px;background:rgba(58,46,26,0.2);border:1px solid rgba(58,46,26,0.3);margin-bottom:20px;border-radius:2px;overflow:hidden;}
+.cal-header{background:rgba(15,12,7,0.9);padding:6px 4px;text-align:center;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--gold-dark);text-transform:uppercase;}
+.cal-header.today-col{color:var(--gold);background:rgba(201,168,76,0.08);}
+.cal-hour-label{background:rgba(10,8,5,0.9);padding:4px 4px;text-align:right;font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);letter-spacing:1px;padding-right:6px;display:flex;align-items:flex-start;justify-content:flex-end;}
+.cal-cell{
+  background:rgba(12,10,7,0.85);
+  min-height:36px;position:relative;cursor:pointer;
+  transition:background 0.15s;border:none;
+}
+.cal-cell:hover{background:rgba(201,168,76,0.06);}
+.cal-cell.past{cursor:not-allowed;opacity:0.5;}
+.cal-cell.past:hover{background:rgba(12,10,7,0.85);}
+.cal-cell.today-col{background:rgba(201,168,76,0.04);}
+.cal-cell.has-slot{cursor:default;}
+.cal-cell.has-slot:hover{background:rgba(12,10,7,0.85);}
+
+/* SLOT BLOCK */
+.slot-block{
+  position:absolute;inset:1px;border-radius:2px;padding:3px 5px;
+  display:flex;flex-direction:column;justify-content:center;
+  overflow:hidden;font-size:0;
+  border-left:3px solid;
+  transition:opacity 0.2s;
+}
+.slot-block.top-slot{background:rgba(40,20,8,0.9);border-color:#e09040;}
+.slot-block.bot-slot{background:rgba(8,16,35,0.9);border-color:#4080e0;}
+.slot-block.own-slot{opacity:1;}
+.slot-nick{font-family:'Cinzel',serif;font-size:9px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.5px;}
+.slot-guild{font-size:9px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.slot-del-btn{position:absolute;top:2px;right:2px;background:none;border:none;color:rgba(200,80,80,0.6);cursor:pointer;font-size:10px;line-height:1;padding:1px 3px;}
+.slot-del-btn:hover{color:#e07070;}
+.slot-edit-btn{position:absolute;bottom:2px;right:2px;background:none;border:none;color:rgba(201,168,76,0.5);cursor:pointer;font-size:9px;line-height:1;padding:1px 3px;}
+.slot-edit-btn:hover{color:var(--gold);}
+
+/* RESERVE MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;}
+.modal-overlay.hidden{display:none;}
+.modal-box{background:linear-gradient(160deg,#1e1810,#100d08);border:1px solid rgba(201,168,76,0.4);border-radius:3px;padding:28px 32px;min-width:320px;max-width:480px;width:90%;position:relative;}
+.modal-box::before,.modal-box::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(201,168,76,0.45);border-style:solid;}
+.modal-box::before{top:7px;left:7px;border-width:1px 0 0 1px;}
+.modal-box::after{bottom:7px;right:7px;border-width:0 1px 1px 0;}
+.modal-title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:18px;text-align:center;}
+.modal-error{color:#e07070;font-size:13px;text-align:center;margin-top:8px;min-height:18px;}
+.modal-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;}
+.modal-close:hover{color:var(--gold);}
+.modal-row{display:flex;gap:10px;margin-bottom:12px;align-items:center;}
+.modal-row label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;}
+.modal-select,.modal-input-sm{background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--gold-light);font-family:'Cinzel',serif;font-size:12px;padding:6px 10px;border-radius:2px;outline:none;cursor:pointer;}
+.modal-select:focus,.modal-input-sm:focus{border-color:rgba(201,168,76,0.6);}
+.modal-select option{background:#1a1208;}
+.section-toggle{display:flex;gap:6px;}
+.sec-btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;padding:6px 14px;border-radius:2px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:none;}
+.sec-btn.active-top{color:#e09040;border-color:rgba(224,144,64,0.7);background:rgba(40,20,8,0.5);}
+.sec-btn.active-bot{color:#4080e0;border-color:rgba(64,128,224,0.7);background:rgba(8,16,35,0.5);}
+.duration-row{display:flex;gap:6px;flex-wrap:wrap;}
+.dur-btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;padding:5px 12px;border-radius:2px;cursor:pointer;border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:none;transition:all 0.2s;}
+.dur-btn.active{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,0.1);}
+
+/* DELEGATION */
+.delegate-box{background:rgba(8,10,18,0.7);border:1px solid rgba(60,120,200,0.25);padding:12px 16px;margin-bottom:16px;border-radius:2px;}
+.delegate-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:#6090e0;text-transform:uppercase;margin-bottom:8px;}
+.del-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.del-select{background:rgba(0,0,0,0.5);border:1px solid rgba(60,120,200,0.3);color:var(--text);font-family:'Crimson Text',serif;font-size:14px;padding:5px 8px;border-radius:2px;outline:none;}
+.del-dur{width:70px;background:rgba(0,0,0,0.5);border:1px solid rgba(60,120,200,0.3);color:var(--text);font-family:'Crimson Text',serif;font-size:14px;padding:5px 8px;border-radius:2px;outline:none;text-align:center;}
+.active-delegation{font-family:'Cinzel',serif;font-size:10px;color:#7090d0;padding:6px 0;}
+
+/* ADMIN PANEL */
+.admin-box{background:rgba(20,8,8,0.7);border:1px solid rgba(180,60,60,0.25);padding:12px 16px;margin-bottom:16px;border-radius:2px;}
+.admin-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:#c07070;text-transform:uppercase;margin-bottom:8px;}
+.users-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;}
+.user-row{display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(0,0,0,0.3);border-radius:2px;}
+.user-row-nick{font-family:'Cinzel',serif;font-size:11px;color:var(--text);flex:1;}
+.user-row-guild{font-size:11px;color:var(--text-dim);}
+.user-row-role{font-family:'Cinzel',serif;font-size:9px;color:var(--gold-dark);letter-spacing:1px;}
+
+/* LEGEND */
+.legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);}
+.legend-dot{width:12px;height:4px;border-radius:1px;}
+
+/* STATUS BAR */
+.status-bar{display:flex;gap:16px;padding:8px 0;flex-wrap:wrap;}
+.status-item{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;}
+.status-item.active-top{color:#e09040;}
+.status-item.active-bot{color:#4080e0;}
+
+  /* OVERRIDE */
+  .override-notification{
+    position:fixed;bottom:20px;right:20px;z-index:2000;
+    max-width:380px;width:90%;
+    background:linear-gradient(160deg,#1a1208,#0e0b06);
+    border:1px solid rgba(201,168,76,0.5);border-radius:3px;
+    padding:18px 20px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.8),0 0 20px rgba(201,168,76,0.1);
+    animation:slideIn 0.3s ease-out;
+  }
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+  .override-notification::before,.override-notification::after{content:'';position:absolute;width:12px;height:12px;border-color:rgba(201,168,76,0.5);border-style:solid;}
+  .override-notification::before{top:5px;left:5px;border-width:1px 0 0 1px;}
+  .override-notification::after{bottom:5px;right:5px;border-width:0 1px 1px 0;}
+  .override-title{font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;}
+  .override-info{font-size:13px;color:var(--text);margin-bottom:12px;line-height:1.5;}
+  .override-info strong{color:var(--gold-light);}
+  .override-hours{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-bottom:12px;}
+  .override-btns{display:flex;gap:8px;}
+  .override-accept{flex:1;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:8px;border:1px solid rgba(60,160,60,0.5);color:#60d060;background:rgba(30,100,30,0.15);cursor:pointer;border-radius:2px;transition:all 0.2s;}
+  .override-accept:hover{background:rgba(30,100,30,0.3);}
+  .override-reject{flex:1;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:8px;border:1px solid rgba(180,60,60,0.4);color:#d06060;background:rgba(100,30,30,0.12);cursor:pointer;border-radius:2px;transition:all 0.2s;}
+  .override-reject:hover{background:rgba(100,30,30,0.25);}
+
+  /* REGULAMIN */
+  .rules-box{
+    background:linear-gradient(160deg,rgba(20,14,6,0.9),rgba(10,8,4,0.95));
+    border:1px solid rgba(201,168,76,0.2);border-radius:3px;
+    padding:18px 22px;margin-bottom:16px;
+    font-size:13px;line-height:1.7;color:var(--text);
+  }
+  .rules-title{font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .rules-toggle{font-size:10px;color:var(--text-dim);cursor:pointer;margin-left:auto;}
+  .rules-toggle:hover{color:var(--gold);}
+  .rules-list{list-style:none;display:flex;flex-direction:column;gap:6px;}
+  .rules-list li{display:flex;align-items:flex-start;gap:8px;}
+  .rules-list li::before{content:'▸';color:var(--gold-dark);flex-shrink:0;margin-top:2px;}
+  .rules-list strong{color:var(--gold-light);font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.5px;}
+
+  /* DZWONECZEK POWIADOMIEŃ */
+  .bell-wrap{position:relative;display:inline-block;}
+  .bell-btn{
+    background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);
+    color:var(--gold-dark);cursor:pointer;font-size:16px;
+    padding:5px 10px;border-radius:2px;transition:all 0.2s;position:relative;
+  }
+  .bell-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.15);}
+  .bell-badge{
+    position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;
+    background:#e07070;border-radius:8px;font-family:'Cinzel',serif;
+    font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;
+    padding:0 3px;pointer-events:none;
+  }
+  .bell-badge.hidden{display:none;}
+  .bell-panel{
+    position:absolute;right:0;top:calc(100% + 8px);
+    width:340px;max-height:400px;overflow-y:auto;
+    background:linear-gradient(160deg,#1e1810,#100d08);
+    border:1px solid rgba(201,168,76,0.35);border-radius:3px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.8);z-index:500;
+  }
+  .bell-panel.hidden{display:none;}
+  .bell-panel::-webkit-scrollbar{width:3px;}
+  .bell-panel::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.2);}
+  .bell-panel-title{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);
+    text-transform:uppercase;padding:10px 14px;
+    border-bottom:1px solid rgba(201,168,76,0.15);
+  }
+  .bell-item{padding:12px 14px;border-bottom:1px solid rgba(58,46,26,0.3);}
+  .bell-item:last-child{border-bottom:none;}
+  .bell-item-title{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-light);margin-bottom:4px;letter-spacing:0.5px;}
+  .bell-item-info{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:8px;}
+  .bell-item-hours{font-family:'Cinzel',serif;font-size:8px;color:var(--text-dim);margin-bottom:8px;letter-spacing:1px;}
+  .bell-item-btns{display:flex;gap:6px;}
+  .bell-accept{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border:1px solid rgba(60,160,60,0.5);color:#60d060;background:rgba(30,100,30,0.15);cursor:pointer;border-radius:2px;flex:1;transition:all 0.2s;}
+  .bell-accept:hover{background:rgba(30,100,30,0.3);}
+  .bell-reject{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border:1px solid rgba(180,60,60,0.4);color:#d06060;background:rgba(100,30,30,0.12);cursor:pointer;border-radius:2px;flex:1;transition:all 0.2s;}
+  .bell-reject:hover{background:rgba(100,30,30,0.25);}
+  .bell-empty{padding:16px 14px;text-align:center;font-size:12px;color:var(--text-dim);font-style:italic;}
+
+  /* OVERRIDE REQUEST BUTTON - ikonka w stylu metin2 */
+  .slot-ovr-btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;flex-shrink:0;margin-left:auto;
+    cursor:pointer;border-radius:2px;
+    opacity:0.7;transition:opacity 0.2s,transform 0.15s;
+    vertical-align:middle;
+  }
+  .slot-ovr-btn:hover{opacity:1;transform:scale(1.15);}
+  .slot-ovr-btn svg{width:14px;height:14px;display:block;}
+
+  /* CZAT FAB (kalendarz) */
+  .chat-fab{position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#2a1e0e,#1a1208);border:2px solid rgba(201,168,76,0.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;box-shadow:0 4px 20px rgba(0,0,0,0.6);transition:all 0.2s;}
+  .chat-fab:hover{border-color:var(--gold);}
+  .chat-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;background:#e07070;border-radius:9px;font-family:'Cinzel',serif;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid rgba(9,8,6,0.9);}
+  .chat-badge.hidden{display:none;}
+  .chat-panel{position:fixed;bottom:86px;right:24px;z-index:500;width:320px;height:420px;background:linear-gradient(160deg,#1a1208,#0e0b06);border:1px solid rgba(201,168,76,0.35);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.8);}
+  .chat-panel.hidden{display:none;}
+  .kal-chat-header{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .kal-chat-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0;}
+  .kal-chat-msgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+  .kal-chat-msgs::-webkit-scrollbar{width:3px;} .kal-chat-msgs::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.2);}
+  .kal-chat-msg{font-size:12px;color:var(--text);line-height:1.5;}
+  .kal-chat-nick{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-light);margin-right:4px;}
+  .kal-chat-time{font-size:10px;color:var(--text-dim);float:right;opacity:0.6;}
+  .kal-chat-msg.own .kal-chat-nick{color:#80d0ff;}
+  .kal-chat-input-row{display:flex;gap:6px;padding:8px 10px;border-top:1px solid rgba(201,168,76,0.12);flex-shrink:0;}
+  .kal-chat-input{flex:1;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:5px 8px;border-radius:2px;outline:none;}
+  .kal-chat-input:focus{border-color:rgba(201,168,76,0.5);}
+  .kal-chat-send{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:5px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);cursor:pointer;border-radius:2px;white-space:nowrap;transition:all 0.2s;}
+  .kal-chat-send:hover{color:var(--gold);border-color:var(--gold);}
+
+</style>
+</head>
+<body>
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+<canvas id="particleCanvas"></canvas>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authOverlay">
+  <div class="auth-panel">
+    <div class="auth-title">⚔ Projekt Sojusz</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Zaloguj się</button>
+      <button class="auth-tab" id="tabReg" onclick="switchAuthTab('register')">Zarejestruj</button>
+    </div>
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="form-field"><label>Nick w grze</label><input class="form-input" id="loginNick" placeholder="Twój nick..." autocomplete="username"></div>
+      <div class="form-field"><label>Hasło</label><input class="form-input" type="password" id="loginPass" placeholder="Hasło..." autocomplete="current-password"></div>
+      <button class="form-btn" onclick="doLogin()">→ Zaloguj się</button>
+    </div>
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none;">
+      <div class="form-field"><label>Nick w grze</label><input class="form-input" id="regNick" placeholder="Twój nick w grze..." autocomplete="username"></div>
+      <div class="form-field"><label>Gildia</label><input class="form-input" id="regGuild" placeholder="Nazwa gildii..."></div>
+      <div class="form-field"><label>Hasło</label><input class="form-input" type="password" id="regPass" placeholder="Min. 4 znaki..." autocomplete="new-password"></div>
+      <button class="form-btn" onclick="doRegister()">→ Zarejestruj konto</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- RESERVE MODAL -->
+<div class="modal-overlay hidden" id="reserveModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeReserveModal()">✕</button>
+    <div class="modal-title" id="reserveTitle">Rezerwacja slotu</div>
+    <div class="modal-row" id="forNickRow" style="display:none;">
+      <label>Nick gracza:</label>
+      <input class="modal-input-sm" id="forNickInput" placeholder="Nick (zostaw puste = dla siebie)" style="flex:1;font-family:'Crimson Text',serif;font-size:14px;">
+    </div>
+    <div class="modal-row">
+      <label>Sekcja:</label>
+      <div class="section-toggle">
+        <button class="sec-btn active-top" id="secTop" onclick="setSection('top')">🔥 Góra</button>
+        <button class="sec-btn" id="secBot" onclick="setSection('bottom')">🌊 Dół</button>
+      </div>
+    </div>
+    <div class="modal-row">
+      <label>Dzień:</label>
+      <select class="modal-select" id="resDay" onchange="updateReservePreview()"></select>
+    </div>
+    <div class="modal-row">
+      <label>Godzina:</label>
+      <select class="modal-select" id="resHour" onchange="updateReservePreview()"></select>
+    </div>
+    <div class="modal-row">
+      <label>Czas trwania:</label>
+      <div class="duration-row" id="durButtons"></div>
+    </div>
+    <div class="modal-row" id="resPreview" style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;"></div>
+    <div class="modal-row">
+      <label>Notatka:</label>
+      <input class="modal-input-sm" id="resNote" placeholder="Opcjonalna notatka..." maxlength="80" style="flex:1;font-family:'Crimson Text',serif;font-size:13px;letter-spacing:0;">
+    </div>
+    <button class="form-btn" onclick="submitReservation()">✓ Zarezerwuj</button>
+    <div class="modal-error" id="reserveError"></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay hidden" id="editModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <div class="modal-title">Edytuj rezerwację</div>
+    <div class="modal-row"><label>Dzień:</label><select class="modal-select" id="editDay" onchange="updateEditPreview()"></select></div>
+    <div class="modal-row"><label>Godzina:</label><select class="modal-select" id="editHour" onchange="updateEditPreview()"></select></div>
+    <div class="modal-row"><label>Czas trwania:</label><div class="duration-row" id="editDurButtons"></div></div>
+    <div class="modal-row" id="editPreview" style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;"></div>
+    <button class="form-btn" onclick="submitEdit()">✓ Zapisz zmiany</button>
+    <div class="modal-error" id="editError"></div>
+  </div>
+</div>
+
+
+<!-- OVERRIDE HOUR SELECT MODAL -->
+<div class="modal-overlay hidden" id="overrideSelectModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('overrideSelectModal').classList.add('hidden')">✕</button>
+    <div class="modal-title">⚡ Prośba o ustąpienie slotu</div>
+    <div id="ovrSlotInfo" style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:16px;text-align:left;"></div>
+    <div class="modal-row">
+      <label>Od godziny:</label>
+      <select class="modal-select" id="ovrStartHour"></select>
+    </div>
+    <div class="modal-row">
+      <label>Do godziny:</label>
+      <select class="modal-select" id="ovrEndHour"></select>
+    </div>
+    <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:14px;">
+      Możesz prosić o fragment slotu — reszta zostaje u właściciela
+    </div>
+    <button class="form-btn" onclick="submitOverrideDialog()">⚡ Wyślij prośbę</button>
+    <div class="modal-error" id="overrideError"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="/logo.png" class="logo-header" onclick="location.href='/'">
+    <a class="nav-btn" href="/">⬅ Główna</a>
+    <a class="nav-btn" href="/giganty.html">⚔ Giganty</a>
+    <div class="page-title">Kalendarz Slotów</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="ws-dot" id="wsDot"></div>
+    <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);" id="wsLabel">Łączenie...</span>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="mainApp" style="display:none;">
+
+  <!-- USER BAR -->
+  <div class="user-bar">
+    <div class="user-info" id="userInfo"></div>
+    <div class="user-actions">
+      <button class="action-btn btn-gold" onclick="openReserveModal()">+ Zarezerwuj slot</button>
+      <button class="action-btn btn-blue" onclick="toggleDelegatePanel()" id="delegateToggle">🤝 Deleguj</button>
+      <button class="action-btn btn-red" id="adminToggle" style="display:none;" onclick="toggleAdminPanel()">⚙ Admin</button>
+      <div class="bell-wrap">
+        <button class="bell-btn" onclick="toggleBellPanel()" title="Powiadomienia">🔔<span class="bell-badge hidden" id="bellBadge">0</span></button>
+        <div class="bell-panel hidden" id="bellPanel">
+          <div class="bell-panel-title">Powiadomienia</div>
+          <div id="bellItems"><div class="bell-empty">Brak powiadomień</div></div>
+        </div>
+      </div>
+      <button class="action-btn btn-red" onclick="doLogout()">Wyloguj</button>
+    </div>
+  </div>
+
+  <!-- DELEGATION PANEL -->
+  <div class="delegate-box" id="delegatePanel" style="display:none;">
+    <div class="delegate-title">🤝 Deleguj uprawnienia do timerów</div>
+    <div id="activeDelegations"></div>
+    <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-bottom:8px;">
+      Wybierz swoją rezerwację i osobę — dostanie uprawnienia do klikania timerów przez cały czas trwania Twojego slotu.
+    </div>
+    <div class="del-row">
+      <select class="del-select" id="delSlot" style="flex:1;" onchange="updateDelSection()">
+        <option value="">— wybierz swoją rezerwację —</option>
+      </select>
+      <select class="del-select" id="delTarget" style="flex:1;"></select>
+      <button class="action-btn btn-blue" onclick="submitDelegate()" style="padding:6px 14px;">Deleguj →</button>
+    </div>
+    <div style="color:#e07070;font-size:12px;margin-top:6px;" id="delegateError"></div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div class="admin-box" id="adminPanel" style="display:none;">
+    <div class="admin-title">⚙ Panel administratora</div>
+    <div class="users-list" id="usersList"></div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar" id="statusBar"></div>
+
+  <!-- WEEK NAV -->
+  <div class="week-nav">
+    <button class="week-btn" onclick="shiftWeek(-1)">← Poprzedni</button>
+    <div class="week-label" id="weekLabel"></div>
+    <button class="week-btn" onclick="shiftWeek(1)">Następny →</button>
+  </div>
+
+  <!-- REGULAMIN -->
+  <div class="rules-box" id="rulesBox">
+    <div class="rules-title">
+      📜 Zasady rezerwacji slotów
+      <span class="rules-toggle" onclick="document.getElementById('rulesContent').style.display=document.getElementById('rulesContent').style.display==='none'?'':'none'">zwiń ▾</span>
+    </div>
+    <div id="rulesContent">
+      <ul class="rules-list">
+        <li><strong>Rezerwacja</strong> — pilnuj ile rezerwujesz, inni też chcą skorzystać.</li>
+        <li><strong>Nadpisanie</strong> <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;vertical-align:middle;display:inline-block;"><defs><linearGradient id="sg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0d080"/><stop offset="100%" stop-color="#c9a84c"/></linearGradient></defs><line x1="3" y1="13" x2="11" y2="3" stroke="url(#sg1)" stroke-width="1.8" stroke-linecap="round"/><polyline points="7,3 11,3 11,7" stroke="url(#sg1)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="4" y1="10" x2="6" y2="12" stroke="rgba(201,168,76,0.6)" stroke-width="2" stroke-linecap="round"/></svg> — jeśli ktoś zajął slot który jest Ci potrzebny, kliknij ikonkę <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;vertical-align:middle;display:inline-block;"><defs><linearGradient id="sg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0d080"/><stop offset="100%" stop-color="#c9a84c"/></linearGradient></defs><line x1="3" y1="13" x2="11" y2="3" stroke="url(#sg1)" stroke-width="1.8" stroke-linecap="round"/><polyline points="7,3 11,3 11,7" stroke="url(#sg1)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="4" y1="10" x2="6" y2="12" stroke="rgba(201,168,76,0.6)" stroke-width="2" stroke-linecap="round"/></svg> na slocie aby wysłać prośbę o ustąpienie. Właściciel slotu musi potwierdzić.</li>
+        <li><strong>Delegowanie</strong> — jeżeli gracie w 2 jednocześnie możecie dać sobie dostęp do timerów i klikać timery wspólnie.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Override notifications container -->
+  <div id="overrideNotifications"></div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#e09040;"></div>Góra</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4080e0;"></div>Dół</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(201,168,76,0.5);"></div>Twój slot</div>
+    <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);margin-left:8px;">Kliknij pustą komórkę aby zarezerwować</span>
+  </div>
+
+  <!-- GRID GÓRA -->
+  <div class="cal-section-label top-lbl">🔥 Góra</div>
+  <div class="cal-grid" id="calTop"></div>
+
+  <!-- GRID DÓŁ -->
+  <div class="cal-section-label bot-lbl">🌊 Dół</div>
+  <div class="cal-grid" id="calBot"></div>
+</div>
+
+<script>
+/* === STATE === */
+let currentUser = null
+let slots = []
+let delegations = {}
+let allUsers = []
+let weekOffset = 0
+let reserveSection = 'top'
+let reserveForNick = ''
+let reserveDuration = 1
+let editingSlot = null
+let editDuration = 1
+
+const socket = io({ auth: { token: localStorage.getItem('sojusz_token') } })
+socket.on('connect', function(){
+  document.getElementById('wsDot').className='ws-dot ok'
+  document.getElementById('wsLabel').innerText='Na żywo'
+  // Po (re)connect - zarejestruj socket jeśli zalogowany
+  var token = localStorage.getItem('sojusz_token')
+  if(token) {
+    socket.emit('auth', token)
+    // Sprawdź pending overrides z bazy
+    setTimeout(function(){ if(currentUser) checkPendingOverrides() }, 500)
+  }
+})
+socket.on('disconnect', ()=>{ document.getElementById('wsDot').className='ws-dot'; document.getElementById('wsLabel').innerText='Brak połączenia'; })
+socket.on('slotsUpdate', ({ action, slot, slotId }) => {
+  if (action === 'add')    { slots.push(slot); }
+  if (action === 'update') { const i = slots.findIndex(s=>String(s._id)===String(slot._id)); if(i>=0) slots[i]=slot; }
+  if (action === 'delete') { slots = slots.filter(s=>String(s._id)!==slotId); }
+  renderCalendars()
+  populateMySlots()
+})
+socket.on('delegationsUpdate', d => { delegations=d; renderDelegations(); })
+
+// Live powiadomienie o odpowiedzi na prośbę override
+socket.on('overrideResponded', function(data){
+  if(currentUser && data.fromNick === currentUser.nick){
+    // Usuń z pending jeśli tam był
+    pendingOverrides = pendingOverrides.filter(function(o){ return o._id !== data.overrideId })
+    renderBellItems()
+    if(data.accept){
+      showToast('✓ '+data.toNick+' zaakceptował prośbę! Slot jest Twój.', '#60d060')
+      loadSlots().then(renderCalendars)
+    } else {
+      showToast('✕ '+data.toNick+' odrzucił prośbę.', '#e07070')
+    }
+  }
+  if(currentUser && data.toNick === currentUser.nick){
+    // Odśwież też po stronie właściciela
+    loadSlots().then(renderCalendars)
+    populateMySlots()
+  }
+})
+
+socket.on('pendingOverrides', function(list){
+  // Serwer wysłał pending overrides po zalogowaniu
+  if(!Array.isArray(list)) return
+  pendingOverrides = list
+  renderBellItems()
+  if(list.length > 0) document.getElementById('bellPanel')?.classList.remove('hidden')
+})
+socket.on('overrideNotify', function(data){
+  // Broadcast do wszystkich - sprawdź czy to dla mnie
+  if(!currentUser || data.toNick !== currentUser.nick) return
+  var exists = pendingOverrides.find(function(o){ return o._id === data.overrideId })
+  if(exists) return
+  pendingOverrides.push({ _id:data.overrideId, fromNick:data.fromNick, fromGuild:data.fromGuild, toNick:data.toNick, section:data.section, newStartAt:data.newStartAt, newEndAt:data.newEndAt, myWeekHours:data.myWeekHours||0, ownerWeekHours:data.ownerWeekHours||0 })
+  renderBellItems()
+  document.getElementById('bellPanel')?.classList.remove('hidden')
+})
+socket.on('overrideRequestBroadcast', function(data){
+  // Fallback broadcast - obsłuż tak samo jak overrideRequest
+  if(currentUser && data.toNick === currentUser.nick){
+    var exists = pendingOverrides.find(function(o){ return o._id === data.overrideId })
+    if(!exists){
+      pendingOverrides.push({ _id: data.overrideId, fromNick: data.fromNick, fromGuild: data.fromGuild, toNick: data.toNick, section: data.section, newStartAt: data.newStartAt, newEndAt: data.newEndAt, myWeekHours: data.myWeekHours||0, ownerWeekHours: data.ownerWeekHours||0 })
+      renderBellItems()
+      document.getElementById('bellPanel')?.classList.remove('hidden')
+    }
+  }
+})
+socket.on('overrideRequest', function(data){
+  if(currentUser && data.toNick === currentUser.nick){
+    pendingOverrides.push({ _id: data.overrideId, fromNick: data.fromNick, fromGuild: data.fromGuild, toNick: data.toNick, section: data.section, newStartAt: data.newStartAt, newEndAt: data.newEndAt, myWeekHours: data.myWeekHours||0, ownerWeekHours: data.ownerWeekHours||0 })
+    renderBellItems()
+    document.getElementById('bellPanel')?.classList.remove('hidden')
+  }
+})
+
+
+/* === AUTH === */
+function switchAuthTab(tab) {
+  document.getElementById('loginForm').style.display    = tab==='login' ? '' : 'none'
+  document.getElementById('registerForm').style.display = tab==='register' ? '' : 'none'
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login')
+  document.getElementById('tabReg').classList.toggle('active', tab==='register')
+  document.getElementById('authError').textContent = ''
+}
+
+async function doLogin() {
+  const nick = document.getElementById('loginNick').value.trim()
+  const pass = document.getElementById('loginPass').value
+  if(!nick||!pass) return showAuthError('Wypełnij wszystkie pola')
+  try {
+    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nick,password:pass}) })
+    const d = await r.json()
+    if(!r.ok) return showAuthError(d.error)
+    saveSession(d)
+  } catch(e) { showAuthError('Błąd połączenia') }
+}
+
+async function doRegister() {
+  const nick  = document.getElementById('regNick').value.trim()
+  const guild = document.getElementById('regGuild').value.trim()
+  const pass  = document.getElementById('regPass').value
+  if(!nick||!guild||!pass) return showAuthError('Wypełnij wszystkie pola')
+  try {
+    const r = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nick,guild,password:pass}) })
+    const d = await r.json()
+    if(!r.ok) return showAuthError(d.error)
+    saveSession(d)
+  } catch(e) { showAuthError('Błąd połączenia') }
+}
+
+function saveSession(data) {
+  localStorage.setItem('sojusz_token', data.token)
+  currentUser = { nick: data.nick, guild: data.guild, role: data.role }
+  socket.auth = { token: data.token }
+  // Wyślij token przez socket żeby zarejestrować usera bez reconnectu
+  socket.emit('auth', data.token)
+  showApp()
+}
+
+function doLogout() {
+  localStorage.removeItem('sojusz_token')
+  currentUser = null
+  document.getElementById('mainApp').style.display = 'none'
+  document.getElementById('authOverlay').style.display = 'flex'
+}
+
+function showAuthError(msg) { document.getElementById('authError').textContent = msg }
+
+/* === OVERRIDE UI === */
+function showOverrideRequest(data) {
+  const container = document.getElementById('overrideNotifications')
+  const id = 'ovr_'+data.overrideId
+  const s = new Date(data.newStartAt), e = new Date(data.newEndAt)
+  const secLabel = data.section==='top'?'🔥 Góra':'🌊 Dół'
+  const div = document.createElement('div')
+  div.className = 'override-notification'
+  div.id = id
+  var ovBtn = 'override-accept'
+  var rejBtn = 'override-reject'
+  div.innerHTML = '<div class="override-title">Prosba o ustapienie slotu</div>'+
+    '<div class="override-info"><strong>'+esc(data.fromNick)+'</strong> ('+esc(data.fromGuild)+') prosi o Twoj slot:<br>'+
+    secLabel+': '+fmtDt(s)+' do '+fmtTime(e)+'</div>'+
+    '<div class="override-hours">Twoje godz.: '+data.ownerWeekHours.toFixed(1)+'h | Ich godz.: '+data.myWeekHours.toFixed(1)+'h</div>'+
+    '<div class="override-btns">'+
+    '<button class="'+ovBtn+'">Tak, zgadzam sie</button>'+
+    '<button class="'+rejBtn+'">Odmawiam</button>'+
+    '</div>'
+  div.querySelector('.override-accept').addEventListener('click', function(){ doRespondOverride(data.overrideId, id, true) })
+  div.querySelector('.override-reject').addEventListener('click', function(){ doRespondOverride(data.overrideId, id, false) })
+  container.appendChild(div)
+  // Auto-remove after 24h (just UI)
+  setTimeout(()=>div.remove(), 86400000)
+}
+
+async function doRespondOverride(overrideId, divId, accept) {
+  var r = await apiPost('/api/slots/override-respond', { overrideId: overrideId, accept: accept })
+  if(r && r.error){ alert('Blad: '+r.error); return }
+  var el = document.getElementById(divId)
+  if(el) el.remove()
+  showToast(accept ? 'Slot przekazany!' : 'Prosba odrzucona', accept ? '#60d060' : '#c07070')
+  if(accept) loadSlots().then(renderCalendars)
+}
+
+/* === BELL PANEL === */
+var pendingOverrides = []
+
+function toggleBellPanel(){
+  const p = document.getElementById('bellPanel')
+  p.classList.toggle('hidden')
+}
+// Close bell when clicking outside
+document.addEventListener('click', function(e){
+  const wrap = document.querySelector('.bell-wrap')
+  if(wrap && !wrap.contains(e.target)) document.getElementById('bellPanel')?.classList.add('hidden')
+})
+
+function renderBellItems(){
+  const container = document.getElementById('bellItems')
+  const badge = document.getElementById('bellBadge')
+  if(!container) return
+  if(!pendingOverrides.length){
+    container.innerHTML = '<div class="bell-empty">Brak powiadomień</div>'
+    badge.classList.add('hidden')
+    return
+  }
+  badge.classList.remove('hidden')
+  badge.textContent = pendingOverrides.length
+  container.innerHTML = ''
+  pendingOverrides.forEach(function(ovr){
+    var s = new Date(ovr.newStartAt), e = new Date(ovr.newEndAt)
+    var secLabel = ovr.section==='top' ? '🔥 Góra' : '🌊 Dół'
+    var div = document.createElement('div')
+    div.className = 'bell-item'
+    div.id = 'bell_'+ovr._id
+    div.innerHTML =
+      '<div class="bell-item-title">⚔ Prośba o ustąpienie slotu</div>'+
+      '<div class="bell-item-info"><strong>'+esc(ovr.fromNick)+'</strong> ('+esc(ovr.fromGuild||'')+')<br>'+
+      secLabel+': '+fmtDt(s)+' → '+fmtTime(e)+'</div>'+
+      '<div class="bell-item-hours">Twoje godz.: '+(ovr.ownerWeekHours||0).toFixed(1)+'h | Ich: '+(ovr.myWeekHours||0).toFixed(1)+'h</div>'+
+      '<div class="bell-item-btns">'+
+      '<button class="bell-accept">✓ Zgadzam się</button>'+
+      '<button class="bell-reject">✕ Odmawiam</button>'+
+      '</div>'
+    div.querySelector('.bell-accept').addEventListener('click', function(){ respondBellOverride(ovr._id, true) })
+    div.querySelector('.bell-reject').addEventListener('click', function(){ respondBellOverride(ovr._id, false) })
+    container.appendChild(div)
+  })
+}
+
+async function respondBellOverride(overrideId, accept){
+  var r = await apiPost('/api/slots/override-respond', { overrideId: overrideId, accept: accept })
+  if(r && r.error){ alert('Błąd: '+r.error); return }
+  pendingOverrides = pendingOverrides.filter(function(o){ return o._id !== overrideId })
+  renderBellItems()
+  showToast(accept ? 'Slot przekazany!' : 'Prośba odrzucona', accept ? '#60d060' : '#c07070')
+  if(accept) loadSlots().then(renderCalendars)
+}
+
+async function checkPendingOverrides() {
+  if(!currentUser) return
+  const r = await apiGet('/api/slots/override-pending')
+  if(!Array.isArray(r)) return
+  pendingOverrides = r
+  renderBellItems()
+  // Auto-open bell if there are pending
+  if(r.length > 0) document.getElementById('bellPanel')?.classList.remove('hidden')
+}
+
+function showToast(msg, color) {
+  const t = document.createElement('div')
+  t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:3000;padding:10px 20px;background:rgba(10,8,5,0.95);border:1px solid '+(color||'var(--gold)')+';color:'+(color||'var(--gold)')+';font-family:Cinzel,serif;font-size:11px;letter-spacing:1px;border-radius:2px;animation:slideIn 0.3s ease-out;'
+  t.textContent = msg
+  document.body.appendChild(t)
+  setTimeout(()=>t.remove(), 4000)
+}
+
+async function checkSession() {
+  const token = localStorage.getItem('sojusz_token')
+  if (!token) return
+  try {
+    const r = await fetch('/api/me', { headers:{ Authorization:'Bearer '+token } })
+    if (!r.ok) { localStorage.removeItem('sojusz_token'); return }
+    const d = await r.json()
+    currentUser = d
+    showApp()
+  } catch(e) {}
+}
+
+async function showApp() {
+  document.getElementById('authOverlay').style.display = 'none'
+  document.getElementById('mainApp').style.display = 'block'
+  document.getElementById('userInfo').innerHTML =
+    '<strong>'+esc(currentUser.nick)+'</strong> <span>· '+esc(currentUser.guild)+' · '+(currentUser.role==='admin'?'<span style="color:var(--gold)">Admin</span>':'Gracz')+'</span>'
+  if (currentUser.role === 'admin') {
+    document.getElementById('adminToggle').style.display = ''
+    await loadUsers()
+  }
+  await loadSlots()
+  await loadDelegations()
+  renderWeekLabel()
+  renderCalendars()
+  populateDelTarget()
+  populateMySlots()
+  buildReserveStartOptions()
+  buildDurButtons('durButtons', reserveDuration, function(h){ reserveDuration=h; updateReservePreview(); buildDurButtons('durButtons',h,this); })
+}
+
+/* === USERS === */
+async function loadUsers() {
+  const r = await apiGet('/api/users')
+  if (r) { allUsers = r; renderUsersList(); }
+}
+
+function renderUsersList() {
+  const el = document.getElementById('usersList')
+  el.innerHTML = allUsers.map(function(u) {
+    var delBtn = (u.nick!==currentUser.nick && u.nick!=='Ezvay')
+      ? '<button class="action-btn btn-red" onclick="deleteUser(\''+esc(u.nick)+'\')" style="padding:3px 8px;font-size:8px;">x</button>'
+      : '';
+    return '<div class="user-row"><span class="user-row-nick">'+esc(u.nick)+'</span><span class="user-row-guild">'+esc(u.guild)+'</span><span class="user-row-role">'+u.role+'</span>'+delBtn+'</div>';
+  }).join('')
+}
+
+async function deleteUser(nick) {
+  if (!confirm('Usuń użytkownika '+nick+'?')) return
+  await apiDelete('/api/users/'+encodeURIComponent(nick))
+  await loadUsers()
+  await loadSlots()
+}
+
+function populateDelTarget() {
+  const sel = document.getElementById('delTarget')
+  sel.innerHTML = allUsers.filter(function(u){ return u.nick !== currentUser.nick; }).map(function(u){
+    return '<option value="'+esc(u.nick)+'">'+esc(u.nick)+' ('+esc(u.guild)+')</option>';
+  }).join('')
+}
+
+/* === SLOTS === */
+async function loadSlots() {
+  const monday = getMondayOfWeek(weekOffset)
+  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6); sunday.setHours(23,59,59)
+  const from = new Date(monday); from.setDate(from.getDate() - 7)
+  const to   = new Date(sunday); to.setDate(to.getDate() + 7)
+  const r = await apiGet('/api/slots?from='+from.toISOString()+'&to='+to.toISOString())
+  if(r){ slots=r; populateMySlots(); }
+}
+
+/* === WEEK HELPERS === */
+function getMondayOfWeek(offset=0) {
+  const now = new Date()
+  const day = now.getDay() || 7
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - day + 1 + offset * 7)
+  monday.setHours(0,0,0,0)
+  return monday
+}
+
+function shiftWeek(dir) {
+  weekOffset += dir
+  loadSlots().then(() => { renderWeekLabel(); renderCalendars(); buildReserveStartOptions(); })
+}
+
+function renderWeekLabel() {
+  const mon = getMondayOfWeek(weekOffset)
+  const sun = new Date(mon); sun.setDate(sun.getDate()+6)
+  const fmt = d => d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'})
+  document.getElementById('weekLabel').textContent = fmt(mon)+' – '+fmt(sun)
+}
+
+const DAY_NAMES = ['Pon','Wt','Śr','Czw','Pt','Sob','Nd']
+const MONTH_SHORT = ['Sty','Lut','Mar','Kwi','Maj','Cze','Lip','Sie','Wrz','Paź','Lis','Gru']
+
+/* === CALENDAR RENDER === */
+function renderCalendars() {
+  renderGrid('calTop', 'top')
+  renderGrid('calBot', 'bottom')
+  renderStatusBar()
+}
+
+function renderGrid(containerId, section) {
+  const grid    = document.getElementById(containerId)
+  const monday  = getMondayOfWeek(weekOffset)
+  const now     = new Date()
+  const days    = Array.from({length:7}, (_,i) => { const d=new Date(monday); d.setDate(d.getDate()+i); return d; })
+
+  grid.innerHTML = ''
+  // Header row
+  const cornerH = document.createElement('div')
+  cornerH.className = 'cal-header'
+  cornerH.textContent = 'Godz.'
+  grid.appendChild(cornerH)
+  days.forEach((d,i) => {
+    const isToday = d.toDateString() === now.toDateString()
+    const h = document.createElement('div')
+    h.className = 'cal-header' + (isToday?' today-col':'')
+    h.textContent = DAY_NAMES[i]+' '+d.getDate()+' '+MONTH_SHORT[d.getMonth()]
+    grid.appendChild(h)
+  })
+
+  // Hour rows
+  for (let hour = 0; hour < 24; hour++) {
+    const lbl = document.createElement('div')
+    lbl.className = 'cal-hour-label'
+    lbl.textContent = String(hour).padStart(2,'0')+':00'
+    grid.appendChild(lbl)
+
+    days.forEach((d,di) => {
+      const cellStart = new Date(d); cellStart.setHours(hour,0,0,0)
+      const cellEnd   = new Date(d); cellEnd.setHours(hour+1,0,0,0)
+      const isPast    = cellEnd <= now
+      const isToday   = d.toDateString() === now.toDateString()
+
+      // Find slot covering this cell
+      const slot = slots.find(s => {
+        const ss = new Date(s.startAt), se = new Date(s.endAt)
+        return s.section === section && ss <= cellStart && se > cellStart
+      })
+
+      const cell = document.createElement('div')
+      cell.className = 'cal-cell' + (isPast?' past':'') + (isToday?' today-col':'') + (slot?' has-slot':'')
+
+      if (slot) {
+        const isOwn = slot.nick === currentUser.nick
+        const canEdit = isOwn || currentUser.role === 'admin'
+        const slotDiv = document.createElement('div')
+        slotDiv.className = 'slot-block '+(section==='top'?'top-slot':'bot-slot')+(isOwn?' own-slot':'')
+        var delBtn2 = canEdit ? '<button class="slot-del-btn" onclick="event.stopPropagation();deleteSlot(\''+slot._id+'\')">✕</button>' : ''
+        var editBtn2 = canEdit ? '<button class="slot-edit-btn" onclick="event.stopPropagation();openEditModal(\''+slot._id+'\')">✎</button>' : ''
+        var ovrBtn2 = (!isOwn && !isPast && currentUser) ? '<span class="slot-ovr-btn" onclick="event.stopPropagation();openOverrideDialog(\'' + slot._id + '\',\'' + section + '\')" title="Prośba o ustąpienie"><svg viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"og\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#f0d080\"/><stop offset=\"100%\" stop-color=\"#c9a84c\"/></linearGradient></defs><line x1=\"3\" y1=\"13\" x2=\"11\" y2=\"3\" stroke=\"url(#og)\" stroke-width=\"1.8\" stroke-linecap=\"round\"/><polyline points=\"7,3 11,3 11,7\" stroke=\"url(#og)\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"4\" y1=\"10\" x2=\"6\" y2=\"12\" stroke=\"rgba(201,168,76,0.6)\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg></span>' : ''
+        var noteDiv = slot.note ? '<div class="slot-note">'+esc(slot.note)+'</div>' : ''
+        var pmBtn2 = (!isOwn && currentUser) ? '<span onclick="event.stopPropagation();openKalPM(\'' + esc(slot.nick) + '\',\'' + esc(slot.guild||'') + '\')" title="PM" style="cursor:pointer;font-size:10px;flex-shrink:0;color:rgba(201,168,76,0.5);margin-left:2px;user-select:none;">💬</span>' : ''
+        slotDiv.innerHTML = '<div class="slot-top-row"><span class="slot-nick">'+esc(slot.nick)+'</span>'+delBtn2+editBtn2+ovrBtn2+pmBtn2+'</div><div class="slot-guild">'+esc(slot.guild)+'</div>'+noteDiv
+        cell.appendChild(slotDiv)
+      } else if (!isPast) {
+        cell.addEventListener('click', () => openReserveModalAt(section, cellStart))
+      }
+      grid.appendChild(cell)
+    })
+  }
+}
+
+/* === RESERVE MODAL === */
+function openReserveModal() {
+  buildReserveStartOptions()
+  updateReservePreview()
+  // Pokaż pole "dla kogo" tylko adminowi
+  if(currentUser && currentUser.role==='admin') {
+    document.getElementById('forNickRow').style.display = 'flex'
+    document.getElementById('forNickInput').oninput = function(){ reserveForNick = this.value; }
+  } else {
+    document.getElementById('forNickRow').style.display = 'none'
+    reserveForNick = ''
+  }
+  document.getElementById('reserveModal').classList.remove('hidden')
+}
+
+function openReserveModalAt(section, startDate) {
+  setSection(section)
+  buildDaySelect('resDay', startDate)
+  buildHourSelect('resHour', startDate.getHours())
+  document.getElementById('resDay').onchange = updateReservePreview
+  document.getElementById('resHour').onchange = updateReservePreview
+  buildDurButtons('durButtons', reserveDuration, function(h){ reserveDuration=h; updateReservePreview(); buildDurButtons('durButtons',h,this); })
+  updateReservePreview()
+  document.getElementById('reserveModal').classList.remove('hidden')
+}
+
+function closeReserveModal() {
+  document.getElementById('reserveModal').classList.add('hidden')
+  document.getElementById('reserveError').textContent = ''
+}
+
+function setSection(s) {
+  reserveSection = s
+  document.getElementById('secTop').className = 'sec-btn' + (s==='top'?' active-top':'')
+  document.getElementById('secBot').className = 'sec-btn' + (s==='bottom'?' active-bot':'')
+}
+
+const DAY_PL = ['Nd','Pon','Wt','Śr','Czw','Pt','Sob']
+
+function toLocalDateStr(d) {
+  // YYYY-MM-DD w lokalnej strefie (nie UTC!)
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+}
+
+function buildDaySelect(selectId, preselectDate) {
+  const sel = document.getElementById(selectId)
+  if(!sel) return
+  const pl = new Date(); pl.setHours(0,0,0,0)
+  sel.innerHTML = ''
+  for(let d=0; d<14; d++){
+    const day = new Date(pl); day.setDate(day.getDate()+d)
+    const dow = DAY_PL[day.getDay()]
+    const label = dow+' '+String(day.getDate()).padStart(2,'0')+'.'+String(day.getMonth()+1).padStart(2,'0')
+    const opt = document.createElement('option')
+    opt.value = toLocalDateStr(day)   // YYYY-MM-DD lokalnie
+    opt.textContent = label
+    if(preselectDate && opt.value === toLocalDateStr(preselectDate)) opt.selected = true
+    sel.appendChild(opt)
+  }
+}
+
+function buildHourSelect(selectId, preselectHour) {
+  const sel = document.getElementById(selectId)
+  if(!sel) return
+  sel.innerHTML = ''
+  for(let h=0; h<24; h++){
+    const opt = document.createElement('option')
+    opt.value = h
+    opt.textContent = String(h).padStart(2,'0')+':00'
+    if(preselectHour !== undefined && h === preselectHour) opt.selected = true
+    sel.appendChild(opt)
+  }
+}
+
+function getDateFromDayHour(daySelectId, hourSelectId) {
+  const dayVal  = document.getElementById(daySelectId)?.value   // YYYY-MM-DD lokalne
+  const hourVal = document.getElementById(hourSelectId)?.value  // 0-23
+  if(!dayVal) return null
+  // Parsuj lokalnie (nie przez new Date(string) które traktuje YYYY-MM-DD jako UTC)
+  const [y,m,d] = dayVal.split('-').map(Number)
+  const dt = new Date(y, m-1, d, parseInt(hourVal)||0, 0, 0, 0)
+  return dt
+}
+
+function buildReserveStartOptions(preselect) {
+  const now = new Date()
+  const defaultHour = preselect ? preselect.getHours() : now.getHours()+1
+  buildDaySelect('resDay', preselect || now)
+  buildHourSelect('resHour', defaultHour >= 24 ? 0 : defaultHour)
+}
+
+// Keep for edit
+function buildStartOptions(daySelectId, hourSelectId, preselectDate, onChange) {
+  buildDaySelect(daySelectId, preselectDate)
+  buildHourSelect(hourSelectId, preselectDate ? preselectDate.getHours() : new Date().getHours())
+  if(onChange) {
+    document.getElementById(daySelectId).onchange = onChange
+    document.getElementById(hourSelectId).onchange = onChange
+  }
+}
+
+function buildDurButtons(containerId, active, onSelect) {
+  const wrap = document.getElementById(containerId)
+  wrap.innerHTML = ''
+  for (let h = 1; h <= 8; h++) {
+    const btn = document.createElement('button')
+    btn.className = 'dur-btn' + (h===active?' active':'')
+    btn.textContent = h+'h'
+    btn.onclick = () => onSelect(h)
+    wrap.appendChild(btn)
+  }
+}
+
+function updateReservePreview() {
+  const start = getDateFromDayHour('resDay','resHour')
+  if(!start) return
+  const end = new Date(start); end.setHours(end.getHours()+reserveDuration)
+  document.getElementById('resPreview').textContent = 'Rezerwacja: '+fmtDt(start)+' → '+fmtDt(end)
+  document.getElementById('reserveError').textContent = ''
+}
+
+async function submitReservation() {
+  const start = getDateFromDayHour('resDay','resHour')
+  if(!start){ document.getElementById('reserveError').textContent='Wybierz dzień i godzinę'; return }
+  const now = new Date()
+  if(start < now){ document.getElementById('reserveError').textContent='Nie można rezerwować w przeszłości'; return }
+  const end = new Date(start); end.setHours(end.getHours()+reserveDuration)
+
+  // Admin może rezerwować dla dowolnego nicka
+  const forNick = (currentUser.role==='admin' && reserveForNick && reserveForNick.trim())
+    ? reserveForNick.trim() : null
+
+  const resp = await fetch('/api/slots',{
+    method:'POST', headers:authHeader(),
+    body:JSON.stringify({section:reserveSection, startAt:start.toISOString(), endAt:end.toISOString(), forNick, note: document.getElementById("resNote")?.value||""})
+  })
+  const r = await resp.json()
+  if(resp.status===409 && r.error==='conflict'){
+    showConflictOptions(r.conflict, reserveSection, start.toISOString(), end.toISOString())
+    return
+  }
+  if(!resp.ok){ document.getElementById('reserveError').textContent=r.error||'Błąd'; return }
+  slots.push(r)
+  populateMySlots()
+  closeReserveModal()
+  renderCalendars()
+}
+
+// Otwórz dialog override bezpośrednio z kliknięcia na slot w kalendarzu
+var pendingOvrSlot = null
+
+async function submitOverrideDialog(){
+  if(!pendingOvrSlot){ document.getElementById('overrideError').textContent='Brak wybranego slotu'; return }
+  var slot = pendingOvrSlot
+  var slotDate = new Date(slot.startAt)
+  var startH = parseInt(document.getElementById('ovrStartHour').value)
+  var endH   = parseInt(document.getElementById('ovrEndHour').value)
+  if(isNaN(startH)||isNaN(endH)||endH<=startH){
+    document.getElementById('overrideError').textContent='Godzina końca musi być późniejsza niż start'
+    return
+  }
+  var y=slotDate.getFullYear(), mo=slotDate.getMonth(), d=slotDate.getDate()
+  var newStart = new Date(y,mo,d,startH,0,0)
+  var newEnd   = new Date(y,mo,d,endH,0,0)
+  document.getElementById('overrideError').textContent=''
+  document.getElementById('overrideSelectModal').classList.add('hidden')
+  var r = await apiPost('/api/slots/override-request',{
+    conflictSlotId:String(slot._id), section:slot.section,
+    startAt:newStart.toISOString(), endAt:newEnd.toISOString()
+  })
+  pendingOvrSlot = null
+  if(r&&r.error){ showToast('Błąd: '+r.error,'#e07070'); return }
+  showToast('Prośba wysłana do '+slot.nick,'#c9a84c')
+}
+
+function openOverrideDialog(slotId, section) {
+  const slot = slots.find(s => String(s._id) === String(slotId))
+  if (!slot) return
+  pendingOvrSlot = slot
+  const slotStart = new Date(slot.startAt)
+  const slotEnd   = new Date(slot.endAt)
+  // Info o slocie
+  var secLabel = section==='top' ? '🔥 Góra' : '🌊 Dół'
+  document.getElementById('ovrSlotInfo').innerHTML =
+    'Slot: <strong>'+esc(slot.nick)+'</strong>'+(slot.guild ? ' ('+esc(slot.guild)+')' : '')+'<br>'+
+    secLabel+': '+fmtDt(slotStart)+' → '+fmtTime(slotEnd)
+  // Wypełnij select startowy (od godziny startu slotu do godziny przed końcem)
+  var startSel = document.getElementById('ovrStartHour')
+  var endSel   = document.getElementById('ovrEndHour')
+  startSel.innerHTML = ''
+  endSel.innerHTML   = ''
+  // Start: od startu slotu do 1h przed końcem
+  for(var h = slotStart.getHours(); h < slotEnd.getHours(); h++){
+    var opt = document.createElement('option')
+    opt.value = h
+    opt.textContent = String(h).padStart(2,'0')+':00'
+    startSel.appendChild(opt)
+  }
+  // End: od startu+1h do końca slotu
+  for(var h2 = slotStart.getHours()+1; h2 <= slotEnd.getHours(); h2++){
+    var opt2 = document.createElement('option')
+    opt2.value = h2
+    opt2.textContent = String(h2).padStart(2,'0')+':00'
+    endSel.appendChild(opt2)
+  }
+  // Domyślnie: pełny slot
+  startSel.value = slotStart.getHours()
+  endSel.value   = slotEnd.getHours()
+  // Synchronizuj - end musi być > start
+  startSel.onchange = function(){
+    var sv = parseInt(startSel.value)
+    endSel.innerHTML = ''
+    for(var h3 = sv+1; h3 <= slotEnd.getHours(); h3++){
+      var o = document.createElement('option'); o.value=h3; o.textContent=String(h3).padStart(2,'0')+':00'; endSel.appendChild(o)
+    }
+    endSel.value = slotEnd.getHours()
+  }
+  document.getElementById('overrideSelectModal').classList.remove('hidden')
+}
+
+function showConflictOptions(conflict, section, startAt, endAt) {
+  const s = new Date(conflict.startAt), e = new Date(conflict.endAt)
+  var msg = 'Slot zajety przez '+conflict.nick+' ('+conflict.guild+'). Wyslac prosbe o ustapienie? Gracz musi potwierdzic (brak odpowiedzi = odmowa).'
+  if(!confirm(msg)) return
+  // Wyślij override request
+  apiPost('/api/slots/override-request', { conflictSlotId: conflict.slotId, section, startAt, endAt })
+    .then(r=>{
+      if(r?.error){ alert('Błąd: '+r.error); return }
+      alert('Prosba wyslana do '+conflict.nick+'. Dostaniesz powiadomienie gdy odpowie.')
+      closeReserveModal()
+    })
+}
+
+/* === EDIT MODAL === */
+function openEditModal(slotId) {
+  editingSlot = slots.find(s => String(s._id) === String(slotId))
+  if(!editingSlot) return
+  editDuration = Math.round((new Date(editingSlot.endAt) - new Date(editingSlot.startAt)) / 3600000)
+  const startDate = new Date(editingSlot.startAt)
+  buildDaySelect('editDay', startDate)
+  buildHourSelect('editHour', startDate.getHours())
+  document.getElementById('editDay').onchange = updateEditPreview
+  document.getElementById('editHour').onchange = updateEditPreview
+  buildDurButtons('editDurButtons', editDuration, function(h){ editDuration=h; updateEditPreview(); buildDurButtons('editDurButtons',h,this); })
+  updateEditPreview()
+  document.getElementById('editModal').classList.remove('hidden')
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.add('hidden')
+  document.getElementById('editError').textContent = ''
+  editingSlot = null
+}
+
+function updateEditPreview() {
+  const start = getDateFromDayHour('editDay','editHour')
+  if(!start) return
+  const end = new Date(start); end.setHours(end.getHours()+editDuration)
+  document.getElementById('editPreview').textContent = fmtDt(start)+' → '+fmtDt(end)
+}
+
+async function submitEdit() {
+  if(!editingSlot) return
+  const start = getDateFromDayHour('editDay','editHour')
+  if(!start){ document.getElementById('editError').textContent='Wybierz dzień i godzinę'; return }
+  const end = new Date(start); end.setHours(end.getHours()+editDuration)
+  const r = await apiPut('/api/slots/'+editingSlot._id, { startAt:start.toISOString(), endAt:end.toISOString() })
+  if(r?.error){ document.getElementById('editError').textContent=r.error; return }
+  const i = slots.findIndex(s=>String(s._id)===String(editingSlot._id))
+  if(i>=0) slots[i]=r
+  populateMySlots()
+  closeEditModal()
+  renderCalendars()
+}
+
+async function deleteSlot(id) {
+  if (!confirm('Usuń rezerwację?')) return
+  await apiDelete(`/api/slots/${id}`)
+  slots = slots.filter(s => String(s._id) !== String(id))
+  renderCalendars()
+}
+
+/* === STATUS BAR === */
+function renderStatusBar() {
+  const now = new Date()
+  const bar = document.getElementById('statusBar')
+  const activeTop = slots.find(s => s.section==='top'    && new Date(s.startAt)<=now && new Date(s.endAt)>now)
+  const activeBot = slots.find(s => s.section==='bottom' && new Date(s.startAt)<=now && new Date(s.endAt)>now)
+  bar.innerHTML = [
+    activeTop ? `<span class="status-item active-top">🔥 Góra: <strong>${esc(activeTop.nick)}</strong> (${esc(activeTop.guild)}) do ${fmtTime(new Date(activeTop.endAt))}</span>` : '<span class="status-item" style="color:var(--text-dim)">🔥 Góra: wolne</span>',
+    activeBot ? `<span class="status-item active-bot">🌊 Dół: <strong>${esc(activeBot.nick)}</strong> (${esc(activeBot.guild)}) do ${fmtTime(new Date(activeBot.endAt))}</span>` : '<span class="status-item" style="color:var(--text-dim)">🌊 Dół: wolne</span>',
+  ].join('')
+  // Refresh every minute
+}
+setInterval(() => { if (currentUser) renderStatusBar() }, 60000)
+
+/* === DELEGATIONS === */
+async function loadDelegations() {
+  const r = await apiGet('/api/delegations')
+  if (r) delegations = r
+  renderDelegations()
+}
+
+function renderDelegations() {
+  const el = document.getElementById('activeDelegations')
+  const items = Object.entries(delegations).filter(([,d]) => d && d.expiresAt > Date.now())
+  if (!items.length) { el.innerHTML = '<div class="active-delegation" style="color:var(--text-dim)">Brak aktywnych delegacji</div>'; return }
+  el.innerHTML = items.map(([sec, d]) =>
+    `<div class="active-delegation">
+      ${sec==='top'?'🔥 Góra':'🌊 Dół'}: <strong>${esc(d.fromNick)}</strong> → <strong>${esc(d.toNick)}</strong>
+      (do ${fmtTime(new Date(d.expiresAt))})
+      ${(d.fromNick===currentUser.nick||currentUser.role==='admin') ? `<button onclick="removeDelegate('${sec}')" style="font-family:'Cinzel',serif;font-size:9px;color:#c07070;background:none;border:none;cursor:pointer;margin-left:8px;">✕ Cofnij</button>` : ''}
+    </div>`).join('')
+}
+
+function toggleDelegatePanel() {
+  const p = document.getElementById('delegatePanel')
+  p.style.display = p.style.display==='none' ? '' : 'none'
+}
+
+function toggleAdminPanel() {
+  const p = document.getElementById('adminPanel')
+  p.style.display = p.style.display==='none' ? '' : 'none'
+}
+
+// Populate "my slots" dropdown in delegate panel
+function populateMySlots() {
+  const sel = document.getElementById('delSlot')
+  if(!sel || !currentUser) return
+  const now = new Date()
+  const mySlots = slots
+    .filter(s => s.nick===currentUser.nick && new Date(s.endAt)>now)
+    .sort((a,b)=>new Date(a.startAt)-new Date(b.startAt))
+  sel.innerHTML = '<option value="">— wybierz swoją rezerwację —</option>'
+  mySlots.forEach(s => {
+    const start = new Date(s.startAt), end = new Date(s.endAt)
+    const opt = document.createElement('option')
+    opt.value = s._id
+    opt.dataset.section = s.section
+    opt.dataset.startAt = s.startAt
+    opt.dataset.endAt   = s.endAt
+    const secLabel = s.section==='top'?'🔥 Góra':'🌊 Dół'
+    opt.textContent = secLabel+': '+fmtDt(start)+' → '+fmtTime(end)
+    sel.appendChild(opt)
+  })
+}
+
+function updateDelSection() {
+  // sekcja wynika ze slotu — podpowiedź dla użytkownika
+  const sel = document.getElementById('delSlot')
+  const opt = sel?.options[sel.selectedIndex]
+  const errEl = document.getElementById('delegateError')
+  if(errEl) errEl.textContent = ''
+}
+
+async function submitDelegate() {
+  const slotSel = document.getElementById('delSlot')
+  const toNick  = document.getElementById('delTarget').value
+  const selOpt  = slotSel?.options[slotSel?.selectedIndex]
+
+  if(!selOpt || !selOpt.value) {
+    document.getElementById('delegateError').textContent = 'Wybierz swoją rezerwację'
+    return
+  }
+  if(!toNick) {
+    document.getElementById('delegateError').textContent = 'Wybierz gracza'
+    return
+  }
+
+  const section = selOpt.dataset.section
+  const endAt   = selOpt.dataset.endAt
+  // Minuty = ile zostało do końca slotu
+  const minutesLeft = Math.max(1, Math.floor((new Date(endAt) - Date.now()) / 60000))
+
+  const r = await apiPost('/api/delegate', { section, toNick, minutes: minutesLeft })
+  if(r?.error){ document.getElementById('delegateError').textContent=r.error; return }
+  document.getElementById('delegateError').textContent=''
+  renderDelegations()
+}
+
+async function removeDelegate(section) {
+  await apiDelete(`/api/delegate/${section}`)
+}
+
+/* === API HELPERS === */
+function getToken() { return localStorage.getItem('sojusz_token') }
+function authHeader() { return { 'Authorization': 'Bearer '+getToken(), 'Content-Type':'application/json' } }
+
+async function apiGet(url) {
+  try { const r=await fetch(url,{headers:authHeader()}); return r.json() } catch { return null }
+}
+async function apiPost(url, body) {
+  try { const r=await fetch(url,{method:'POST',headers:authHeader(),body:JSON.stringify(body)}); return r.json() } catch { return null }
+}
+async function apiPut(url, body) {
+  try { const r=await fetch(url,{method:'PUT',headers:authHeader(),body:JSON.stringify(body)}); return r.json() } catch { return null }
+}
+async function apiDelete(url) {
+  try { const r=await fetch(url,{method:'DELETE',headers:authHeader()}); return r.json() } catch { return null }
+}
+
+/* === HELPERS === */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function fmtDt(d){ return d.toLocaleDateString('pl-PL',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+String(d.getHours()).padStart(2,'0')+':00' }
+function fmtTime(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') }
+
+/* === INIT === */
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin() })
+document.getElementById('loginNick').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin() })
+document.getElementById('authOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('authOverlay')) {} })
+
+/* === PM (kalendarz) === */
+function saveKalPMHistory(){
+  try{
+    var toSave={};
+    Object.keys(kalPmHistory).forEach(function(nick){ toSave[nick]=kalPmHistory[nick].slice(-50); });
+    localStorage.setItem('sojusz_pm_history',JSON.stringify(toSave));
+  }catch(e){}
+}
+function loadKalPMHistory(){
+  try{
+    var saved=localStorage.getItem('sojusz_pm_history');
+    if(saved){ kalPmHistory=JSON.parse(saved); updateKalPMList(); }
+  }catch(e){}
+}
+/* === PM (kalendarz) === */
+var kalPmTarget=null, kalPmUnread={}, kalPmListOpen=false;
+var kalPmHistory=(function(){ try{ var s=localStorage.getItem('sojusz_pm_history'); return s?JSON.parse(s):{} }catch(e){return{}} })();
+
+function toggleKalPMList(){
+  kalPmListOpen=!kalPmListOpen;
+  document.getElementById('kalPmListPanel').style.display=kalPmListOpen?'block':'none';
+  if(kalPmListOpen) updateKalPMList();
+}
+
+function updateKalPMBadge(){
+  var total=Object.values(kalPmUnread).reduce(function(s,v){return s+v;},0);
+  var b=document.getElementById('kalPmBadge'); if(!b) return;
+  if(total>0){b.style.display='flex';b.textContent=total>9?'9+':total;}else{b.style.display='none';}
+}
+
+function updateKalPMList(){
+  var el=document.getElementById('kalPmListItems'); if(!el) return;
+  var convs=Object.keys(kalPmHistory).filter(function(n){ return kalPmHistory[n]&&kalPmHistory[n].length>0; });
+  if(!convs.length){
+    el.innerHTML='<div style="padding:10px;text-align:center;font-size:11px;color:var(--text-dim);font-style:italic;">Kliknij 💬 przy slocie aby napisać</div>';
+    return;
+  }
+  el.innerHTML='';
+  convs.forEach(function(nick){
+    var msgs=kalPmHistory[nick]||[];
+    var last=msgs[msgs.length-1];
+    var unread=kalPmUnread[nick]||0;
+    var div=document.createElement('div');
+    div.style.cssText='padding:8px 10px;border-bottom:1px solid rgba(58,46,26,0.3);display:flex;align-items:center;gap:6px;';
+    var info=document.createElement('div');
+    info.style.cssText='flex:1;cursor:pointer;min-width:0;';
+    info.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;">'+
+      '<span style="font-family:Cinzel,serif;font-size:10px;color:var(--gold-light);">'+esc(nick)+'</span>'+
+      (unread?'<span style="background:#e07070;border-radius:8px;font-size:9px;color:#fff;padding:1px 5px;">'+unread+'</span>':'')+'</div>'+
+      (last?'<div style="font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(last.text.slice(0,30))+'</div>':'');
+    info.onclick=function(){openKalPM(nick,'');};
+    info.onmouseover=function(){div.style.background='rgba(201,168,76,0.06)';}
+    info.onmouseout=function(){div.style.background='';}
+    var del=document.createElement('button');
+    del.textContent='✕'; del.title='Usuń czat';
+    del.style.cssText='background:none;border:none;color:rgba(200,80,80,0.5);cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0;line-height:1;';
+    del.onmouseover=function(){this.style.color='#e07070';}
+    del.onmouseout=function(){this.style.color='rgba(200,80,80,0.5)';}
+    del.onclick=function(e){ e.stopPropagation(); deleteKalPMConversation(nick); };
+    div.appendChild(info); div.appendChild(del);
+    el.appendChild(div);
+  });
+}
+
+function deleteKalPMConversation(nick){
+  delete kalPmHistory[nick];
+  delete kalPmUnread[nick];
+  if(kalPmTarget===nick) closeKalPM();
+  saveKalPMHistory();
+  updateKalPMList();
+  updateKalPMBadge();
+}
+
+/* === PM (kalendarz) === */
+function saveKalPMHistory(){
+  try{
+    var toSave={};
+    Object.keys(kalPmHistory).forEach(function(nick){ toSave[nick]=kalPmHistory[nick].slice(-50); });
+    localStorage.setItem('sojusz_pm_history',JSON.stringify(toSave));
+  }catch(e){}
+}
+
+/* === PM (kalendarz) === */
+
+function openKalPM(nick,guild){
+  if(!currentUser){ return; }
+  if(nick===currentUser.nick) return;
+  kalPmTarget=nick;
+  document.getElementById('kalPmTargetName').textContent=nick+(guild?' ['+guild+']':'');
+  var cont=document.getElementById('kalPmMessages'); cont.innerHTML='';
+  (kalPmHistory[nick]||[]).forEach(function(m){ renderKalPmMsg(m); });
+  document.getElementById('kalPmPanel').style.display='flex';
+  cont.scrollTop=cont.scrollHeight;
+  kalPmUnread[nick]=0; updateKalPMBadge(); updateKalPMList();
+  document.getElementById('kalPmInput')?.focus();
+  document.getElementById('kalPmListPanel').style.display='none';
+  kalPmListOpen=false;
+  saveKalPMHistory();
+}
+function closeKalPM(){ document.getElementById('kalPmPanel').style.display='none'; kalPmTarget=null; }
+function sendKalPM(){
+  if(!currentUser||!kalPmTarget) return;
+  var inp=document.getElementById('kalPmInput'); var t=inp?inp.value.trim():'';
+  if(!t) return; socket.emit('chatSend',{text:t,toNick:kalPmTarget,token:localStorage.getItem('sojusz_token')}); inp.value=''; inp.focus();
+}
+function renderKalPmMsg(msg){
+  var cont=document.getElementById('kalPmMessages'); if(!cont) return;
+  var isOwn=currentUser&&msg.nick===currentUser.nick;
+  var d=new Date(msg.ts);
+  var time=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var div=document.createElement('div');
+  div.style.cssText='font-size:12px;line-height:1.5;margin-bottom:2px;'+(isOwn?'text-align:right;':'');
+  div.innerHTML=(isOwn?'':'<span style="font-family:Cinzel,serif;font-size:10px;color:var(--gold-light);margin-right:4px;">'+esc(msg.nick)+'</span>')+
+    '<span style="font-size:10px;color:var(--text-dim);float:'+(isOwn?'left':'right')+';">'+time+'</span><div style="color:var(--text);clear:both;">'+esc(msg.text)+'</div>';
+  cont.appendChild(div);
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='kalPmInput') sendKalPM();
+});
+socket.on('privateMessageBroadcast',function(msg){
+  if(!currentUser) return;
+  if(msg.toNick!==currentUser.nick && msg.nick!==currentUser.nick) return;
+  var other=(msg.nick===currentUser.nick)?msg.toNick:msg.nick;
+  if(!kalPmHistory[other]) kalPmHistory[other]=[];
+  if(kalPmHistory[other].find(function(m){return m.id===msg.id;})) return;
+  kalPmHistory[other].push(msg);
+  if(kalPmTarget===other){
+    renderKalPmMsg(msg);
+    var cont=document.getElementById('kalPmMessages'); if(cont) cont.scrollTop=cont.scrollHeight;
+  } else {
+    kalPmUnread[other]=(kalPmUnread[other]||0)+1;
+    updateKalPMBadge(); updateKalPMList();
+    if(typeof showToast==='function') showToast('💬 PM od '+msg.nick+': '+msg.text.slice(0,40),'#c9a84c');
+  }
+  saveKalPMHistory();
+});
+socket.on('privateMessage',function(msg){
+  var other=(msg.nick===(currentUser&&currentUser.nick))?msg.toNick:msg.nick;
+  if(!kalPmHistory[other]) kalPmHistory[other]=[];
+  kalPmHistory[other].push(msg);
+  if(kalPmTarget===other){
+    renderKalPmMsg(msg);
+    var cont=document.getElementById('kalPmMessages'); if(cont) cont.scrollTop=cont.scrollHeight;
+  } else {
+    kalPmUnread[other]=(kalPmUnread[other]||0)+1;
+    updateKalPMBadge(); updateKalPMList();
+    if(typeof showToast==='function') showToast('💬 PM od '+msg.nick+': '+msg.text.slice(0,40),'#c9a84c');
+  }
+  saveKalPMHistory();
+});
+
+document.addEventListener('DOMContentLoaded',function(){ updateKalPMList(); });
+checkSession()
+
+/* === PARTICLES === */
+const _pc=document.getElementById('particleCanvas'),_px=_pc.getContext('2d');
+function _pr(){_pc.width=window.innerWidth;_pc.height=window.innerHeight;} _pr(); window.addEventListener('resize',_pr);
+const _ps=[];for(let i=0;i<60;i++)_ps.push(_pnew());
+function _pnew(){const t=Math.random()<0.7?'a':'e';return{t,x:Math.random()*_pc.width,y:Math.random()*_pc.height,s:t==='a'?1.5+Math.random()*3:1+Math.random()*2,vy:0.22+Math.random()*0.7,vx:Math.random()*0.35-0.175,w:Math.random()*Math.PI*2,ws:0.005+Math.random()*0.015,o:0.08+Math.random()*0.35,od:1,gs:3+Math.random()*8};}
+function _pu(p){p.w+=p.ws;p.vx+=(Math.random()-0.5)*0.015;p.vx=Math.max(-0.5,Math.min(0.5,p.vx));p.x+=p.vx+Math.sin(p.w)*0.25;p.y+=p.vy;if(p.t==='e'){p.o+=p.od*0.007;if(p.o>0.5||p.o<0.06)p.od*=-1;}if(p.y>_pc.height+20||p.x<-20||p.x>_pc.width+20){p.x=Math.random()*_pc.width;p.y=-10;p.o=0.08+Math.random()*0.3;}}
+function _pd(p){_px.save();if(p.t==='a'){_px.globalAlpha=p.o;_px.fillStyle=`rgba(185,175,165,${p.o})`;_px.beginPath();_px.ellipse(p.x,p.y,p.s,p.s*0.55,p.w,0,Math.PI*2);_px.fill();}else{const g=_px.createRadialGradient(p.x,p.y,0,p.x,p.y,p.gs);g.addColorStop(0,`rgba(255,145,45,${p.o*0.9})`);g.addColorStop(1,'rgba(180,40,10,0)');_px.fillStyle=g;_px.beginPath();_px.arc(p.x,p.y,p.gs,0,Math.PI*2);_px.fill();_px.globalAlpha=p.o;_px.fillStyle='rgba(255,205,110,0.9)';_px.beginPath();_px.arc(p.x,p.y,p.s*0.4,0,Math.PI*2);_px.fill();}_px.restore();}
+(function _loop(){_px.clearRect(0,0,_pc.width,_pc.height);_ps.forEach(p=>{_pu(p);_pd(p);});requestAnimationFrame(_loop);})();
+</script>
+
+<!-- PM FAB (kalendarz) -->
+<div id="kalPmFab" onclick="toggleKalPMList()" style="position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#2a1e0e,#1a1208);border:2px solid rgba(201,168,76,0.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;box-shadow:0 4px 20px rgba(0,0,0,0.6);">
+  💬<span id="kalPmBadge" style="display:none;position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;background:#e07070;border-radius:9px;font-size:9px;color:#fff;align-items:center;justify-content:center;padding:0 3px;">0</span>
+</div>
+<div id="kalPmListPanel" style="position:fixed;bottom:86px;right:24px;z-index:601;width:240px;background:linear-gradient(160deg,#1a1208,#0e0b06);border:1px solid rgba(201,168,76,0.35);border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,0.8);display:none;">
+  <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:9px 12px;border-bottom:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:space-between;">
+    <span>💬 Wiadomości</span>
+    <button onclick="document.getElementById('kalPmListPanel').style.display='none'" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0;">✕</button>
+  </div>
+  <div id="kalPmListItems" style="padding:6px;">
+    <div style="padding:10px;text-align:center;font-size:11px;color:var(--text-dim);font-style:italic;">Kliknij 💬 przy slocie aby napisać</div>
+  </div>
+</div>
+
+
+<!-- PM PANEL (kalendarz) -->
+<div id="kalPmPanel" style="position:fixed;bottom:86px;right:24px;z-index:601;width:300px;height:360px;background:linear-gradient(160deg,#1a1208,#0e0b06);border:1px solid rgba(201,168,76,0.35);border-radius:4px;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.8);display:none;">
+  <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <span>🔒 PM: <span id="kalPmTargetName">—</span></span>
+    <button onclick="closeKalPM()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0;">✕</button>
+  </div>
+  <div id="kalPmMessages" style="flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:4px;"></div>
+  <div style="display:flex;gap:6px;padding:8px 10px;border-top:1px solid rgba(201,168,76,0.12);flex-shrink:0;">
+    <input id="kalPmInput" placeholder="Wiadomość prywatna..." maxlength="300" style="flex:1;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:5px 8px;border-radius:2px;outline:none;">
+    <button onclick="sendKalPM()" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:5px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);cursor:pointer;border-radius:2px;white-space:nowrap;">Wyślij</button>
+  </div>
+</div>
+
+</body>
+</html>

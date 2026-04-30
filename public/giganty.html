@@ -327,6 +327,205 @@
   }
   .queue-join-btn:hover{color:var(--gold);border-color:var(--gold);}
   .queue-empty{font-size:11px;color:var(--text-dim);font-style:italic;}
+
+  /* AUTH PANEL */
+  .auth-mini{position:relative;z-index:30;display:flex;align-items:center;gap:10px;padding:8px 20px;background:rgba(10,8,5,0.85);border-bottom:1px solid rgba(201,168,76,0.12);}
+  .auth-mini.hidden{display:none;}
+  .auth-mini-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;}
+  .auth-mini-input{background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:14px;padding:4px 8px;border-radius:2px;outline:none;width:150px;}
+  .auth-mini-input:focus{border-color:rgba(201,168,76,0.5);}
+  .auth-mini-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);transition:all 0.2s;}
+  .auth-mini-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .auth-mini-btn.red{border-color:rgba(180,60,60,0.3);color:#c07070;}
+  .auth-mini-btn.red:hover{color:#e08080;border-color:rgba(200,60,60,0.6);}
+  .auth-mini-sep{color:rgba(201,168,76,0.2);font-size:12px;}
+  .auth-mini-user{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-light);letter-spacing:1px;}
+  .auth-mini-tab{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:4px 10px;border-radius:2px;cursor:pointer;border:1px solid transparent;color:var(--text-dim);background:none;transition:all 0.2s;}
+  .auth-mini-tab.active{color:var(--gold);border-color:rgba(201,168,76,0.4);background:rgba(201,168,76,0.08);}
+  .auth-mini-error{font-size:11px;color:#e07070;min-width:80px;}
+
+  /* ACTIVE PLAYER BAR */
+  .active-bar{
+    display:flex;align-items:center;gap:0;
+    margin:0;border-bottom:1px solid rgba(201,168,76,0.1);
+  }
+  .active-section{
+    flex:1;display:flex;align-items:center;gap:12px;
+    padding:9px 18px;
+  }
+  .active-section.top-active{background:rgba(40,20,8,0.6);border-right:1px solid rgba(201,168,76,0.1);}
+  .active-section.bot-active{background:rgba(8,16,35,0.6);}
+  .active-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .active-dot.top{background:#e09040;box-shadow:0 0 8px #e09040;}
+  .active-dot.bot{background:#4080e0;box-shadow:0 0 8px #4080e0;}
+  .active-zone{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;}
+  .active-zone.top{color:#e09040;}
+  .active-zone.bot{color:#4080e0;}
+  .active-name{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--text);}
+  .active-guild{font-size:12px;color:var(--text-dim);}
+  .active-until{font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-left:auto;}
+  .active-empty{font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;font-style:italic;}
+  .my-slot-info{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
+    padding:3px 10px;border-radius:2px;
+    background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);
+    color:var(--gold-dark);white-space:nowrap;
+  }
+  .my-slot-info.active-now{color:var(--gold);border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.15);}
+  .cal-link-btn{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;
+    padding:4px 10px;border-radius:2px;cursor:pointer;border:1px solid rgba(60,120,200,0.3);
+    color:#7090d0;background:rgba(60,120,200,0.06);text-decoration:none;display:inline-block;transition:all 0.2s;
+    margin-left:auto;
+  }
+  .cal-link-btn:hover{color:#90b0ff;border-color:rgba(60,120,200,0.6);}
+  .timer-locked-notice{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
+    padding:3px 8px;border-radius:2px;
+    background:rgba(180,60,60,0.1);border:1px solid rgba(180,60,60,0.2);
+    color:#c07070;white-space:nowrap;
+  }
+
+  /* CALENDAR NAV BUTTON in map legend */
+  .cal-nav-btn{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 14px;
+    background:linear-gradient(135deg,rgba(30,20,8,0.9),rgba(15,10,4,0.95));
+    border:1px solid rgba(201,168,76,0.3);
+    border-radius:3px;
+    text-decoration:none;
+    transition:all 0.25s;
+    margin-top:4px;
+    position:relative;
+    overflow:hidden;
+  }
+  .cal-nav-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,0.06) 0%,transparent 60%);opacity:0;transition:opacity 0.25s;}
+  .cal-nav-btn:hover{border-color:rgba(201,168,76,0.6);box-shadow:0 4px 16px rgba(0,0,0,0.4),0 0 12px rgba(201,168,76,0.1);}
+  .cal-nav-btn:hover::before{opacity:1;}
+  .cal-nav-icon{font-size:1.5rem;line-height:1;filter:drop-shadow(0 0 6px rgba(201,168,76,0.4));}
+  .cal-nav-text{font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:var(--gold-light);letter-spacing:1px;line-height:1.4;}
+  .cal-nav-sub{font-family:'Cinzel',serif;font-size:8px;color:var(--text-dim);letter-spacing:1px;font-weight:400;display:block;}
+
+  /* OVERRIDE POPUP na giganty */
+  .override-popup-overlay{
+    position:fixed;inset:0;z-index:2000;
+    background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .override-popup-overlay.hidden{display:none;}
+  .override-popup-box{
+    background:linear-gradient(160deg,#1e1810,#100d08);
+    border:1px solid rgba(201,168,76,0.5);border-radius:4px;
+    padding:30px 36px;min-width:340px;max-width:480px;
+    text-align:center;position:relative;
+    box-shadow:0 0 60px rgba(0,0,0,0.9),0 0 30px rgba(201,168,76,0.08);
+    animation:popIn 0.3s cubic-bezier(0.23,1,0.32,1);
+  }
+  @keyframes popIn{from{transform:scale(0.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .override-popup-box::before,.override-popup-box::after{content:'';position:absolute;width:16px;height:16px;border-color:rgba(201,168,76,0.5);border-style:solid;}
+  .override-popup-box::before{top:7px;left:7px;border-width:2px 0 0 2px;}
+  .override-popup-box::after{bottom:7px;right:7px;border-width:0 2px 2px 0;}
+  .override-popup-icon{font-size:2.5rem;margin-bottom:10px;}
+  .override-popup-title{font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+  .override-popup-info{font-size:14px;color:var(--text);line-height:1.7;margin-bottom:8px;}
+  .override-popup-info strong{color:var(--gold-light);}
+  .override-popup-hours{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);margin-bottom:18px;}
+  .override-popup-btns{display:flex;gap:10px;}
+  .override-popup-accept{
+    flex:1;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    padding:11px;border:1px solid rgba(60,160,60,0.6);color:#60d060;
+    background:rgba(30,100,30,0.15);cursor:pointer;border-radius:2px;transition:all 0.2s;
+  }
+  .override-popup-accept:hover{background:rgba(30,100,30,0.3);}
+  .override-popup-reject{
+    flex:1;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    padding:11px;border:1px solid rgba(180,60,60,0.5);color:#d06060;
+    background:rgba(100,30,30,0.12);cursor:pointer;border-radius:2px;transition:all 0.2s;
+  }
+  .override-popup-reject:hover{background:rgba(100,30,30,0.25);}
+
+  /* TIMER LOCK TOAST */
+  .timer-toast{
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    z-index:5000;
+    background:linear-gradient(160deg,#1e1810,#100d08);
+    border:1px solid rgba(201,168,76,0.4);border-radius:3px;
+    padding:20px 32px;text-align:center;
+    box-shadow:0 0 60px rgba(0,0,0,0.9),0 0 20px rgba(201,168,76,0.08);
+    animation:toastIn 0.25s cubic-bezier(0.23,1,0.32,1);
+    min-width:260px;
+  }
+  @keyframes toastIn{from{transform:translate(-50%,-50%) scale(0.85);opacity:0;}to{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+  .timer-toast::before,.timer-toast::after{content:'';position:absolute;width:12px;height:12px;border-color:rgba(201,168,76,0.4);border-style:solid;}
+  .timer-toast::before{top:5px;left:5px;border-width:1px 0 0 1px;}
+  .timer-toast::after{bottom:5px;right:5px;border-width:0 1px 1px 0;}
+  .timer-toast-icon{font-size:1.8rem;margin-bottom:6px;}
+  .timer-toast-msg{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--gold-dark);}
+  .timer-toast-sub{font-size:12px;color:var(--text-dim);margin-top:4px;font-style:italic;}
+
+  /* DZWONECZEK na giganty */
+  .gig-bell-wrap{position:relative;display:inline-flex;align-items:center;}
+  .gig-bell-btn{
+    background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);
+    color:var(--gold-dark);cursor:pointer;font-size:15px;
+    padding:5px 10px;border-radius:2px;transition:all 0.2s;position:relative;
+    line-height:1;
+  }
+  .gig-bell-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.15);}
+  .gig-bell-badge{
+    position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;
+    background:#e07070;border-radius:9px;font-family:'Cinzel',serif;
+    font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;
+    padding:0 3px;pointer-events:none;border:1px solid rgba(9,8,6,0.8);
+  }
+  .gig-bell-badge.hidden{display:none;}
+  .gig-bell-panel{
+    position:absolute;right:0;top:calc(100% + 8px);
+    width:320px;max-height:380px;overflow-y:auto;
+    background:linear-gradient(160deg,#1e1810,#100d08);
+    border:1px solid rgba(201,168,76,0.35);border-radius:3px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.85);z-index:500;
+  }
+  .gig-bell-panel.hidden{display:none;}
+  .gig-bell-panel::-webkit-scrollbar{width:3px;}
+  .gig-bell-panel::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.2);}
+  .gig-bell-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgba(201,168,76,0.15);}
+  .gig-bell-item{padding:12px 14px;border-bottom:1px solid rgba(58,46,26,0.3);}
+  .gig-bell-item-title{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-light);margin-bottom:4px;}
+  .gig-bell-item-info{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:6px;}
+  .gig-bell-item-btns{display:flex;gap:6px;}
+  .gig-bell-accept{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:5px 10px;border:1px solid rgba(60,160,60,0.5);color:#60d060;background:rgba(30,100,30,0.15);cursor:pointer;border-radius:2px;flex:1;transition:all 0.2s;}
+  .gig-bell-accept:hover{background:rgba(30,100,30,0.3);}
+  .gig-bell-reject{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:5px 10px;border:1px solid rgba(180,60,60,0.4);color:#d06060;background:rgba(100,30,30,0.12);cursor:pointer;border-radius:2px;flex:1;transition:all 0.2s;}
+  .gig-bell-reject:hover{background:rgba(100,30,30,0.25);}
+  .gig-bell-empty{padding:14px;text-align:center;font-size:12px;color:var(--text-dim);font-style:italic;}
+
+  /* ═══ CZAT FAB ═══ */
+  .chat-fab{position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#2a1e0e,#1a1208);border:2px solid rgba(201,168,76,0.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;box-shadow:0 4px 20px rgba(0,0,0,0.6),0 0 12px rgba(201,168,76,0.15);transition:all 0.2s;position:fixed;}
+  .chat-fab:hover{border-color:var(--gold);box-shadow:0 4px 24px rgba(0,0,0,0.7),0 0 20px rgba(201,168,76,0.3);}
+  .chat-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;background:#e07070;border-radius:9px;font-family:'Cinzel',serif;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid rgba(9,8,6,0.9);}
+  .chat-badge.hidden{display:none;}
+  .chat-panel{position:fixed;bottom:86px;right:24px;z-index:500;width:320px;height:420px;background:linear-gradient(160deg,#1a1208,#0e0b06);border:1px solid rgba(201,168,76,0.35);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.8);}
+  .chat-panel.hidden{display:none;}
+  .chat-panel::before,.chat-panel::after{content:'';position:absolute;width:12px;height:12px;border-color:rgba(201,168,76,0.4);border-style:solid;pointer-events:none;}
+  .chat-panel::before{top:5px;left:5px;border-width:1px 0 0 1px;}
+  .chat-panel::after{bottom:5px;right:5px;border-width:0 1px 1px 0;}
+  .chat-header{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .chat-close-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0;}
+  .chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+  .chat-messages::-webkit-scrollbar{width:3px;}
+  .chat-messages::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.2);}
+  .chat-msg{font-size:12px;color:var(--text);line-height:1.5;}
+  .chat-msg-nick{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-light);letter-spacing:0.5px;margin-right:4px;}
+  .chat-msg-guild{font-size:10px;color:var(--text-dim);margin-right:6px;}
+  .chat-msg-time{font-size:10px;color:var(--text-dim);float:right;opacity:0.6;}
+  .chat-msg.own .chat-msg-nick{color:#80d0ff;}
+  .chat-input-row{display:flex;gap:6px;padding:8px 10px;border-top:1px solid rgba(201,168,76,0.12);flex-shrink:0;}
+  .chat-input{flex:1;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:5px 8px;border-radius:2px;outline:none;}
+  .chat-input:focus{border-color:rgba(201,168,76,0.5);}
+  .chat-send-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:5px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);cursor:pointer;border-radius:2px;transition:all 0.2s;white-space:nowrap;}
+  .chat-send-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .chat-login-note{padding:12px;text-align:center;font-size:11px;color:var(--text-dim);font-style:italic;}
 </style>
 </head>
 <body>
@@ -418,14 +617,90 @@
           <div class="legend-who" id="legendWhoBot">— nikt nie bije —</div>
         </div>
       </div>
+
+      <!-- Przycisk kalendarza pod legendą -->
+      <a href="/kalendarz.html" class="cal-nav-btn">
+        <span class="cal-nav-icon">📅</span>
+        <div class="cal-nav-text">Kalendarz<br><span class="cal-nav-sub">Rezerwacje slotów</span></div>
+      </a>
     </div>
   </div>
 
+<!-- OVERRIDE POPUP (wyskakuje gdy ktoś prosi o Twój slot) -->
+<div class="override-popup-overlay hidden" id="overridePopupOverlay">
+  <div class="override-popup-box">
+    <div class="override-popup-icon">⚔</div>
+    <div class="override-popup-title">Prośba o Twój slot</div>
+    <div class="override-popup-info" id="overridePopupInfo"></div>
+    <div class="override-popup-hours" id="overridePopupHours"></div>
+    <div class="override-popup-btns">
+      <button class="override-popup-accept" id="overridePopupAccept">✓ Tak, ustępuję</button>
+      <button class="override-popup-reject" id="overridePopupReject">✕ Odmawiam</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- AUTH MINI BAR -->
+<div class="auth-mini" id="authMiniLogin">
+  <span class="auth-mini-title">Konto:</span>
+  <button class="auth-mini-tab active" id="authTabLogin" onclick="switchMiniTab('login')">Zaloguj</button>
+  <button class="auth-mini-tab" id="authTabReg" onclick="switchMiniTab('register')">Rejestracja</button>
+  <span class="auth-mini-sep">|</span>
+  <!-- Login fields -->
+  <div id="miniLoginFields" style="display:flex;align-items:center;gap:6px;">
+    <input class="auth-mini-input" id="miniLoginNick" placeholder="Nick..." style="width:120px;" autocomplete="username">
+    <input class="auth-mini-input" type="password" id="miniLoginPass" placeholder="Hasło..." style="width:110px;" autocomplete="current-password">
+    <button class="auth-mini-btn" onclick="doMiniLogin()">→ Zaloguj</button>
+  </div>
+  <!-- Register fields -->
+  <div id="miniRegFields" style="display:none;align-items:center;gap:6px;">
+    <input class="auth-mini-input" id="miniRegNick" placeholder="Nick w grze..." style="width:130px;">
+    <input class="auth-mini-input" id="miniRegGuild" placeholder="Gildia..." style="width:110px;">
+    <input class="auth-mini-input" type="password" id="miniRegPass" placeholder="Hasło (min.4)..." style="width:130px;">
+    <button class="auth-mini-btn" onclick="doMiniRegister()">→ Zarejestruj</button>
+  </div>
+  <span class="auth-mini-error" id="authMiniError"></span>
+</div>
+
+<!-- LOGGED IN BAR -->
+<div class="auth-mini hidden" id="authMiniLogged">
+  <span class="auth-mini-user" id="authMiniUserInfo"></span>
+  <span class="auth-mini-sep">|</span>
+  <span id="mySlotTopInfo" class="my-slot-info" style="display:none;"></span>
+  <span id="mySlotBotInfo" class="my-slot-info" style="display:none;"></span>
+  <a href="/kalendarz.html" class="cal-link-btn">📅 Zarządzaj rezerwacjami</a>
+  <div class="gig-bell-wrap">
+    <button class="gig-bell-btn" onclick="toggleGigBell()" title="Powiadomienia">🔔<span class="gig-bell-badge hidden" id="gigBellBadge">0</span></button>
+    <div class="gig-bell-panel hidden" id="gigBellPanel">
+      <div class="gig-bell-title">Powiadomienia</div>
+      <div id="gigBellItems"><div class="gig-bell-empty">Brak powiadomień</div></div>
+    </div>
+  </div>
+  <button class="auth-mini-btn red" onclick="doMiniLogout()" style="margin-left:4px;">Wyloguj</button>
+</div>
+
+<!-- ACTIVE PLAYERS BAR (z kalendarza) -->
+<div class="active-bar">
+  <div class="active-section top-active">
+    <div class="active-dot top"></div>
+    <span class="active-zone top">Góra</span>
+    <div id="activeTopInfo"><span class="active-empty">— nikt nie ma slotu —</span></div>
+  </div>
+  <div class="active-section bot-active">
+    <div class="active-dot bot"></div>
+    <span class="active-zone bot">Dół</span>
+    <div id="activeBotInfo"><span class="active-empty">— nikt nie ma slotu —</span></div>
+  </div>
+</div>
+
+<!-- SEKCJA GÓRA -->
 <div class="section-wrap" id="sectionTop">
     <div class="section-header" onclick="toggleSection('top')">
       <div class="section-header-left">
         <span class="section-badge top-badge">🔥 Góra</span>
         <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów</span>
+        <span id="timerLockTop" class="timer-locked-notice" style="display:none;">🔒 Zaloguj się lub zarezerwuj slot</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;" onclick="event.stopPropagation()">
         <div class="layout-bar" id="layoutBarTop">
@@ -441,35 +716,16 @@
         <button class="toggle-btn" id="toggleTop">▾</button>
       </div>
     </div>
-
-    <!-- KTO BIJE GÓRĘ -->
-    <div class="who-box" id="whoBoxTop">
-      <span class="who-label">Kto bije górę:</span>
-      <input class="who-input" id="whoInputTop" placeholder="Nick / gildia..." maxlength="40" style="max-width:180px;">
-      <div class="who-until-wrap">
-        <span class="who-until-label">do</span>
-        <select class="who-until-select" id="whoUntilTop"></select>
-      </div>
-      <button class="who-set-btn" onclick="setWho('top')">✓ Ustaw</button>
-      <button class="who-set-btn" onclick="joinQueue('top')" style="border-color:rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(0,0,0,0.2);">+ Kolejka</button>
-      <span class="who-current empty" id="whoCurrentTop">— nikt nie bije —</span>
-      <button class="who-clear-btn" onclick="clearWho('top')">✕</button>
-    </div>
-    <!-- KOLEJKA GÓRA -->
-    <div class="queue-box" id="queueBoxTop">
-      <div class="queue-title">📋 Kolejka <span id="queueCountTop" style="color:var(--gold-dark);"></span></div>
-      <div class="queue-list" id="queueListTop"><span class="queue-empty">— brak graczy w kolejce —</span></div>
-    </div>
-
     <div class="timer-grid layout-2x4-horizontal" id="timersTop"></div>
-  </div>
+</div>
 
-  <!-- ══ DÓŁ ══ -->
-  <div class="section-wrap" id="sectionBottom">
+<!-- SEKCJA DÓŁ -->
+<div class="section-wrap" id="sectionBottom">
     <div class="section-header" onclick="toggleSection('bottom')">
       <div class="section-header-left">
         <span class="section-badge bot-badge">🌊 Dół</span>
         <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów</span>
+        <span id="timerLockBot" class="timer-locked-notice" style="display:none;">🔒 Zaloguj się lub zarezerwuj slot</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;" onclick="event.stopPropagation()">
         <div class="layout-bar" id="layoutBarBottom">
@@ -485,110 +741,319 @@
         <button class="toggle-btn" id="toggleBottom">▾</button>
       </div>
     </div>
-
-    <!-- KTO BIJE DÓŁ -->
-    <div class="who-box" id="whoBoxBottom">
-      <span class="who-label">Kto bije dół:</span>
-      <input class="who-input" id="whoInputBottom" placeholder="Nick / gildia..." maxlength="40" style="max-width:180px;">
-      <div class="who-until-wrap">
-        <span class="who-until-label">do</span>
-        <select class="who-until-select" id="whoUntilBottom"></select>
-      </div>
-      <button class="who-set-btn" onclick="setWho('bottom')">✓ Ustaw</button>
-      <button class="who-set-btn" onclick="joinQueue('bottom')" style="border-color:rgba(201,168,76,0.2);color:var(--text-dim);background:rgba(0,0,0,0.2);">+ Kolejka</button>
-      <span class="who-current empty" id="whoCurrentBottom">— nikt nie bije —</span>
-      <button class="who-clear-btn" onclick="clearWho('bottom')">✕</button>
-    </div>
-    <!-- KOLEJKA DÓŁ -->
-    <div class="queue-box" id="queueBoxBottom">
-      <div class="queue-title">📋 Kolejka <span id="queueCountBottom" style="color:var(--gold-dark);"></span></div>
-      <div class="queue-list" id="queueListBottom"><span class="queue-empty">— brak graczy w kolejce —</span></div>
-    </div>
-
     <div class="timer-grid layout-2x4-horizontal" id="timersBottom"></div>
-  </div>
+</div>
 
 </div>
 
 <script>
-const socket = io();
+/* ═══ AUTH STATE ═══ */
+let currentUser = null;
+let calSlots    = [];  // slots from calendar API
+let activeSlotTop = null;
+let activeSlotBot = null;
 
-/* ═══ WS STATUS ═══ */
-socket.on('connect',    ()=>{ document.getElementById('wsDot').className='ws-dot ok'; document.getElementById('wsLabel').innerText='Na żywo'; });
-socket.on('disconnect', ()=>{ document.getElementById('wsDot').className='ws-dot';    document.getElementById('wsLabel').innerText='Brak połączenia'; });
+function getToken(){ return localStorage.getItem('sojusz_token'); }
+function authH(){ return { 'Authorization':'Bearer '+getToken(), 'Content-Type':'application/json' }; }
 
-/* ═══ VOLUME — osobne dla Góry i Dołu ═══ */
+/* ═══ AUTH MINI BAR ═══ */
+function switchMiniTab(tab){
+  document.getElementById('miniLoginFields').style.display = tab==='login'?'flex':'none';
+  document.getElementById('miniRegFields').style.display   = tab==='register'?'flex':'none';
+  document.getElementById('authTabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('authTabReg').classList.toggle('active', tab==='register');
+  document.getElementById('authMiniError').textContent='';
+}
+
+async function doMiniLogin(){
+  const nick = document.getElementById('miniLoginNick').value.trim();
+  const pass = document.getElementById('miniLoginPass').value;
+  if(!nick||!pass) return showMiniError('Wypełnij pola');
+  try{
+    const r = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick,password:pass})});
+    const d = await r.json();
+    if(!r.ok) return showMiniError(d.error);
+    saveMiniSession(d);
+  }catch(e){ showMiniError('Błąd połączenia'); }
+}
+
+async function doMiniRegister(){
+  const nick  = document.getElementById('miniRegNick').value.trim();
+  const guild = document.getElementById('miniRegGuild').value.trim();
+  const pass  = document.getElementById('miniRegPass').value;
+  if(!nick||!guild||!pass) return showMiniError('Wypełnij wszystkie pola');
+  try{
+    const r = await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick,guild,password:pass})});
+    const d = await r.json();
+    if(!r.ok) return showMiniError(d.error);
+    saveMiniSession(d);
+  }catch(e){ showMiniError('Błąd połączenia'); }
+}
+
+function saveMiniSession(d){
+  localStorage.setItem('sojusz_token', d.token);
+  currentUser = { nick:d.nick, guild:d.guild, role:d.role };
+  socket.auth = { token: d.token };
+  // Wyślij token przez socket - nie rozłączaj
+  socket.emit('auth', d.token);
+  showLoggedInBar();
+  loadCalSlots();
+  checkGigPendingOverrides();
+}
+
+function doMiniLogout(){
+  localStorage.removeItem('sojusz_token');
+  currentUser = null;
+  document.getElementById('authMiniLogin').classList.remove('hidden');
+  document.getElementById('authMiniLogged').classList.add('hidden');
+  updateTimerLocks();
+}
+
+function showMiniError(msg){ document.getElementById('authMiniError').textContent=msg; setTimeout(()=>document.getElementById('authMiniError').textContent='',3000); }
+
+function showLoggedInBar(){
+  document.getElementById('authMiniLogin').classList.add('hidden');
+  document.getElementById('authMiniLogged').classList.remove('hidden');
+  document.getElementById('authMiniUserInfo').textContent = currentUser.nick + ' · ' + currentUser.guild + (currentUser.role==='admin'?' · Admin':'');
+  // Obsłuż powiadomienia które czekały aż się zalogujemy
+  setTimeout(processNotifyQueue, 100);
+}
+
+async function checkMiniSession(){
+  const token = getToken();
+  if(!token) return;
+  try{
+    const r = await fetch('/api/me',{headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok){ localStorage.removeItem('sojusz_token'); return; }
+    currentUser = await r.json();
+    showLoggedInBar();
+    await loadCalSlots();
+  }catch(e){}
+}
+
+/* ═══ CALENDAR SLOTS ═══ */
+async function loadCalSlots(){
+  try{
+    const now = new Date();
+    const from = new Date(now); from.setDate(from.getDate()-1);
+    const to   = new Date(now); to.setDate(to.getDate()+7);
+    // Sloty są publiczne - nie wymagają tokenu
+    const headers = getToken() ? authH() : {};
+    const r = await fetch('/api/slots?from='+from.toISOString()+'&to='+to.toISOString(), {headers});
+    if(r.ok){ calSlots = await r.json(); updateActiveBar(); updateMySlotInfo(); }
+  }catch(e){}
+}
+
+function getActiveSlotNow(section){
+  const now = new Date();
+  return calSlots.find(s => s.section===section && new Date(s.startAt)<=now && new Date(s.endAt)>now) || null;
+}
+
+function getMyNextSlot(section){
+  const now = new Date();
+  if(!currentUser) return null;
+  return calSlots
+    .filter(s => s.section===section && s.nick===currentUser.nick && new Date(s.endAt)>now)
+    .sort((a,b)=>new Date(a.startAt)-new Date(b.startAt))[0] || null;
+}
+
+function updateActiveBar(){
+  activeSlotTop = getActiveSlotNow('top');
+  activeSlotBot = getActiveSlotNow('bottom');
+
+  // Top
+  const ti = document.getElementById('activeTopInfo');
+  const svgTop = document.getElementById('svgTop');
+  const svgTopLbl = document.getElementById('svgTopLabel');
+  const lgTop = document.getElementById('legendTop');
+  const lgWhoTop = document.getElementById('legendWhoTop');
+  if(activeSlotTop){
+    const end = new Date(activeSlotTop.endAt);
+    ti.innerHTML = '<span class="active-name">'+esc(activeSlotTop.nick)+'</span><span class="active-guild"> · '+esc(activeSlotTop.guild)+'</span><span class="active-until">do '+fmtTime(end)+'</span>'+('<button onclick="openPM(\'' + esc(activeSlotTop.nick) + '\',\'' + esc(activeSlotTop.guild) + '\')" style="font-family:Cinzel,serif;font-size:9px;padding:3px 8px;border:1px solid rgba(201,168,76,0.35);color:var(--gold-dark);background:none;cursor:pointer;border-radius:2px;margin-left:8px;">💬 PM</button>');
+    document.getElementById('sectionTop').classList.add('glow-top');
+    // SVG map
+    if(svgTop){svgTop.setAttribute('fill','rgba(255,120,20,0.18)');svgTop.setAttribute('stroke','rgba(255,140,40,0.85)');}
+    if(svgTopLbl){svgTopLbl.setAttribute('fill','rgba(255,170,70,0.95)');svgTopLbl.setAttribute('stroke','rgba(0,0,0,0.7)');}
+    // Legend
+    if(lgTop) lgTop.classList.add('active');
+    if(lgWhoTop){ lgWhoTop.textContent='⚔ '+esc(activeSlotTop.nick)+' (do '+fmtTime(end)+')'; lgWhoTop.className='legend-who has-player'; }
+  } else {
+    ti.innerHTML = '<span class="active-empty">— brak aktywnego slotu —</span>';
+    document.getElementById('sectionTop').classList.remove('glow-top');
+    if(svgTop){svgTop.setAttribute('fill','rgba(0,0,0,0)');svgTop.setAttribute('stroke','rgba(0,0,0,0)');}
+    if(svgTopLbl){svgTopLbl.setAttribute('fill','rgba(0,0,0,0)');svgTopLbl.setAttribute('stroke','rgba(0,0,0,0)');}
+    if(lgTop) lgTop.classList.remove('active');
+    if(lgWhoTop){ lgWhoTop.textContent='— nikt nie bije —'; lgWhoTop.className='legend-who'; }
+  }
+
+  // Bottom
+  const bi = document.getElementById('activeBotInfo');
+  const svgBot = document.getElementById('svgBot');
+  const svgBotLbl = document.getElementById('svgBotLabel');
+  const lgBot = document.getElementById('legendBot');
+  const lgWhoBot = document.getElementById('legendWhoBot');
+  if(activeSlotBot){
+    const end = new Date(activeSlotBot.endAt);
+    bi.innerHTML = '<span class="active-name">'+esc(activeSlotBot.nick)+'</span><span class="active-guild"> · '+esc(activeSlotBot.guild)+'</span><span class="active-until">do '+fmtTime(end)+'</span>'+('<button onclick="openPM(\'' + esc(activeSlotBot.nick) + '\',\'' + esc(activeSlotBot.guild) + '\')" style="font-family:Cinzel,serif;font-size:9px;padding:3px 8px;border:1px solid rgba(201,168,76,0.35);color:var(--gold-dark);background:none;cursor:pointer;border-radius:2px;margin-left:8px;">💬 PM</button>');
+    document.getElementById('sectionBottom').classList.add('glow-bottom');
+    if(svgBot){svgBot.setAttribute('fill','rgba(40,120,255,0.18)');svgBot.setAttribute('stroke','rgba(60,140,255,0.85)');}
+    if(svgBotLbl){svgBotLbl.setAttribute('fill','rgba(80,170,255,0.95)');svgBotLbl.setAttribute('stroke','rgba(0,0,0,0.7)');}
+    if(lgBot) lgBot.classList.add('active');
+    if(lgWhoBot){ lgWhoBot.textContent='⚔ '+esc(activeSlotBot.nick)+' (do '+fmtTime(end)+')'; lgWhoBot.className='legend-who has-player'; }
+  } else {
+    bi.innerHTML = '<span class="active-empty">— brak aktywnego slotu —</span>';
+    document.getElementById('sectionBottom').classList.remove('glow-bottom');
+    if(svgBot){svgBot.setAttribute('fill','rgba(0,0,0,0)');svgBot.setAttribute('stroke','rgba(0,0,0,0)');}
+    if(svgBotLbl){svgBotLbl.setAttribute('fill','rgba(0,0,0,0)');svgBotLbl.setAttribute('stroke','rgba(0,0,0,0)');}
+    if(lgBot) lgBot.classList.remove('active');
+    if(lgWhoBot){ lgWhoBot.textContent='— nikt nie bije —'; lgWhoBot.className='legend-who'; }
+  }
+
+  updateTimerLocks();
+}
+
+function updateMySlotInfo(){
+  ['top','bottom'].forEach(function(sec){
+    const id = sec==='top'?'mySlotTopInfo':'mySlotBotInfo';
+    const el = document.getElementById(id);
+    if(!el||!currentUser) return;
+    const active = getActiveSlotNow(sec);
+    const next   = getMyNextSlot(sec);
+    if(active && active.nick===currentUser.nick){
+      el.style.display='';
+      el.className='my-slot-info active-now';
+      el.textContent=(sec==='top'?'🔥':'🌊')+' Twój slot aktywny do '+fmtTime(new Date(active.endAt));
+    } else if(next){
+      el.style.display='';
+      el.className='my-slot-info';
+      const start=new Date(next.startAt);
+      el.textContent=(sec==='top'?'🔥':'🌊')+' Twój slot: '+fmtTime(start)+'→'+fmtTime(new Date(next.endAt));
+    } else {
+      el.style.display='none';
+    }
+  });
+}
+
+function canControl(section){
+  if(!currentUser) return false;
+  if(currentUser.role==='admin') return true;
+  const active = getActiveSlotNow(section);
+  if(active && active.nick===currentUser.nick) return true;
+  // Check delegation
+  const del = delegations[section];
+  if(del && del.toNick===currentUser.nick && del.expiresAt>Date.now()) return true;
+  return false;
+}
+
+function updateTimerLocks(){
+  const lockTop = document.getElementById('timerLockTop');
+  const lockBot = document.getElementById('timerLockBot');
+  // Ukryj zupełnie gdy zalogowany (niezależnie od slotu)
+  const loggedIn = !!currentUser;
+  if(lockTop) lockTop.style.display = (loggedIn || canControl('top')) ? 'none' : '';
+  if(lockBot) lockBot.style.display = (loggedIn || canControl('bottom')) ? 'none' : '';
+}
+
+let delegations = {};
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtTime(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+function showTimerLockToast(msg){
+  var existing = document.querySelector('.timer-toast');
+  if(existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'timer-toast';
+  t.innerHTML = '<div class="timer-toast-icon">🔒</div>'+
+    '<div class="timer-toast-msg">'+(msg||'Brak aktywnego slotu')+'</div>'+
+    '<div class="timer-toast-sub">Zarezerwuj czas w Kalendarzu</div>';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.animation='toastIn 0.25s reverse forwards'; setTimeout(function(){ t.remove(); }, 250); }, 2500);
+  t.addEventListener('click', function(){ t.remove(); });
+}
+
+// Odświeżaj co minutę
+setInterval(function(){
+  updateActiveBar();
+  updateMySlotInfo();
+}, 60000);
+
+/* ═══ SOCKET ═══ */
+const socket = io({ auth: { token: getToken()||'' } });
+
+socket.on('connect', function(){
+  document.getElementById('wsDot').className='ws-dot ok';
+  document.getElementById('wsLabel').innerText='Na żywo';
+  var token = localStorage.getItem('sojusz_token');
+  if(token) {
+    socket.emit('auth', token);
+    // Daj czas na auth i checkMiniSession
+    setTimeout(function(){
+      if(currentUser) {
+        checkGigPendingOverrides();
+      } else {
+        // Poczekaj jeszcze - checkMiniSession może być w toku
+        setTimeout(function(){ if(currentUser) checkGigPendingOverrides(); }, 1500);
+      }
+    }, 600);
+  }
+});
+socket.on('disconnect', function(){ document.getElementById('wsDot').className='ws-dot';    document.getElementById('wsLabel').innerText='Brak połączenia'; });
+socket.on('delegationsUpdate', function(d){ delegations=d; updateTimerLocks(); });
+socket.on('slotsUpdate', function(){ loadCalSlots(); }); // odśwież sloty gdy ktoś zrobi zmiany w kalendarzu
+
+/* ═══ VOLUME ═══ */
 const sectionVol  = { top: parseFloat(localStorage.getItem('vol_top'))  || 0.3,
                       bottom: parseFloat(localStorage.getItem('vol_bot')) || 0.3 };
 const sectionMute = { top: localStorage.getItem('mute_top')==='1',
                       bottom: localStorage.getItem('mute_bot')==='1' };
 
-// Init sliders after DOM ready
 (function(){
   const vt = document.getElementById('volTop');
   const vb = document.getElementById('volBottom');
-  if(vt){ vt.value = sectionVol.top;    vt.oninput = ()=>{ sectionVol.top=parseFloat(vt.value); localStorage.setItem('vol_top',vt.value); }; }
-  if(vb){ vb.value = sectionVol.bottom; vb.oninput = ()=>{ sectionVol.bottom=parseFloat(vb.value); localStorage.setItem('vol_bot',vb.value); }; }
+  if(vt){ vt.value=sectionVol.top;    vt.oninput=function(){ sectionVol.top=parseFloat(vt.value);    localStorage.setItem('vol_top',vt.value); }; }
+  if(vb){ vb.value=sectionVol.bottom; vb.oninput=function(){ sectionVol.bottom=parseFloat(vb.value); localStorage.setItem('vol_bot',vb.value); }; }
   updateMuteBtn('top');
   updateMuteBtn('bottom');
 })();
 
 function updateMuteBtn(s){
-  const btn = document.getElementById(s==='top'?'muteTop':'muteBottom');
-  if(btn) btn.textContent = sectionMute[s] ? '🔇' : '🔊';
+  const btn=document.getElementById(s==='top'?'muteTop':'muteBottom');
+  if(btn) btn.textContent=sectionMute[s]?'🔇':'🔊';
 }
 function toggleMute(s){
-  sectionMute[s] = !sectionMute[s];
+  sectionMute[s]=!sectionMute[s];
   localStorage.setItem(s==='top'?'mute_top':'mute_bot', sectionMute[s]?'1':'0');
   updateMuteBtn(s);
 }
 
-/* ═══ AUDIO ═══ */
-let audioCtx = null;
-function getAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
-function beepFor(section, freq=800, dur=0.15){
-  if(sectionMute[section]) return;
-  const vol = sectionVol[section];
-  if(vol <= 0) return;
-  const ctx=getAudio(), osc=ctx.createOscillator(), gain=ctx.createGain();
-  osc.connect(gain); gain.connect(ctx.destination);
-  osc.frequency.value=freq; osc.start();
-  gain.gain.setValueAtTime(vol, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
-  osc.stop(ctx.currentTime+dur);
-}
-function tripleBeep(s){ beepFor(s,820,0.12); setTimeout(()=>beepFor(s,820,0.12),220); setTimeout(()=>beepFor(s,820,0.12),440); }
-function singleBeep(s){ beepFor(s,600,0.65); }
-
 /* ═══ TOGGLE SECTION ═══ */
 function toggleSection(s){
-  const grid = document.getElementById(s==='top'?'timersTop':'timersBottom');
-  const btn  = document.getElementById(s==='top'?'toggleTop':'toggleBottom');
-  const who  = document.getElementById(s==='top'?'whoBoxTop':'whoBoxBottom');
-  const hidden = grid.style.display==='none';
-  grid.style.display = hidden ? 'grid' : 'none';
-  who.style.display  = hidden ? 'flex' : 'none';
-  btn.innerText = hidden ? '▾' : '▸';
+  const grid=document.getElementById(s==='top'?'timersTop':'timersBottom');
+  const btn=document.getElementById(s==='top'?'toggleTop':'toggleBottom');
+  const hidden=grid.style.display==='none';
+  grid.style.display=hidden?'grid':'none';
+  btn.innerText=hidden?'▾':'▸';
 }
 
 /* ═══ LAYOUT ═══ */
-const layoutMap = { top: 'layout-2x4-horizontal', bottom: 'layout-2x4-horizontal' };
+const layoutMap = { top:'layout-2x4-horizontal', bottom:'layout-2x4-horizontal' };
 function setLayout(section, layout){
-  const grid = document.getElementById(section==='top'?'timersTop':'timersBottom');
-  grid.className = 'timer-grid ' + layout;
-  layoutMap[section] = layout;
+  const grid=document.getElementById(section==='top'?'timersTop':'timersBottom');
+  grid.className='timer-grid '+layout;
+  layoutMap[section]=layout;
   localStorage.setItem('layout_'+section, layout);
   highlightLayout(section, layout);
 }
 function highlightLayout(section, layout){
-  const bar = document.getElementById('layoutBar'+(section==='top'?'Top':'Bottom'));
-  const layouts = ['layout-2x4-horizontal','layout-2x4-vertical','layout-1x8-horizontal','layout-1x8-vertical'];
-  [...bar.children].forEach((el,i) => el.classList.toggle('active-layout', layouts[i]===layout));
+  const bar=document.getElementById('layoutBar'+(section==='top'?'Top':'Bottom'));
+  const layouts=['layout-2x4-horizontal','layout-2x4-vertical','layout-1x8-horizontal','layout-1x8-vertical'];
+  [...bar.children].forEach((el,i)=>el.classList.toggle('active-layout', layouts[i]===layout));
 }
-['top','bottom'].forEach(s => {
-  const saved = localStorage.getItem('layout_'+s);
-  if(saved) setLayout(s, saved);
-  else highlightLayout(s, layoutMap[s]);
+['top','bottom'].forEach(function(s){
+  const saved=localStorage.getItem('layout_'+s);
+  if(saved) setLayout(s,saved);
+  else highlightLayout(s,layoutMap[s]);
 });
 
 /* ═══ FORMAT ═══ */
@@ -598,268 +1063,477 @@ function format(sec){
          String(sec%60).padStart(2,'0');
 }
 
+/* ═══ AUDIO ═══ */
+let audioCtx=null;
+function getAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function beepFor(section, freq, dur){
+  if(sectionMute[section]) return;
+  const vol=sectionVol[section]; if(vol<=0) return;
+  const ctx=getAudio(),osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.frequency.value=freq||800; osc.start();
+  gain.gain.setValueAtTime(vol,ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+(dur||0.15));
+  osc.stop(ctx.currentTime+(dur||0.15));
+}
+function tripleBeep(s){ beepFor(s,820,0.12); setTimeout(function(){beepFor(s,820,0.12);},220); setTimeout(function(){beepFor(s,820,0.12);},440); }
+function singleBeep(s){ beepFor(s,600,0.65); }
+
 /* ═══ CREATE TIMER CARD ═══ */
-const displays = {};
-
+const displays={};
 function createTimer(id, section){
-  const label = id.replace('KG_CH','CH ').replace('KGD_CH','CH ');
-  const card = document.createElement('div');
-  card.className = 'timer-card state-grey';
+  const label=id.replace('KG_CH','CH ').replace('KGD_CH','CH ');
+  const card=document.createElement('div'); card.className='timer-card state-grey';
+  const name=document.createElement('div'); name.className='timer-name'; name.innerText=label;
+  const disp=document.createElement('div'); disp.className='timer-display'; disp.innerText='00:00:00';
+  const btns=document.createElement('div'); btns.className='timer-btns';
+  const bStart=document.createElement('button'); bStart.className='btn btn-start'; bStart.innerText='Start';
+  const bStop =document.createElement('button'); bStop.className='btn btn-stop';  bStop.innerText='Stop';
+  const bReset=document.createElement('button'); bReset.className='btn btn-reset'; bReset.innerText='Reset';
+  const comment=document.createElement('input'); comment.className='comment-input'; comment.placeholder='Notatka...'; comment.maxLength=40;
 
-  const name = document.createElement('div');
-  name.className = 'timer-name';
-  name.innerText = label;
+  bStart.onclick=function(){
+    if(!canControl(section)){ showTimerLockToast(); return; }
+    socket.emit('start',id);
+  };
+  bStop.onclick=function(){
+    if(!canControl(section)){ showTimerLockToast(); return; }
+    socket.emit('stop',id);
+  };
+  bReset.onclick=function(){
+    if(!canControl(section)){ showTimerLockToast(); return; }
+    comment.value=''; socket.emit('reset',id);
+  };
 
-  const disp = document.createElement('div');
-  disp.className = 'timer-display';
-  disp.innerText = '00:00:00';
-
-  const btns = document.createElement('div');
-  btns.className = 'timer-btns';
-
-  const bStart = document.createElement('button');
-  bStart.className='btn btn-start'; bStart.innerText='Start';
-  const bStop  = document.createElement('button');
-  bStop.className='btn btn-stop';  bStop.innerText='Stop';
-  const bReset = document.createElement('button');
-  bReset.className='btn btn-reset'; bReset.innerText='Reset';
-
-  const comment = document.createElement('input');
-  comment.className='comment-input'; comment.placeholder='Notatka...';
-  comment.maxLength=40;
-
-  bStart.onclick = () => socket.emit('start', id);
-  bStop.onclick  = () => socket.emit('stop',  id);
-  bReset.onclick = () => { comment.value=''; socket.emit('reset', id); };
-
-  btns.append(bStart, bStop, bReset);
-  card.append(name, disp, btns, comment);
-
+  btns.append(bStart,bStop,bReset);
+  card.append(name,disp,btns,comment);
   return { card, disp, section, beepYellow:false, beepGreen:false };
 }
 
-// Build top timers (CH1-CH8)
-for(let i=1;i<=8;i++){
-  const id='KG_CH'+i;
-  const t=createTimer(id,'top');
-  document.getElementById('timersTop').appendChild(t.card);
-  displays[id]=t;
-}
-// Build bottom timers (CH1-CH8)
-for(let i=1;i<=8;i++){
-  const id='KGD_CH'+i;
-  const t=createTimer(id,'bottom');
-  document.getElementById('timersBottom').appendChild(t.card);
-  displays[id]=t;
-}
+for(let i=1;i<=8;i++){ const id='KG_CH'+i;  const t=createTimer(id,'top');    document.getElementById('timersTop').appendChild(t.card);    displays[id]=t; }
+for(let i=1;i<=8;i++){ const id='KGD_CH'+i; const t=createTimer(id,'bottom'); document.getElementById('timersBottom').appendChild(t.card); displays[id]=t; }
 
-/* ═══ TIMER UPDATE ═══ */
-socket.on('update', data => {
+socket.on('update', function(data){
   for(const id in data){
     if(!displays[id]) continue;
     const sec=data[id], t=displays[id];
-    t.disp.innerText = format(sec);
-    const state = sec===0?'state-grey':sec<1500?'state-red':sec<1800?'state-yellow':'state-green';
-    t.card.className = 'timer-card ' + state;
-    // Dźwięki osobne dla sekcji — żółty=1pip, zielony=3pipy
+    t.disp.innerText=format(sec);
+    const state=sec===0?'state-grey':sec<1500?'state-red':sec<1800?'state-yellow':'state-green';
+    t.card.className='timer-card '+state;
     if(sec>=1500&&sec<1502&&!t.beepYellow){ singleBeep(t.section); t.beepYellow=true; }
     if(sec>=1800&&sec<1802&&!t.beepGreen) { tripleBeep(t.section); t.beepGreen=true; }
     if(sec===0){ t.beepYellow=false; t.beepGreen=false; }
   }
 });
 
-/* ═══ WHO IS PLAYING ═══ */
-// State: who is playing top/bottom (global, stored on server)
-let whoState = { top: null, bottom: null };
-let queueState = { top: [], bottom: [] };
+socket.on('timerError', function(msg){ showTimerLockToast(msg); });
 
+/* ═══ MAP SVG / LEGEND ═══ */
 function renderWho(section){
-  const val  = whoState[section] || '';
-  const el   = document.getElementById('whoCurrent'+(section==='top'?'Top':'Bottom'));
-  const wrap = document.getElementById(section==='top'?'sectionTop':'sectionBottom');
-  // Map SVG elements
-  const svgRect  = document.getElementById(section==='top'?'svgTop':'svgBot');
-  const svgLabel = document.getElementById(section==='top'?'svgTopLabel':'svgBotLabel');
-  const legend   = document.getElementById(section==='top'?'legendTop':'legendBot');
-  const legendWho= document.getElementById(section==='top'?'legendWhoTop':'legendWhoBot');
-
-  const nick  = val ? (val.nick || val) : '';
-  const until = val ? (val.until || '') : '';
-  if(nick){
-    el.textContent = '⚔ ' + nick + (until ? '  (do '+until+')' : '');
-    el.className   = 'who-current';
-    wrap.classList.remove('glow-top','glow-bottom');
-    wrap.classList.add(section==='top'?'glow-top':'glow-bottom');
-    // Activate map region
-    if(section==='top'){
-      svgRect.setAttribute('fill',  'rgba(255,120,20,0.18)');
-      svgRect.setAttribute('stroke','rgba(255,140,40,0.85)');
-      svgLabel.setAttribute('fill', 'rgba(255,170,70,0.95)');
-      svgLabel.setAttribute('stroke','rgba(0,0,0,0.7)');
-    } else {
-      svgRect.setAttribute('fill',  'rgba(40,120,255,0.18)');
-      svgRect.setAttribute('stroke','rgba(60,140,255,0.85)');
-      svgLabel.setAttribute('fill', 'rgba(80,170,255,0.95)');
-      svgLabel.setAttribute('stroke','rgba(0,0,0,0.7)');
-    }
-    // Legend — pokaż nick + godzinę
-    legend.classList.add('active');
-    legendWho.textContent = '⚔ ' + nick + (until ? ' (do '+until+')' : '');
-    legendWho.className   = 'legend-who has-player';
-  } else {
-    el.textContent = '— nikt nie bije —';
-    el.className   = 'who-current empty';
-    wrap.classList.remove('glow-top','glow-bottom');
-    // Deactivate map region
-    svgRect.setAttribute('fill',  'rgba(0,0,0,0)');
-    svgRect.setAttribute('stroke','rgba(0,0,0,0)');
-    svgLabel.setAttribute('fill', 'rgba(0,0,0,0)');
-    svgLabel.setAttribute('stroke','rgba(0,0,0,0)');
-    // Legend
-    legend.classList.remove('active');
-    legendWho.textContent = '— nikt nie bije —';
-    legendWho.className   = 'legend-who';
-  }
+  // Legacy renderWho — obsłużone przez updateActiveBar z kalendarza
+  // Zostaw puste dla kompatybilności
 }
 
-/* ═══ CZAS POLSKI — generuj opcje co 15 min ═══ */
-function getPolandTime(){
-  // Czas polski (UTC+1 zimą, UTC+2 latem)
-  const now = new Date();
-  const pl = new Date(now.toLocaleString('en-US',{timeZone:'Europe/Warsaw'}));
-  return pl;
+/* ═══ INIT ═══ */
+document.getElementById('miniLoginPass').addEventListener('keydown',function(e){ if(e.key==='Enter') doMiniLogin(); });
+document.getElementById('miniLoginNick').addEventListener('keydown',function(e){ if(e.key==='Enter') doMiniLogin(); });
+
+/* === OVERRIDE POPUP (giganty) === */
+var pendingOverrideId = null;
+
+function showOverridePopupOnGiganty(data) {
+  pendingOverrideId = data.overrideId;
+  var s = new Date(data.newStartAt), e = new Date(data.newEndAt);
+  var secLabel = data.section==='top' ? '🔥 Góra' : '🌊 Dół';
+  document.getElementById('overridePopupInfo').innerHTML =
+    '<strong>'+data.fromNick+'</strong> ('+data.fromGuild+') prosi o Twój slot:<br>'+
+    secLabel+': '+fmtDt(s)+' do '+fmtTime(e);
+  document.getElementById('overridePopupHours').textContent =
+    'Twoje godz. w tym tyg.: '+data.ownerWeekHours.toFixed(1)+'h | Ich: '+data.myWeekHours.toFixed(1)+'h';
+  document.getElementById('overridePopupOverlay').classList.remove('hidden');
 }
 
-function buildTimeOptions(selectEl){
-  const pl = getPolandTime();
-  const curH = pl.getHours(), curM = pl.getMinutes();
-  const currentVal = selectEl.value; // zachowaj aktualny wybór jeśli istnieje
-  selectEl.innerHTML = '';
-  // Znajdź najbliższą pełną lub półgodzinę ПІСЛЯ teraz
-  const totalNow = curH * 60 + curM;
-  // Pierwsze słupki: 0 i 30 minut
-  // Znajdź pierwszy slot po "teraz"
-  let startSlot;
-  if(curM < 30) startSlot = curH * 60 + 30;        // np. 18:10 → pierwsze: 18:30
-  else          startSlot = (curH + 1) * 60 + 0;   // np. 18:40 → pierwsze: 19:00
-  // Generuj 48 opcji (24 godziny co 30 min)
-  for(let i=0;i<48;i++){
-    const totalMins = startSlot + i*30;
-    const h = Math.floor(totalMins/60)%24;
-    const m = totalMins%60;
-    const label = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-    const opt = document.createElement('option');
-    opt.value = label;
-    opt.textContent = label;
-    if(label === currentVal) opt.selected = true;
-    selectEl.appendChild(opt);
-  }
+function closeOverridePopup() {
+  document.getElementById('overridePopupOverlay').classList.add('hidden');
+  pendingOverrideId = null;
 }
 
-// Inicjalizuj selecty przy starcie i odświeżaj co minutę
-function initTimeSelects(){
-  ['Top','Bottom'].forEach(s=>{
-    const sel = document.getElementById('whoUntil'+s);
-    if(sel) buildTimeOptions(sel);
+function fmtDt(d){
+  return ['Pon','Wt','Śr','Czw','Pt','Sob','Nd'][d.getDay()]+' '+d.getDate()+'.'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':00';
+}
+
+document.getElementById('overridePopupAccept').addEventListener('click', async function() {
+  if(!pendingOverrideId) return;
+  var token = getToken();
+  var r = await fetch('/api/slots/override-respond', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({ overrideId: pendingOverrideId, accept: true })
   });
-}
-initTimeSelects();
-setInterval(initTimeSelects, 60000);
-
-function getUntilVal(s){
-  const sel = document.getElementById('whoUntil'+s);
-  return sel ? sel.value : '';
-}
-
-function setWho(section){
-  const s     = section==='top'?'Top':'Bottom';
-  const nick  = document.getElementById('whoInput'+s).value.trim();
-  const until = getUntilVal(s);
-  if(!nick){ 
-    document.getElementById('whoInput'+s).style.borderColor='rgba(255,80,80,0.7)';
-    setTimeout(()=>document.getElementById('whoInput'+s).style.borderColor='',1500);
-    return; 
-  }
-  socket.emit('gigWhoSet', { section, who: nick, until });
-  document.getElementById('whoInput'+s).value = '';
-}
-
-function clearWho(section){
-  socket.emit('gigWhoClear', { section });
-}
-
-function joinQueue(section){
-  const s     = section==='top'?'Top':'Bottom';
-  const nick  = document.getElementById('whoInput'+s).value.trim();
-  const until = getUntilVal(s);
-  if(!nick){ 
-    document.getElementById('whoInput'+s).style.borderColor='rgba(255,80,80,0.7)';
-    setTimeout(()=>document.getElementById('whoInput'+s).style.borderColor='',1500);
-    return; 
-  }
-  socket.emit('gigQueueJoin', { section, nick, until });
-  document.getElementById('whoInput'+s).value = '';
-}
-
-// Allow Enter key in who inputs
-['Top','Bottom'].forEach(s => {
-  const input = document.getElementById('whoInput'+s);
-  input.addEventListener('keydown', e => {
-    if(e.key==='Enter') setWho(s.toLowerCase());
-  });
-
+  var d = await r.json();
+  if(d && d.error){ alert('Błąd: '+d.error); return; }
+  closeOverridePopup();
+  showGigToast('Slot przekazany!', '#60d060');
+  loadCalSlots();
 });
 
-// Init queue render
-renderQueue('top');
-renderQueue('bottom');
+document.getElementById('overridePopupReject').addEventListener('click', async function() {
+  if(!pendingOverrideId) return;
+  var token = getToken();
+  var r = await fetch('/api/slots/override-respond', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({ overrideId: pendingOverrideId, accept: false })
+  });
+  closeOverridePopup();
+  showGigToast('Prośba odrzucona', '#c07070');
+});
 
-/* ═══ QUEUE ═══ */
-function renderQueue(section){
-  const s    = section==='top'?'Top':'Bottom';
-  const list = document.getElementById('queueList'+s);
-  const cnt  = document.getElementById('queueCount'+s);
-  const arr  = queueState[section] || [];
-  if(cnt) cnt.textContent = arr.length ? `(${arr.length})` : '';
-  if(!list) return;
-  if(!arr.length){
-    list.innerHTML = '<span class="queue-empty">— brak graczy w kolejce —</span>';
+function showGigToast(msg, color) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:3000;padding:10px 24px;background:rgba(10,8,5,0.97);border:1px solid '+color+';color:'+color+';font-family:Cinzel,serif;font-size:11px;letter-spacing:1px;border-radius:2px;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 3500);
+}
+
+// Sprawdź pending overrides przy logowaniu
+/* === BELL POWIADOMIENIA (giganty) === */
+var gigPendingOverrides = [];
+
+function toggleGigBell(){
+  var p = document.getElementById('gigBellPanel');
+  if(p) p.classList.toggle('hidden');
+}
+document.addEventListener('click', function(e){
+  var wrap = document.querySelector('.gig-bell-wrap');
+  if(wrap && !wrap.contains(e.target)) {
+    var p = document.getElementById('gigBellPanel');
+    if(p) p.classList.add('hidden');
+  }
+});
+
+function renderGigBell(){
+  var container = document.getElementById('gigBellItems');
+  var badge = document.getElementById('gigBellBadge');
+  if(!container) return;
+  if(!gigPendingOverrides.length){
+    container.innerHTML = '<div class="gig-bell-empty">Brak powiadomień</div>';
+    if(badge) badge.classList.add('hidden');
     return;
   }
-  list.innerHTML = '';
-  arr.forEach((entry,i)=>{
-    const div = document.createElement('div');
-    div.className='queue-entry';
-    div.innerHTML=`<span class="queue-pos">${i+1}.</span>
-      <span class="queue-nick">${esc(entry.nick)}</span>
-      ${entry.until?`<span class="queue-until">do ${esc(entry.until)}</span>`:''}
-      <button class="queue-remove" onclick="socket.emit('gigQueueLeave',{section:'${section}',nick:'${esc(entry.nick)}'})" title="Usuń z kolejki">✕</button>`;
-    list.appendChild(div);
+  if(badge){ badge.classList.remove('hidden'); badge.textContent = gigPendingOverrides.length; }
+  container.innerHTML = '';
+  gigPendingOverrides.forEach(function(ovr){
+    var s = new Date(ovr.newStartAt||ovr.origStartAt), e = new Date(ovr.newEndAt||ovr.origEndAt);
+    var secLabel = ovr.section==='top' ? '🔥 Góra' : '🌊 Dół';
+    var div = document.createElement('div');
+    div.className = 'gig-bell-item';
+    div.id = 'gigbell_'+ovr._id;
+    div.innerHTML =
+      '<div class="gig-bell-item-title">⚔ Prośba o Twój slot</div>'+
+      '<div class="gig-bell-item-info"><strong>'+esc(ovr.fromNick)+'</strong>'+(ovr.fromGuild?' ('+esc(ovr.fromGuild)+')':'')+
+      '<br>'+secLabel+': '+fmtDt(s)+' → '+fmtTime(e)+'</div>'+
+      '<div class="gig-bell-item-btns">'+
+      '<button class="gig-bell-accept">✓ Zgadzam się</button>'+
+      '<button class="gig-bell-reject">✕ Odmawiam</button>'+
+      '</div>';
+    div.querySelector('.gig-bell-accept').addEventListener('click', function(){ respondGigOverride(ovr._id, true); });
+    div.querySelector('.gig-bell-reject').addEventListener('click', function(){ respondGigOverride(ovr._id, false); });
+    container.appendChild(div);
   });
 }
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-socket.on('gigQueueUpdate', data=>{
-  queueState = data || { top:[], bottom:[] };
-  renderQueue('top');
-  renderQueue('bottom');
+async function respondGigOverride(overrideId, accept){
+  var token = getToken();
+  var r = await fetch('/api/slots/override-respond', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({ overrideId: overrideId, accept: accept })
+  });
+  var d = await r.json();
+  if(d && d.error){ showGigToast('Błąd: '+d.error, '#e07070'); return; }
+  gigPendingOverrides = gigPendingOverrides.filter(function(o){ return o._id !== overrideId; });
+  renderGigBell();
+  showGigToast(accept ? 'Slot przekazany!' : 'Prośba odrzucona', accept ? '#60d060' : '#c07070');
+  if(accept) loadCalSlots();
+}
+
+async function checkGigPendingOverrides() {
+  var token = getToken();
+  if(!token) return;
+  try {
+    var r = await fetch('/api/slots/override-pending', {headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok) return;
+    var list = await r.json();
+    if(!Array.isArray(list)) return;
+    gigPendingOverrides = list;
+    renderGigBell();
+    if(list.length > 0){
+      // Pokaż dzwoneczek otwarty
+      var p = document.getElementById('gigBellPanel');
+      if(p) p.classList.remove('hidden');
+    }
+  } catch(e) {}
+}
+
+// Kolejka powiadomień - czeka aż currentUser będzie gotowy
+var pendingNotifyQueue = [];
+
+function processNotifyQueue() {
+  if(!currentUser || !pendingNotifyQueue.length) return;
+  pendingNotifyQueue.forEach(function(data){
+    var exists = gigPendingOverrides.find(function(o){ return o._id === data.overrideId; });
+    if(exists) return;
+    if(data.toNick !== currentUser.nick) return;
+    gigPendingOverrides.push({
+      _id:data.overrideId, fromNick:data.fromNick, fromGuild:data.fromGuild,
+      toNick:data.toNick, section:data.section,
+      newStartAt:data.newStartAt, newEndAt:data.newEndAt,
+      myWeekHours:data.myWeekHours||0, ownerWeekHours:data.ownerWeekHours||0
+    });
+    renderGigBell();
+    var p=document.getElementById('gigBellPanel'); if(p) p.classList.remove('hidden');
+  });
+  pendingNotifyQueue = [];
+}
+
+socket.on('overrideNotify', function(data){
+  if(currentUser && data.toNick === currentUser.nick){
+    // Zalogowany - obsłuż od razu
+    var exists = gigPendingOverrides.find(function(o){ return o._id === data.overrideId; });
+    if(!exists){
+      gigPendingOverrides.push({ _id:data.overrideId, fromNick:data.fromNick, fromGuild:data.fromGuild, toNick:data.toNick, section:data.section, newStartAt:data.newStartAt, newEndAt:data.newEndAt, myWeekHours:data.myWeekHours||0, ownerWeekHours:data.ownerWeekHours||0 });
+      renderGigBell();
+      var p=document.getElementById('gigBellPanel'); if(p) p.classList.remove('hidden');
+    }
+  } else {
+    // Może jeszcze nie zalogowany - wstaw do kolejki
+    pendingNotifyQueue.push(data);
+  }
 });
 
-socket.on('gigWhoUpdate', data => {
-  whoState = data || { top:'', bottom:'' };
-  renderWho('top');
-  renderWho('bottom');
+socket.on('overrideResponded', function(data){
+  if(currentUser && data.fromNick === currentUser.nick){
+    gigPendingOverrides = gigPendingOverrides.filter(function(o){ return o._id !== data.overrideId; });
+    renderGigBell();
+    showGigToast(data.accept ? 'Slot zaakceptowany!' : 'Prośba odrzucona', data.accept ? '#60d060' : '#c07070');
+    if(data.accept) loadCalSlots();
+  }
+  if(currentUser && data.toNick === currentUser.nick){
+    gigPendingOverrides = gigPendingOverrides.filter(function(o){ return o._id !== data.overrideId; });
+    renderGigBell();
+    loadCalSlots();
+  }
 });
-</script>
 
-<script>
+socket.on('overrideRequest', function(data){
+  if(!currentUser || data.toNick !== currentUser.nick) return;
+  var exists = gigPendingOverrides.find(function(o){ return o._id === data.overrideId; });
+  if(exists) return;
+  gigPendingOverrides.push({ _id:data.overrideId, fromNick:data.fromNick, fromGuild:data.fromGuild, toNick:data.toNick, section:data.section, newStartAt:data.newStartAt, newEndAt:data.newEndAt, myWeekHours:data.myWeekHours||0, ownerWeekHours:data.ownerWeekHours||0 });
+  renderGigBell();
+  var p=document.getElementById('gigBellPanel'); if(p) p.classList.remove('hidden');
+  showOverridePopupOnGiganty(data);
+});
+
+socket.on('pendingOverrides', function(list){
+  if(!Array.isArray(list)) return;
+  gigPendingOverrides = list;
+  renderGigBell();
+  if(list.length > 0){ var p=document.getElementById('gigBellPanel'); if(p) p.classList.remove('hidden'); }
+});
+
+checkMiniSession();
+// Załaduj sloty od razu (publiczne, nie wymagają logowania)
+loadCalSlots();
+// Odświeżaj co minutę
+setInterval(function(){ loadCalSlots(); }, 60000);
+
+/* ═══ PARTICLES ═══ */
 const _pc=document.getElementById('particleCanvas'),_px=_pc.getContext('2d');
-function _pr(){_pc.width=window.innerWidth;_pc.height=window.innerHeight;}_pr();window.addEventListener('resize',_pr);
+function _pr(){_pc.width=window.innerWidth;_pc.height=window.innerHeight;} _pr(); window.addEventListener('resize',_pr);
 const _ps=[];for(let i=0;i<80;i++)_ps.push(_pnew());
 function _pnew(){const t=Math.random()<0.7?'a':'e';return{t,x:Math.random()*_pc.width,y:Math.random()*_pc.height,s:t==='a'?1.5+Math.random()*3:1+Math.random()*2,vy:0.25+Math.random()*0.7,vx:Math.random()*0.4-0.2,w:Math.random()*Math.PI*2,ws:0.005+Math.random()*0.015,o:0.1+Math.random()*0.35,od:1,gs:3+Math.random()*8};}
-function _pu(p){p.w+=p.ws;p.vx+=(-0.01+Math.random()*0.02);p.vx=Math.max(-0.5,Math.min(0.5,p.vx));p.x+=p.vx+Math.sin(p.w)*0.25;p.y+=p.vy;if(p.t==='e'){p.o+=p.od*0.007;if(p.o>0.5||p.o<0.07)p.od*=-1;}if(p.y>_pc.height+20||p.x<-20||p.x>_pc.width+20){p.x=Math.random()*_pc.width;p.y=-10;p.o=0.1+Math.random()*0.3;}}
-function _pd(p){_px.save();if(p.t==='a'){_px.globalAlpha=p.o;_px.fillStyle=`rgba(180,170,160,${p.o})`;_px.beginPath();_px.ellipse(p.x,p.y,p.s,p.s*0.55,p.w,0,Math.PI*2);_px.fill();}else{const g=_px.createRadialGradient(p.x,p.y,0,p.x,p.y,p.gs);g.addColorStop(0,`rgba(255,140,40,${p.o*0.9})`);g.addColorStop(1,'rgba(180,40,10,0)');_px.fillStyle=g;_px.beginPath();_px.arc(p.x,p.y,p.gs,0,Math.PI*2);_px.fill();_px.globalAlpha=p.o;_px.fillStyle='rgba(255,200,100,0.9)';_px.beginPath();_px.arc(p.x,p.y,p.s*0.4,0,Math.PI*2);_px.fill();}_px.restore();}
-(function _loop(){_px.clearRect(0,0,_pc.width,_pc.height);_ps.forEach(p=>{_pu(p);_pd(p);});requestAnimationFrame(_loop);})();
+function _pu(p){p.w+=p.ws;p.vx+=(Math.random()-0.5)*0.015;p.vx=Math.max(-0.5,Math.min(0.5,p.vx));p.x+=p.vx+Math.sin(p.w)*0.25;p.y+=p.vy;if(p.t==='e'){p.o+=p.od*0.007;if(p.o>0.52||p.o<0.06)p.od*=-1;}if(p.y>_pc.height+20||p.x<-20||p.x>_pc.width+20){p.x=Math.random()*_pc.width;p.y=-10;p.o=0.08+Math.random()*0.32;}}
+function _pd(p){_px.save();if(p.t==='a'){_px.globalAlpha=p.o;_px.fillStyle='rgba(185,175,165,'+p.o+')';_px.beginPath();_px.ellipse(p.x,p.y,p.s,p.s*0.55,p.w,0,Math.PI*2);_px.fill();}else{const g=_px.createRadialGradient(p.x,p.y,0,p.x,p.y,p.gs);g.addColorStop(0,'rgba(255,145,45,'+p.o*0.9+')');g.addColorStop(1,'rgba(180,40,10,0)');_px.fillStyle=g;_px.beginPath();_px.arc(p.x,p.y,p.gs,0,Math.PI*2);_px.fill();_px.globalAlpha=p.o;_px.fillStyle='rgba(255,205,110,0.9)';_px.beginPath();_px.arc(p.x,p.y,p.s*0.4,0,Math.PI*2);_px.fill();}_px.restore();}
+(function _loop(){_px.clearRect(0,0,_pc.width,_pc.height);_ps.forEach(function(p){_pu(p);_pd(p);});requestAnimationFrame(_loop);})();
+
+/* ═══ PRYWATNY CZAT (PM) ═══ */
+function savePMHistory(){
+  try{
+    var toSave={};
+    Object.keys(pmHistory).forEach(function(nick){
+      toSave[nick]=pmHistory[nick].slice(-50); // ostatnie 50 wiadomości per konwersacja
+    });
+    localStorage.setItem('sojusz_pm_history', JSON.stringify(toSave));
+  }catch(e){}
+}
+
+/* ═══ PRYWATNY CZAT (PM) ═══ */
+var pmTarget=null, pmUnread={}, pmListOpen=false;
+var pmHistory=(function(){ try{ var s=localStorage.getItem('sojusz_pm_history'); return s?JSON.parse(s):{} }catch(e){return{}} })();
+
+function togglePMList(){
+  pmListOpen = !pmListOpen;
+  document.getElementById('chatPanel').style.display = pmListOpen ? 'block' : 'none';
+  if(pmListOpen) updatePMList(); // odśwież listę przy każdym otwarciu
+}
+
+function updatePMBadge(){
+  var total = Object.values(pmUnread).reduce(function(s,v){return s+v;},0);
+  var b = document.getElementById('chatBadge'); if(!b) return;
+  if(total>0){ b.style.display='flex'; b.textContent=total>9?'9+':total; }
+  else { b.style.display='none'; }
+}
+
+function updatePMList(){
+  var el = document.getElementById('pmListItems'); if(!el) return;
+  var convs = Object.keys(pmHistory).filter(function(n){ return pmHistory[n]&&pmHistory[n].length>0; });
+  if(!convs.length){
+    el.innerHTML='<div style="padding:10px;text-align:center;font-size:11px;color:var(--text-dim);font-style:italic;">Kliknij 💬 PM przy graczu aby napisać</div>';
+    return;
+  }
+  el.innerHTML='';
+  convs.forEach(function(nick){
+    var msgs = pmHistory[nick]||[];
+    var last = msgs[msgs.length-1];
+    var unread = pmUnread[nick]||0;
+    var div=document.createElement('div');
+    div.style.cssText='padding:8px 10px;border-bottom:1px solid rgba(58,46,26,0.3);display:flex;align-items:center;gap:6px;';
+    var info=document.createElement('div');
+    info.style.cssText='flex:1;cursor:pointer;min-width:0;';
+    info.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;">'+
+      '<span style="font-family:Cinzel,serif;font-size:10px;color:var(--gold-light);">'+esc(nick)+'</span>'+
+      (unread?'<span style="background:#e07070;border-radius:8px;font-size:9px;color:#fff;padding:1px 5px;">'+unread+'</span>':'')+'</div>'+
+      (last?'<div style="font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(last.text.slice(0,30))+'</div>':'');
+    info.onclick=function(){ openPM(nick,''); };
+    info.onmouseover=function(){div.style.background='rgba(201,168,76,0.06)';}
+    info.onmouseout=function(){div.style.background='';}
+    var del=document.createElement('button');
+    del.textContent='✕';
+    del.title='Usuń czat';
+    del.style.cssText='background:none;border:none;color:rgba(200,80,80,0.5);cursor:pointer;font-size:12px;padding:2px 4px;flex-shrink:0;line-height:1;';
+    del.onmouseover=function(){this.style.color='#e07070';}
+    del.onmouseout=function(){this.style.color='rgba(200,80,80,0.5)';}
+    del.onclick=function(e){ e.stopPropagation(); deletePMConversation(nick); };
+    div.appendChild(info); div.appendChild(del);
+    el.appendChild(div);
+  });
+}
+
+function deletePMConversation(nick){
+  delete pmHistory[nick];
+  delete pmUnread[nick];
+  if(pmTarget===nick) closePM();
+  savePMHistory();
+  updatePMList();
+  updatePMBadge();
+}
+
+function openPM(nick,guild){
+  if(!currentUser){ showGigToast('Zaloguj się aby pisać','#c9a84c'); return; }
+  if(nick===currentUser.nick) return;
+  pmTarget=nick;
+  document.getElementById('pmTargetName').textContent=nick+(guild?' ['+guild+']':'');
+  var cont=document.getElementById('pmMessages'); cont.innerHTML='';
+  (pmHistory[nick]||[]).forEach(function(m){ renderPMMsg(m); });
+  document.getElementById('pmPanel').style.display='flex';
+  cont.scrollTop=cont.scrollHeight;
+  pmUnread[nick]=0; updatePMBadge(); updatePMList();
+  document.getElementById('pmInput')?.focus();
+  document.getElementById('chatPanel').style.display='none';
+  pmListOpen=false;
+  // Zapisz historię PM do localStorage
+  savePMHistory();
+}
+
+function closePM(){ document.getElementById('pmPanel').style.display='none'; pmTarget=null; }
+
+function sendPM(){
+  if(!currentUser||!pmTarget) return;
+  var inp=document.getElementById('pmInput'); var t=inp?inp.value.trim():'';
+  if(!t) return; socket.emit('chatSend',{text:t,toNick:pmTarget,token:getToken()}); inp.value=''; inp.focus();
+}
+
+function renderPMMsg(msg){
+  var cont=document.getElementById('pmMessages'); if(!cont) return;
+  var isOwn=currentUser&&msg.nick===currentUser.nick;
+  var d=new Date(msg.ts);
+  var time=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var div=document.createElement('div');
+  div.style.cssText='font-size:12px;line-height:1.5;margin-bottom:3px;'+(isOwn?'text-align:right;':'');
+  div.innerHTML=(isOwn?'':'<span style="font-family:Cinzel,serif;font-size:10px;color:var(--gold-light);margin-right:4px;">'+esc(msg.nick)+'</span>')+
+    '<span style="font-size:10px;color:var(--text-dim);float:'+(isOwn?'left':'right')+';">'+time+'</span>'+
+    '<div style="color:var(--text);clear:both;word-break:break-word;">'+esc(msg.text)+'</div>';
+  cont.appendChild(div);
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pmInput') sendPM();
+});
+
+socket.on('privateMessageBroadcast',function(msg){
+  // Fallback gdy emitToNick nie dotrze
+  if(!currentUser) return;
+  if(msg.toNick!==currentUser.nick && msg.nick!==currentUser.nick) return;
+  // Wywołaj ten sam handler co privateMessage
+  var other=(msg.nick===currentUser.nick)?msg.toNick:msg.nick;
+  if(!pmHistory[other]) pmHistory[other]=[];
+  // Sprawdź czy już nie mamy tej wiadomości
+  if(pmHistory[other].find(function(m){return m.id===msg.id;})) return;
+  pmHistory[other].push(msg);
+  if(pmTarget===other){
+    renderPMMsg(msg);
+    var cont=document.getElementById('pmMessages'); if(cont) cont.scrollTop=cont.scrollHeight;
+  } else {
+    pmUnread[other]=(pmUnread[other]||0)+1;
+    updatePMBadge(); updatePMList();
+    showGigToast('💬 '+other+': '+msg.text.slice(0,35),'#c9a84c');
+  }
+  savePMHistory();
+});
+socket.on('privateMessage',function(msg){
+  var other=(msg.nick===(currentUser&&currentUser.nick))?msg.toNick:msg.nick;
+  if(!pmHistory[other]) pmHistory[other]=[];
+  pmHistory[other].push(msg);
+  if(pmTarget===other){
+    renderPMMsg(msg);
+    var cont=document.getElementById('pmMessages'); if(cont) cont.scrollTop=cont.scrollHeight;
+  } else {
+    pmUnread[other]=(pmUnread[other]||0)+1;
+    updatePMBadge(); updatePMList();
+    showGigToast('💬 '+other+': '+msg.text.slice(0,35),'#c9a84c');
+  }
+  savePMHistory();
+});
+
 </script>
+
+<!-- CZAT FAB -->
+<div id="chatFab" onclick="togglePMList()" style="position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#2a1e0e,#1a1208);border:2px solid rgba(201,168,76,0.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;box-shadow:0 4px 20px rgba(0,0,0,0.6);">
+  💬<span id="chatBadge" style="display:none;position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;background:#e07070;border-radius:9px;font-size:9px;color:#fff;align-items:center;justify-content:center;padding:0 3px;">0</span>
+</div>
+
+<div id="chatPanel" style="position:fixed;bottom:86px;right:24px;z-index:501;width:260px;background:linear-gradient(160deg,#1a1208,#0e0b06);border:1px solid rgba(201,168,76,0.35);border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,0.8);display:none;">
+  <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:9px 12px;border-bottom:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:space-between;">
+    <span>💬 Wiadomości</span>
+    <button onclick="document.getElementById('chatPanel').style.display='none'" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0;">✕</button>
+  </div>
+  <div id="pmListItems" style="padding:6px;">
+    <div style="padding:10px;text-align:center;font-size:11px;color:var(--text-dim);font-style:italic;">Kliknij 💬 PM przy graczu aby napisać</div>
+  </div>
+</div>
+
+<!-- PRYWATNY CZAT (PM) -->
+<div id="pmPanel" style="position:fixed;bottom:86px;right:24px;z-index:501;width:300px;height:360px;background:linear-gradient(160deg,#1a1208,#0e0b06);border:1px solid rgba(201,168,76,0.35);border-radius:4px;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.8);display:none;">
+  <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <span>🔒 PM: <span id="pmTargetName">—</span></span>
+    <button onclick="closePM()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:0;">✕</button>
+  </div>
+  <div id="pmMessages" style="flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;"></div>
+  <div style="display:flex;gap:6px;padding:8px 10px;border-top:1px solid rgba(201,168,76,0.12);flex-shrink:0;">
+    <input id="pmInput" placeholder="Wiadomość prywatna..." maxlength="300" style="flex:1;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:5px 8px;border-radius:2px;outline:none;">
+    <button onclick="sendPM()" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:5px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);cursor:pointer;border-radius:2px;white-space:nowrap;">Wyślij</button>
+  </div>
+</div>
+
 </body>
 </html>
