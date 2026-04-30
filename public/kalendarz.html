@@ -306,7 +306,9 @@ body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min
     <div class="modal-title" id="reserveTitle">Rezerwacja slotu</div>
     <div class="modal-row" id="forNickRow" style="display:none;">
       <label>Nick gracza:</label>
-      <input class="modal-input-sm" id="forNickInput" placeholder="Nick (zostaw puste = dla siebie)" style="flex:1;font-family:'Crimson Text',serif;font-size:14px;">
+      <select class="modal-select" id="forNickInput" style="flex:1;">
+        <option value="">— dla siebie (Ezvay) —</option>
+      </select>
     </div>
     <div class="modal-row">
       <label>Sekcja:</label>
@@ -885,7 +887,7 @@ function renderGrid(containerId, section) {
         var pmBtn2 = (!isOwn && currentUser) ? '<span onclick="event.stopPropagation();openKalPM(\'' + esc(slot.nick) + '\',\'' + esc(slot.guild||'') + '\')" title="PM" style="cursor:pointer;font-size:10px;flex-shrink:0;color:rgba(201,168,76,0.5);margin-left:2px;user-select:none;">💬</span>' : ''
         slotDiv.innerHTML = '<div class="slot-top-row"><span class="slot-nick">'+esc(slot.nick)+'</span>'+delBtn2+editBtn2+ovrBtn2+pmBtn2+'</div><div class="slot-guild">'+esc(slot.guild)+'</div>'+noteDiv
         cell.appendChild(slotDiv)
-      } else if (!isPast) {
+      } else if (!isPast || (currentUser && currentUser.role==='admin')) {
         cell.addEventListener('click', () => openReserveModalAt(section, cellStart))
       }
       grid.appendChild(cell)
@@ -900,7 +902,18 @@ function openReserveModal() {
   // Pokaż pole "dla kogo" tylko adminowi
   if(currentUser && currentUser.role==='admin') {
     document.getElementById('forNickRow').style.display = 'flex'
-    document.getElementById('forNickInput').oninput = function(){ reserveForNick = this.value; }
+    // Wypełnij dropdown listą użytkowników
+    var sel = document.getElementById('forNickInput')
+    sel.innerHTML = '<option value="">— dla siebie ('+esc(currentUser.nick)+') —</option>'
+    allUsers.forEach(function(u){
+      if(u.nick === currentUser.nick) return
+      var opt = document.createElement('option')
+      opt.value = u.nick
+      opt.textContent = u.nick + ' (' + u.guild + ')'
+      sel.appendChild(opt)
+    })
+    // Opcja ręcznego wpisu - dodaj pole tekstowe poniżej
+    sel.onchange = function(){ reserveForNick = this.value; }
   } else {
     document.getElementById('forNickRow').style.display = 'none'
     reserveForNick = ''
@@ -1018,7 +1031,7 @@ async function submitReservation() {
   const start = getDateFromDayHour('resDay','resHour')
   if(!start){ document.getElementById('reserveError').textContent='Wybierz dzień i godzinę'; return }
   const now = new Date()
-  if(start < now){ document.getElementById('reserveError').textContent='Nie można rezerwować w przeszłości'; return }
+  if(start < now && currentUser.role !== 'admin'){ document.getElementById('reserveError').textContent='Nie można rezerwować w przeszłości'; return }
   const end = new Date(start); end.setHours(end.getHours()+reserveDuration)
 
   // Admin może rezerwować dla dowolnego nicka
