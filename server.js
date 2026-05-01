@@ -886,6 +886,39 @@ process.on("SIGTERM", () => shutdown("SIGTERM"))
 process.on("SIGINT",  () => shutdown("SIGINT"))
 
 /* ═══ START ═══ */
+function startSlotChecker() {
+  setInterval(async () => {
+    if (!slotsCol) return
+    const now = new Date()
+
+    const toWarn = await slotsCol.find({
+      startAt: { $gte: new Date(now.getTime() + 9*60*1000), $lte: new Date(now.getTime() + 11*60*1000) },
+      confirmed: { $ne: true }, warned: { $ne: true }
+    }).toArray()
+    for (const slot of toWarn) {
+      await slotsCol.updateOne({ _id: slot._id }, { $set: { warned: true } })
+      const data = { slotId: String(slot._id), nick: slot.nick, section: slot.section, startAt: slot.startAt, endAt: slot.endAt, minutesLeft: Math.round((new Date(slot.startAt) - now) / 60000) }
+      emitToNick(slot.nick, 'slotWarning', data)
+      io.emit('slotWarningBroadcast', data)
+      console.log('⏰ Slot warning:', slot.nick)
+    }
+
+    const toExpire = await slotsCol.find({
+      startAt: { $gte: new Date(now.getTime() - 2*60*1000), $lte: now },
+      confirmed: { $ne: true }, expired: { $ne: true }
+    }).toArray()
+    for (const slot of toExpire) {
+      await slotsCol.updateOne({ _id: slot._id }, { $set: { expired: true } })
+      await slotsCol.deleteOne({ _id: slot._id })
+      io.emit('slotsUpdate', { action: 'delete', slotId: String(slot._id) })
+      const expData = { slotId: String(slot._id), nick: slot.nick, section: slot.section }
+      emitToNick(slot.nick, 'slotExpired', expData)
+      io.emit('slotExpiredBroadcast', expData)
+      console.log('❌ Slot expired:', slot.nick)
+    }
+  }, 60 * 1000)
+}
+
 function startServer() {
   const toResume = [...gigRunning]
   gigRunning.clear()
