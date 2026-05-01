@@ -66,11 +66,21 @@ async function connectDB() {
     for (const id in loadedTimers) {
       const t = loadedTimers[id]
       if (typeof t === 'number') {
-        // Stary format: sama liczba sekund
         gigTimers[id] = { elapsed: t, running: false }
       } else if (t && typeof t === 'object') {
         gigTimers[id] = { elapsed: t.elapsed || 0, running: false }
-        // running będzie wznowione przez startServer()
+      }
+    }
+    // Nadrabiaj czas przestoju dla timerów które były uruchomione
+    if (doc.shutdownAt && doc.gigRunning && doc.gigRunning.length > 0) {
+      const elapsedSinceShutdown = Math.floor((Date.now() - doc.shutdownAt) / 1000)
+      if (elapsedSinceShutdown > 0 && elapsedSinceShutdown < 3600) {
+        for (const id of doc.gigRunning) {
+          if (gigTimers[id]) {
+            gigTimers[id].elapsed += elapsedSinceShutdown
+            console.log("Nadrobiono " + elapsedSinceShutdown + "s dla timera " + id)
+          }
+        }
       }
     }
     gigRunning          = new Set(doc.gigRunning  || [])
@@ -129,10 +139,20 @@ let saveTimer = null
 async function saveNow() {
   if (!col) return
   try {
+    // Zawsze aktualizuj elapsed przed zapisem
+    const timersToSave = {}
+    for (const id in gigTimers) {
+      const t = gigTimers[id]
+      if (t && gigRunning.has(id)) {
+        timersToSave[id] = { elapsed: getTimerSeconds(id), running: true, startedAt: t.startedAt }
+      } else {
+        timersToSave[id] = t
+      }
+    }
     await col.replaceOne({ _id: "main" }, {
       _id: "main",
       chatMessages, grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
-      gigTimers, gigRunning:[...gigRunning], gigWho, delegations,
+      gigTimers: timersToSave, gigRunning:[...gigRunning], gigWho, delegations,
       savedAt: Date.now()
     }, { upsert: true })
   } catch(e) { console.error("Save error:", e.message) }
@@ -255,33 +275,6 @@ app.post('/api/slots', authMiddleware, async (req, res) => {
     })
   }
 
-  // Sprawdź lukę — nie pozwól na przerwę 1-2h między slotami (min. 3h lub 0h)
-  const MIN_GAP_MS = 3 * 60 * 60 * 1000  // 3 godziny
-  const MAX_ALLOWED_GAP_MS = 0            // brak przerwy = ciągłość
-  // Szukaj slotu który kończy się tuż przed nowym (luka mniejsza niż 3h)
-  const slotBefore = await slotsCol.findOne({
-    section,
-    endAt: { $gt: new Date(start.getTime() - MIN_GAP_MS), $lte: start }
-  })
-  if (slotBefore && slotBefore.endAt < start) {
-    const gapMs = start.getTime() - new Date(slotBefore.endAt).getTime()
-    const gapH = Math.round(gapMs / 36000) / 100
-    return res.status(400).json({
-      error: `Zbyt mała przerwa (${gapH}h) po slocie ${slotBefore.nick}. Minimalna przerwa to 3h lub zacznij zaraz po poprzednim slocie.`
-    })
-  }
-  // Szukaj slotu który zaczyna się tuż po nowym (luka mniejsza niż 3h)
-  const slotAfter = await slotsCol.findOne({
-    section,
-    startAt: { $gt: end, $lt: new Date(end.getTime() + MIN_GAP_MS) }
-  })
-  if (slotAfter) {
-    const gapMs = new Date(slotAfter.startAt).getTime() - end.getTime()
-    const gapH = Math.round(gapMs / 36000) / 100
-    return res.status(400).json({
-      error: `Zbyt mała przerwa (${gapH}h) przed slotem ${slotAfter.nick}. Minimalna przerwa to 3h lub zakończ tuż przed następnym slotem.`
-    })
-  }
 
   const note = req.body.note ? String(req.body.note).slice(0,80) : ''
   const slot = {
@@ -504,17 +497,6 @@ app.get('/api/debug/override/:id', authMiddleware, async (req, res) => {
       }
     })
   } catch(e) { res.json({ error: e.message }) }
-})
-
-// Potwierdzenie obecności
-app.post('/api/slots/:id/confirm', authMiddleware, async (req, res) => {
-  const slot = await slotsCol.findOne({ _id: new ObjectId(req.params.id) })
-  if (!slot) return res.status(404).json({ error: 'Slot nie istnieje' })
-  if (slot.nick !== req.user.nick && req.user.role !== 'admin')
-    return res.status(403).json({ error: 'To nie Twój slot' })
-  await slotsCol.updateOne({ _id: slot._id }, { $set: { confirmed: true } })
-  io.emit('slotConfirmed', { slotId: String(slot._id), nick: slot.nick })
-  res.json({ ok: true })
 })
 
 // Delete slot
@@ -870,8 +852,9 @@ io.on("connection", async socket => {
 
 /* ═══ SHUTDOWN ═══ */
 async function shutdown(sig) {
-  console.log("Shutdown:", sig)
+  console.log("Zamykanie (" + sig + ") — zapisuję stan timerów...")
   if (saveTimer) clearTimeout(saveTimer)
+  // Zapisz aktualny elapsed dla uruchomionych timerów
   gigRunning.forEach(id => {
     if (gigTimers[id] && typeof gigTimers[id] === 'object') {
       gigTimers[id].elapsed = getTimerSeconds(id)
@@ -879,7 +862,13 @@ async function shutdown(sig) {
       delete gigTimers[id].startedAt
     }
   })
+  // Zapisz timestamp zamknięcia — po restarcie nadrobi czas
+  const shutdownTs = Date.now()
+  if (col) {
+    try { await col.updateOne({ _id: "main" }, { $set: { shutdownAt: shutdownTs } }) } catch(e) {}
+  }
   await saveNow()
+  console.log("Stan zapisany. Zamykam.")
   process.exit(0)
 }
 process.on("SIGTERM", () => shutdown("SIGTERM"))
@@ -903,19 +892,6 @@ function startSlotChecker() {
       console.log('⏰ Slot warning:', slot.nick)
     }
 
-    const toExpire = await slotsCol.find({
-      startAt: { $gte: new Date(now.getTime() - 2*60*1000), $lte: now },
-      confirmed: { $ne: true }, expired: { $ne: true }
-    }).toArray()
-    for (const slot of toExpire) {
-      await slotsCol.updateOne({ _id: slot._id }, { $set: { expired: true } })
-      await slotsCol.deleteOne({ _id: slot._id })
-      io.emit('slotsUpdate', { action: 'delete', slotId: String(slot._id) })
-      const expData = { slotId: String(slot._id), nick: slot.nick, section: slot.section }
-      emitToNick(slot.nick, 'slotExpired', expData)
-      io.emit('slotExpiredBroadcast', expData)
-      console.log('❌ Slot expired:', slot.nick)
-    }
   }, 60 * 1000)
 }
 

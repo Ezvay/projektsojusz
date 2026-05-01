@@ -267,34 +267,7 @@ body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min
   .kal-chat-send{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:5px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);cursor:pointer;border-radius:2px;white-space:nowrap;transition:all 0.2s;}
   .kal-chat-send:hover{color:var(--gold);border-color:var(--gold);}
 
-
-  /* POTWIERDZENIE OBECNOŚCI */
-  .confirm-overlay{
-    position:fixed;inset:0;z-index:2000;
-    background:rgba(0,0,0,0.7);backdrop-filter:blur(3px);
-    display:flex;align-items:center;justify-content:center;
-  }
-  .confirm-overlay.hidden{display:none;}
-  .confirm-box{
-    background:linear-gradient(160deg,#1e1810,#100d08);
-    border:1px solid rgba(201,168,76,0.5);border-radius:4px;
-    padding:28px 36px;min-width:340px;max-width:440px;text-align:center;
-    box-shadow:0 0 60px rgba(0,0,0,0.9),0 0 30px rgba(201,168,76,0.08);
-    animation:popIn 0.3s cubic-bezier(0.23,1,0.32,1);position:relative;
-  }
-  .confirm-box::before,.confirm-box::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(201,168,76,0.5);border-style:solid;}
-  .confirm-box::before{top:7px;left:7px;border-width:2px 0 0 2px;}
-  .confirm-box::after{bottom:7px;right:7px;border-width:0 2px 2px 0;}
-  .confirm-icon{font-size:2.5rem;margin-bottom:10px;}
-  .confirm-title{font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;}
-  .confirm-info{font-size:14px;color:var(--text);line-height:1.7;margin-bottom:6px;}
-  .confirm-timer{font-family:'Cinzel',serif;font-size:11px;color:#e07070;letter-spacing:1px;margin-bottom:20px;}
-  .confirm-btn{
-    width:100%;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;
-    padding:12px;border:1px solid rgba(60,160,60,0.6);color:#60d060;
-    background:rgba(30,100,30,0.15);cursor:pointer;border-radius:2px;transition:all 0.2s;
-  }
-  .confirm-btn:hover{background:rgba(30,100,30,0.3);}
+}
 
   .cal-cell.in-progress{ background:rgba(201,168,76,0.04); cursor:pointer; }
   .cal-cell.in-progress:hover{ background:rgba(201,168,76,0.09); }
@@ -407,17 +380,6 @@ body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
-
-<!-- POTWIERDZENIE OBECNOŚCI -->
-<div class="confirm-overlay hidden" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-icon">⏰</div>
-    <div class="confirm-title">Potwierdź obecność!</div>
-    <div class="confirm-info" id="confirmInfo"></div>
-    <div class="confirm-timer" id="confirmTimer"></div>
-    <button class="confirm-btn" onclick="confirmMySlot()">✓ Jestem! Potwierdzam</button>
-  </div>
-</div>
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
@@ -1515,74 +1477,6 @@ socket.on('privateMessage',function(msg){
 });
 
 document.addEventListener('DOMContentLoaded',function(){ updateKalPMList(); });
-/* === POTWIERDZENIE OBECNOŚCI === */
-var pendingConfirmSlotId = null
-var confirmCountdownTimer = null
-
-function showConfirmPrompt(data) {
-  if(!currentUser || data.nick !== currentUser.nick) return
-  pendingConfirmSlotId = data.slotId
-  var s = new Date(data.startAt), e = new Date(data.endAt)
-  var secLabel = data.section==='top' ? '🔥 Góra' : '🌊 Dół'
-  document.getElementById('confirmInfo').innerHTML =
-    'Twój slot zaraz się zaczyna!<br>' +
-    '<strong>' + secLabel + ': ' + fmtTime(s) + ' → ' + fmtTime(e) + '</strong><br>' +
-    'Masz <strong>' + (data.minutesLeft||10) + ' minut</strong> na potwierdzenie.'
-  document.getElementById('confirmOverlay').classList.remove('hidden')
-  // Odliczanie do startu
-  var endTime = new Date(data.startAt).getTime()
-  if(confirmCountdownTimer) clearInterval(confirmCountdownTimer)
-  confirmCountdownTimer = setInterval(function(){
-    var left = Math.max(0, Math.round((endTime - Date.now()) / 1000))
-    var m = Math.floor(left/60), s2 = left%60
-    document.getElementById('confirmTimer').textContent =
-      'Jeśli nie potwierdzisz, slot przepadnie za: ' + String(m).padStart(2,'0') + ':' + String(s2).padStart(2,'0')
-    if(left <= 0) {
-      clearInterval(confirmCountdownTimer)
-      document.getElementById('confirmOverlay').classList.add('hidden')
-      pendingConfirmSlotId = null
-      showToast('Slot przepadł — nie potwierdziłeś obecności', '#e07070')
-    }
-  }, 1000)
-}
-
-async function confirmMySlot() {
-  if(!pendingConfirmSlotId) return
-  var r = await apiPost('/api/slots/' + pendingConfirmSlotId + '/confirm', {})
-  if(r && r.error) { alert('Błąd: ' + r.error); return }
-  clearInterval(confirmCountdownTimer)
-  document.getElementById('confirmOverlay').classList.add('hidden')
-  pendingConfirmSlotId = null
-  showToast('✓ Obecność potwierdzona!', '#60d060')
-}
-
-// Nasłuchuj ostrzeżeń z serwera
-socket.on('slotWarning', function(data) {
-  showConfirmPrompt(data)
-})
-socket.on('slotWarningBroadcast', function(data) {
-  if(currentUser && data.nick === currentUser.nick) showConfirmPrompt(data)
-})
-socket.on('slotExpired', function(data) {
-  if(currentUser && data.nick === currentUser.nick) {
-    clearInterval(confirmCountdownTimer)
-    document.getElementById('confirmOverlay').classList.add('hidden')
-    pendingConfirmSlotId = null
-    showToast('❌ Twój slot przepadł — nie potwierdziłeś obecności', '#e07070')
-    loadSlots().then(renderCalendars)
-  }
-})
-socket.on('slotExpiredBroadcast', function(data) {
-  // Odśwież kalendarz dla wszystkich gdy slot przepada
-  if(currentUser && data.nick !== currentUser.nick) {
-    loadSlots().then(renderCalendars)
-  }
-})
-socket.on('slotConfirmed', function(data) {
-  // Odznacz slot jako potwierdzony wizualnie (opcjonalnie)
-  loadSlots().then(renderCalendars)
-})
-
 checkSession()
 
 /* === PARTICLES === */
