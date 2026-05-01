@@ -60,7 +60,19 @@ async function connectDB() {
     grotaKilledGenerals = doc.grotaKilledGenerals || {}
     grotaRegions        = doc.grotaRegions        || {}
     grotaSnapshots      = doc.grotaSnapshots      || []
-    gigTimers           = doc.gigTimers           || {}
+    // Wczytaj timery - zachowaj kompatybilność ze starym formatem
+    const loadedTimers = doc.gigTimers || {}
+    gigTimers = {}
+    for (const id in loadedTimers) {
+      const t = loadedTimers[id]
+      if (typeof t === 'number') {
+        // Stary format: sama liczba sekund
+        gigTimers[id] = { elapsed: t, running: false }
+      } else if (t && typeof t === 'object') {
+        gigTimers[id] = { elapsed: t.elapsed || 0, running: false }
+        // running będzie wznowione przez startServer()
+      }
+    }
     gigRunning          = new Set(doc.gigRunning  || [])
     gigWho              = doc.gigWho              || { top:null, bottom:null }
     delegations         = doc.delegations         || {}
@@ -221,15 +233,16 @@ app.post('/api/slots', authMiddleware, async (req, res) => {
 
   if (diffH < 1)  return res.status(400).json({ error: 'Min. 1 godzina' })
   if (diffH > 8)  return res.status(400).json({ error: 'Max. 8 godzin' })
-  if (start < new Date() && req.user.role !== 'admin') return res.status(400).json({ error: 'Nie można rezerwować w przeszłości' })
+  // Można rezerwować do 1h wstecz (np. gdy ktoś wyszedł a slot trwa)
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+  if (start < oneHourAgo && req.user.role !== 'admin') return res.status(400).json({ error: 'Nie można rezerwować więcej niż 1h w przeszłości' })
 
-  // Check collision
+  // Check collision (nakładanie się)
   const conflict = await slotsCol.findOne({
     section,
     $or: [{ startAt: { $lt: end }, endAt: { $gt: start } }]
   })
   if (conflict) {
-    // Zwróć info o konflikcie — klient może zaproponować nadpisanie
     return res.status(409).json({
       error: 'conflict',
       conflict: {
@@ -239,6 +252,34 @@ app.post('/api/slots', authMiddleware, async (req, res) => {
         startAt: conflict.startAt,
         endAt: conflict.endAt
       }
+    })
+  }
+
+  // Sprawdź lukę — nie pozwól na przerwę 1-2h między slotami (min. 3h lub 0h)
+  const MIN_GAP_MS = 3 * 60 * 60 * 1000  // 3 godziny
+  const MAX_ALLOWED_GAP_MS = 0            // brak przerwy = ciągłość
+  // Szukaj slotu który kończy się tuż przed nowym (luka mniejsza niż 3h)
+  const slotBefore = await slotsCol.findOne({
+    section,
+    endAt: { $gt: new Date(start.getTime() - MIN_GAP_MS), $lte: start }
+  })
+  if (slotBefore && slotBefore.endAt < start) {
+    const gapMs = start.getTime() - new Date(slotBefore.endAt).getTime()
+    const gapH = Math.round(gapMs / 36000) / 100
+    return res.status(400).json({
+      error: `Zbyt mała przerwa (${gapH}h) po slocie ${slotBefore.nick}. Minimalna przerwa to 3h lub zacznij zaraz po poprzednim slocie.`
+    })
+  }
+  // Szukaj slotu który zaczyna się tuż po nowym (luka mniejsza niż 3h)
+  const slotAfter = await slotsCol.findOne({
+    section,
+    startAt: { $gt: end, $lt: new Date(end.getTime() + MIN_GAP_MS) }
+  })
+  if (slotAfter) {
+    const gapMs = new Date(slotAfter.startAt).getTime() - end.getTime()
+    const gapH = Math.round(gapMs / 36000) / 100
+    return res.status(400).json({
+      error: `Zbyt mała przerwa (${gapH}h) przed slotem ${slotAfter.nick}. Minimalna przerwa to 3h lub zakończ tuż przed następnym slotem.`
     })
   }
 
@@ -463,6 +504,17 @@ app.get('/api/debug/override/:id', authMiddleware, async (req, res) => {
       }
     })
   } catch(e) { res.json({ error: e.message }) }
+})
+
+// Potwierdzenie obecności
+app.post('/api/slots/:id/confirm', authMiddleware, async (req, res) => {
+  const slot = await slotsCol.findOne({ _id: new ObjectId(req.params.id) })
+  if (!slot) return res.status(404).json({ error: 'Slot nie istnieje' })
+  if (slot.nick !== req.user.nick && req.user.role !== 'admin')
+    return res.status(403).json({ error: 'To nie Twój slot' })
+  await slotsCol.updateOne({ _id: slot._id }, { $set: { confirmed: true } })
+  io.emit('slotConfirmed', { slotId: String(slot._id), nick: slot.nick })
+  res.json({ ok: true })
 })
 
 // Delete slot
@@ -839,7 +891,11 @@ function startServer() {
   gigRunning.clear()
   toResume.forEach(id => { startGig(id); console.log("Resumed:", id) })
   const PORT = process.env.PORT || 3000
-  http.listen(PORT, "0.0.0.0", () => console.log("✅ Port", PORT))
+  http.listen(PORT, "0.0.0.0", () => {
+    console.log("✅ Port", PORT)
+    startSlotChecker()
+    console.log("✅ Slot checker started")
+  })
 }
 
 const dbTimeout = setTimeout(() => { console.warn("⚠ DB timeout"); startServer() }, 15000)
