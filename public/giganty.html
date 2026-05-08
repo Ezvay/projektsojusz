@@ -1768,30 +1768,67 @@ function deleteSoundFile(name){
 socket.on('update', function(snap){ window._lastTimerSnapshot = snap; });
 
 
-/* -- TTS ElevenLabs -- */
-function sendTTS(){
-  var text = document.getElementById('ttsText');
+/* -- TTS ElevenLabs (przeglądarka robi request bezpośrednio) -- */
+var _ttsConfig = null;
+
+async function getTTSConfig(){
+  if(_ttsConfig) return _ttsConfig;
+  var token = getToken();
+  var r = await fetch('/admin/tts-config', { headers:{'Authorization':'Bearer '+token} });
+  _ttsConfig = await r.json();
+  return _ttsConfig;
+}
+
+async function sendTTS(){
+  var textEl = document.getElementById('ttsText');
   var voiceInput = document.getElementById('ttsVoiceId');
   var status = document.getElementById('ttsStatus');
-  var t = text ? text.value.trim() : '';
+  var t = textEl ? textEl.value.trim() : '';
   if(!t){ if(status) status.textContent = 'Wpisz tekst'; return; }
   if(status) status.textContent = '⏳ Generowanie...';
-  var token = getToken();
-  var body = { text: t };
-  var vid = voiceInput ? voiceInput.value.trim() : '';
-  if(vid) body.voiceId = vid;
-  fetch('/admin/tts', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-    body: JSON.stringify(body)
-  }).then(function(r){ return r.json(); })
-    .then(function(d){
-      if(d.error){ if(status) status.textContent = '❌ '+d.error; return; }
-      if(status) status.textContent = '✅ Wysłano!';
-      if(text) text.value = '';
-      setTimeout(function(){ if(status) status.textContent = ''; }, 3000);
-    })
-    .catch(function(e){ if(status) status.textContent = '❌ '+e.message; });
+  try {
+    var cfg = await getTTSConfig();
+    var vid = (voiceInput && voiceInput.value.trim()) ? voiceInput.value.trim() : cfg.voiceId;
+    // Wywołaj ElevenLabs bezpośrednio z przeglądarki
+    var r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': cfg.apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg'
+      },
+      body: JSON.stringify({
+        text: t.slice(0,500),
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      })
+    });
+    if(!r.ok){
+      var err = await r.text();
+      if(status) status.textContent = '❌ ElevenLabs: '+r.status+' '+err.slice(0,60);
+      return;
+    }
+    // Konwertuj na base64
+    var buf = await r.arrayBuffer();
+    var bytes = new Uint8Array(buf);
+    var binary = '';
+    for(var i=0;i<bytes.byteLength;i++) binary += String.fromCharCode(bytes[i]);
+    var base64 = btoa(binary);
+    // Wyślij przez serwer do wszystkich
+    var token = getToken();
+    var resp = await fetch('/admin/tts-broadcast', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({ audio: base64, text: t })
+    });
+    var d = await resp.json();
+    if(d.error){ if(status) status.textContent = '❌ '+d.error; return; }
+    if(status) status.textContent = '✅ Wysłano!';
+    if(textEl) textEl.value = '';
+    setTimeout(function(){ if(status) status.textContent = ''; }, 3000);
+  } catch(e){
+    if(status) status.textContent = '❌ '+e.message;
+  }
 }
 
 // Odbierz TTS i odtwórz (wszyscy)

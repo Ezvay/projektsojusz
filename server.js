@@ -321,40 +321,20 @@ app.delete('/admin/sounds/:name', authMiddleware, adminOnly, (req, res) => {
   res.json({ ok: true })
 })
 
-// TTS przez ElevenLabs (admin)
-app.post('/admin/tts', authMiddleware, adminOnly, async (req, res) => {
-  const { text, voiceId } = req.body
-  if (!text || !text.trim()) return res.status(400).json({ error: 'Brak tekstu' })
+// TTS - przeglądarka admina robi request do ElevenLabs i odsyła base64 audio
+// Serwer tylko rozgłasza audio do wszystkich przez socket
+app.post('/admin/tts-broadcast', authMiddleware, adminOnly, (req, res) => {
+  const { audio, text } = req.body
+  if (!audio) return res.status(400).json({ error: 'Brak audio' })
+  io.emit('playTTS', { audio, text: text || '' })
+  res.json({ ok: true })
+})
+
+// Endpoint do pobrania konfiguracji TTS (klucz + voice id) - tylko dla admina
+app.get('/admin/tts-config', authMiddleware, adminOnly, (req, res) => {
   const apiKey = process.env.ELEVENLABS_API_KEY || 'sk_5b98035c00ddeb0bd7f9588c693eb7f4a43c6f82483388cd'
-  const vid = voiceId || process.env.ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO'
-  try {
-    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
-      method: 'POST',
-      headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg'
-      },
-      body: JSON.stringify({
-        text: text.trim().slice(0, 500),
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-      })
-    })
-    if (!r.ok) {
-      const err = await r.text()
-      console.error('ElevenLabs error:', r.status, err)
-      return res.status(502).json({ error: 'ElevenLabs: ' + r.status })
-    }
-    const arrayBuf = await r.arrayBuffer()
-    const base64 = Buffer.from(arrayBuf).toString('base64')
-    // Wyślij do wszystkich przez socket
-    io.emit('playTTS', { audio: base64, text: text.trim() })
-    res.json({ ok: true })
-  } catch(e) {
-    console.error('TTS error:', e.message)
-    res.status(500).json({ error: e.message })
-  }
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO'
+  res.json({ apiKey, voiceId })
 })
 
 // Puszczanie dźwięku dla wszystkich (admin)
