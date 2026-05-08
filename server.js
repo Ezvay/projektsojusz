@@ -6,11 +6,35 @@ const { MongoClient, ObjectId } = require("mongodb")
 const bcrypt          = require("bcrypt")
 const jwt             = require("jsonwebtoken")
 const path            = require("path")
+const fs              = require("fs")
+const multer          = require("multer")
+
+// Multer - upload dźwięków
+const soundStorage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    const dir = path.join(__dirname, "public", "sounds")
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    cb(null, dir)
+  },
+  filename: function(req, file, cb) {
+    const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')
+    cb(null, safe)
+  }
+})
+const uploadSound = multer({
+  storage: soundStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: function(req, file, cb) {
+    if (/\.(mp3|wav|ogg|m4a)$/i.test(file.originalname)) cb(null, true)
+    else cb(new Error('Tylko pliki audio'))
+  }
+})
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://kawulokdarek8_db_user:6SJushejd5pUueBo@projektsojusz.cxl68tz.mongodb.net/?appName=ProjektSojusz"
 const JWT_SECRET = process.env.JWT_SECRET || "sojusz_secret_2026_hard"
 const DB_NAME   = "projektsojusz"
 const ADMIN_NICK = "Ezvay"
+let REGISTER_CODE = "SojuszProjekt2026"
 
 app.use(express.json())
 app.use(express.static(path.join(__dirname, "public")))
@@ -68,22 +92,21 @@ async function connectDB() {
       if (typeof t === 'number') {
         gigTimers[id] = { elapsed: t, running: false }
       } else if (t && typeof t === 'object') {
-        gigTimers[id] = { elapsed: t.elapsed || 0, running: false }
-      }
-    }
-    // Nadrabiaj czas przestoju dla timerów które były uruchomione
-    if (doc.shutdownAt && doc.gigRunning && doc.gigRunning.length > 0) {
-      const elapsedSinceShutdown = Math.floor((Date.now() - doc.shutdownAt) / 1000)
-      if (elapsedSinceShutdown > 0 && elapsedSinceShutdown < 3600) {
-        for (const id of doc.gigRunning) {
-          if (gigTimers[id]) {
-            gigTimers[id].elapsed += elapsedSinceShutdown
-            console.log("Nadrobiono " + elapsedSinceShutdown + "s dla timera " + id)
-          }
+        // Jeśli timer był uruchomiony (running=true, startedAt zapisany)
+        // dodaj czas który minął od ostatniego zapisu do elapsed
+        let elapsed = t.elapsed || 0
+        if (t.running && t.startedAt) {
+          const extraSeconds = Math.floor((Date.now() - t.startedAt) / 1000)
+          // Nie dodawaj więcej niż 2 minuty (czas restartu serwera)
+          // żeby nie dodać za dużo przy długim downtime
+          elapsed = elapsed + Math.min(extraSeconds, 120)
+          console.log(`Timer ${id}: adding ${Math.min(extraSeconds,120)}s (was running, startedAt=${new Date(t.startedAt).toISOString()})`)
         }
+        gigTimers[id] = { elapsed, running: false }
       }
     }
     gigRunning          = new Set(doc.gigRunning  || [])
+    if (doc.registerCode) REGISTER_CODE = doc.registerCode
     gigWho              = doc.gigWho              || { top:null, bottom:null }
     delegations         = doc.delegations         || {}
     // Clean old killed generals
@@ -139,11 +162,12 @@ let saveTimer = null
 async function saveNow() {
   if (!col) return
   try {
-    // Zawsze aktualizuj elapsed przed zapisem
+    // Zaktualizuj elapsed dla wszystkich aktualnie działających timerów PRZED zapisem
     const timersToSave = {}
     for (const id in gigTimers) {
       const t = gigTimers[id]
       if (t && gigRunning.has(id)) {
+        // Timer działa - oblicz aktualny elapsed
         timersToSave[id] = { elapsed: getTimerSeconds(id), running: true, startedAt: t.startedAt }
       } else {
         timersToSave[id] = t
@@ -179,7 +203,8 @@ function adminOnly(req, res, next) {
 
 /* ═══ AUTH ROUTES ═══ */
 app.post('/api/register', async (req, res) => {
-  const { nick, guild, password } = req.body
+  const { nick, guild, password, code } = req.body
+  if (!code || code.trim() !== REGISTER_CODE) return res.status(403).json({ error: 'Nieprawidłowy kod dostępu' })
   if (!nick || !guild || !password) return res.status(400).json({ error: 'Wszystkie pola wymagane' })
   if (nick.length < 2 || nick.length > 30) return res.status(400).json({ error: 'Nick 2-30 znaków' })
   if (password.length < 4) return res.status(400).json({ error: 'Hasło min. 4 znaki' })
@@ -211,6 +236,137 @@ app.get('/api/me', authMiddleware, (req, res) => res.json(req.user))
 app.get('/api/users', authMiddleware, async (req, res) => {
   const users = await usersCol.find({}, { projection: { passwordHash:0 } }).toArray()
   res.json(users)
+})
+
+// Zmień kod rejestracyjny
+app.post('/api/admin/register-code', authMiddleware, adminOnly, async (req, res) => {
+  const { newCode } = req.body
+  if (!newCode || newCode.trim().length < 4) return res.status(400).json({ error: 'Kod min. 4 znaki' })
+  REGISTER_CODE = newCode.trim()
+  if (col) await col.updateOne({ _id: "main" }, { $set: { registerCode: REGISTER_CODE } }, { upsert: true })
+  res.json({ ok: true })
+})
+
+// Przywróć snapshot timerów (admin)
+app.post('/admin/restore-snapshot', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { timers } = req.body
+    if (!timers) return res.status(400).json({ error: 'Brak danych' })
+    for (const id of [...gigRunning]) {
+      clearInterval(gigIntervals[id]); delete gigIntervals[id]; gigRunning.delete(id)
+    }
+    for (const id in timers) {
+      gigTimers[id] = { elapsed: timers[id] || 0, running: false }
+    }
+    await saveNow()
+    io.emit('update', getTimersSnapshot())
+    res.json({ ok: true })
+  } catch(e) { res.status(500).json({ error: e.message }) }
+})
+
+// Ręczny zapis stanu przed deployem (admin)
+app.post('/admin/save-state', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    gigRunning.forEach(id => {
+      if (gigTimers[id]) gigTimers[id].elapsed = getTimerSeconds(id)
+    })
+    if (col) await col.updateOne({ _id: "main" }, { $set: { shutdownAt: Date.now() } })
+    await saveNow()
+    res.json({ ok: true, message: 'Stan zapisany' })
+  } catch(e) { res.status(500).json({ error: e.message }) }
+})
+
+// Lista dostępnych dźwięków
+app.get('/admin/sounds', authMiddleware, adminOnly, (req, res) => {
+  try {
+    const publicDir = path.join(__dirname, "public")
+    const soundsDir = path.join(__dirname, "public", "sounds")
+    const sounds = []
+    // Wbudowane dźwięki
+    if (fs.existsSync(publicDir)) {
+      fs.readdirSync(publicDir).forEach(f => {
+        if (/\.(mp3|wav|ogg|m4a)$/i.test(f)) {
+          sounds.push({ name: f, path: "/"+f, custom: false })
+        }
+      })
+    }
+    // Własne wgrane dźwięki
+    if (fs.existsSync(soundsDir)) {
+      fs.readdirSync(soundsDir).forEach(f => {
+        if (/\.(mp3|wav|ogg|m4a)$/i.test(f)) {
+          sounds.push({ name: f, path: "/sounds/"+f, custom: true })
+        }
+      })
+    }
+    res.json(sounds)
+  } catch(e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Upload dźwięku (admin)
+app.post('/admin/upload-sound', authMiddleware, adminOnly, uploadSound.single('audio'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Brak pliku' })
+  const filePath = "/sounds/" + req.file.filename
+  console.log("Sound uploaded:", req.file.filename)
+  res.json({ ok: true, name: req.file.filename, path: filePath })
+})
+
+// Usuń dźwięk (admin, tylko własne)
+app.delete('/admin/sounds/:name', authMiddleware, adminOnly, (req, res) => {
+  const name = req.params.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const filePath = path.join(__dirname, "public", "sounds", name)
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Nie znaleziono' })
+  fs.unlinkSync(filePath)
+  res.json({ ok: true })
+})
+
+// TTS przez ElevenLabs (admin)
+app.post('/admin/tts', authMiddleware, adminOnly, async (req, res) => {
+  const { text, voiceId } = req.body
+  if (!text || !text.trim()) return res.status(400).json({ error: 'Brak tekstu' })
+  const apiKey = process.env.ELEVENLABS_API_KEY
+  if (!apiKey) return res.status(500).json({ error: 'Brak ELEVENLABS_API_KEY w środowisku' })
+  const vid = voiceId || process.env.ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO' // Callum domyślnie
+  try {
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg'
+      },
+      body: JSON.stringify({
+        text: text.trim().slice(0, 500),
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      })
+    })
+    if (!r.ok) {
+      const err = await r.text()
+      console.error('ElevenLabs error:', r.status, err)
+      return res.status(502).json({ error: 'ElevenLabs: ' + r.status })
+    }
+    const arrayBuf = await r.arrayBuffer()
+    const base64 = Buffer.from(arrayBuf).toString('base64')
+    // Wyślij do wszystkich przez socket
+    io.emit('playTTS', { audio: base64, text: text.trim() })
+    res.json({ ok: true })
+  } catch(e) {
+    console.error('TTS error:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Puszczanie dźwięku dla wszystkich (admin)
+app.post('/admin/play-sound', authMiddleware, adminOnly, async (req, res) => {
+  const { sound, path: soundPath } = req.body
+  if (!sound) return res.status(400).json({ error: 'Brak nazwy' })
+  const builtIn = ['yalla','discord','reset']
+  const finalPath = soundPath || (builtIn.includes(sound) ? "/"+sound+".mp3" : null)
+  if (!finalPath) return res.status(400).json({ error: 'Nieznany dźwięk' })
+  io.emit('playSound', { sound, path: finalPath })
+  res.json({ ok: true })
 })
 
 app.delete('/api/users/:nick', authMiddleware, adminOnly, async (req, res) => {
@@ -275,6 +431,33 @@ app.post('/api/slots', authMiddleware, async (req, res) => {
     })
   }
 
+  // Sprawdź lukę — nie pozwól na przerwę 1-2h między slotami (min. 3h lub 0h)
+  const MIN_GAP_MS = 3 * 60 * 60 * 1000  // 3 godziny
+  const MAX_ALLOWED_GAP_MS = 0            // brak przerwy = ciągłość
+  // Szukaj slotu który kończy się tuż przed nowym (luka mniejsza niż 3h)
+  const slotBefore = await slotsCol.findOne({
+    section,
+    endAt: { $gt: new Date(start.getTime() - MIN_GAP_MS), $lte: start }
+  })
+  if (slotBefore && slotBefore.endAt < start) {
+    const gapMs = start.getTime() - new Date(slotBefore.endAt).getTime()
+    const gapH = Math.round(gapMs / 36000) / 100
+    return res.status(400).json({
+      error: `Zbyt mała przerwa (${gapH}h) po slocie ${slotBefore.nick}. Minimalna przerwa to 3h lub zacznij zaraz po poprzednim slocie.`
+    })
+  }
+  // Szukaj slotu który zaczyna się tuż po nowym (luka mniejsza niż 3h)
+  const slotAfter = await slotsCol.findOne({
+    section,
+    startAt: { $gt: end, $lt: new Date(end.getTime() + MIN_GAP_MS) }
+  })
+  if (slotAfter) {
+    const gapMs = new Date(slotAfter.startAt).getTime() - end.getTime()
+    const gapH = Math.round(gapMs / 36000) / 100
+    return res.status(400).json({
+      error: `Zbyt mała przerwa (${gapH}h) przed slotem ${slotAfter.nick}. Minimalna przerwa to 3h lub zakończ tuż przed następnym slotem.`
+    })
+  }
 
   const note = req.body.note ? String(req.body.note).slice(0,80) : ''
   const slot = {
@@ -499,6 +682,17 @@ app.get('/api/debug/override/:id', authMiddleware, async (req, res) => {
   } catch(e) { res.json({ error: e.message }) }
 })
 
+// Potwierdzenie obecności
+app.post('/api/slots/:id/confirm', authMiddleware, async (req, res) => {
+  const slot = await slotsCol.findOne({ _id: new ObjectId(req.params.id) })
+  if (!slot) return res.status(404).json({ error: 'Slot nie istnieje' })
+  if (slot.nick !== req.user.nick && req.user.role !== 'admin')
+    return res.status(403).json({ error: 'To nie Twój slot' })
+  await slotsCol.updateOne({ _id: slot._id }, { $set: { confirmed: true } })
+  io.emit('slotConfirmed', { slotId: String(slot._id), nick: slot.nick })
+  res.json({ ok: true })
+})
+
 // Delete slot
 app.delete('/api/slots/:id', authMiddleware, async (req, res) => {
   const slot = await slotsCol.findOne({ _id: new ObjectId(req.params.id) })
@@ -586,7 +780,7 @@ function startGig(id) {
   gigIntervals[id] = setInterval(() => {
     io.emit('update', getTimersSnapshot())
     const elapsed = getTimerSeconds(id)
-    if (elapsed % 10 === 0) saveData()
+    saveData()  // co sekundę - zawsze aktualny stan w MongoDB
   }, 1000)
 }
 function stopGig(id) {
@@ -852,9 +1046,8 @@ io.on("connection", async socket => {
 
 /* ═══ SHUTDOWN ═══ */
 async function shutdown(sig) {
-  console.log("Zamykanie (" + sig + ") — zapisuję stan timerów...")
+  console.log("Shutdown:", sig)
   if (saveTimer) clearTimeout(saveTimer)
-  // Zapisz aktualny elapsed dla uruchomionych timerów
   gigRunning.forEach(id => {
     if (gigTimers[id] && typeof gigTimers[id] === 'object') {
       gigTimers[id].elapsed = getTimerSeconds(id)
@@ -862,13 +1055,7 @@ async function shutdown(sig) {
       delete gigTimers[id].startedAt
     }
   })
-  // Zapisz timestamp zamknięcia — po restarcie nadrobi czas
-  const shutdownTs = Date.now()
-  if (col) {
-    try { await col.updateOne({ _id: "main" }, { $set: { shutdownAt: shutdownTs } }) } catch(e) {}
-  }
   await saveNow()
-  console.log("Stan zapisany. Zamykam.")
   process.exit(0)
 }
 process.on("SIGTERM", () => shutdown("SIGTERM"))
@@ -892,6 +1079,19 @@ function startSlotChecker() {
       console.log('⏰ Slot warning:', slot.nick)
     }
 
+    const toExpire = await slotsCol.find({
+      startAt: { $gte: new Date(now.getTime() - 2*60*1000), $lte: now },
+      confirmed: { $ne: true }, expired: { $ne: true }
+    }).toArray()
+    for (const slot of toExpire) {
+      await slotsCol.updateOne({ _id: slot._id }, { $set: { expired: true } })
+      await slotsCol.deleteOne({ _id: slot._id })
+      io.emit('slotsUpdate', { action: 'delete', slotId: String(slot._id) })
+      const expData = { slotId: String(slot._id), nick: slot.nick, section: slot.section }
+      emitToNick(slot.nick, 'slotExpired', expData)
+      io.emit('slotExpiredBroadcast', expData)
+      console.log('❌ Slot expired:', slot.nick)
+    }
   }, 60 * 1000)
 }
 
