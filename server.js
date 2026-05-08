@@ -325,9 +325,8 @@ app.delete('/admin/sounds/:name', authMiddleware, adminOnly, (req, res) => {
 app.post('/admin/tts', authMiddleware, adminOnly, async (req, res) => {
   const { text, voiceId } = req.body
   if (!text || !text.trim()) return res.status(400).json({ error: 'Brak tekstu' })
-  const apiKey = process.env.ELEVENLABS_API_KEY
-  if (!apiKey) return res.status(500).json({ error: 'Brak ELEVENLABS_API_KEY w środowisku' })
-  const vid = voiceId || process.env.ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO' // Callum domyślnie
+  const apiKey = process.env.ELEVENLABS_API_KEY || 'sk_5b98035c00ddeb0bd7f9588c693eb7f4a43c6f82483388cd'
+  const vid = voiceId || process.env.ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO'
   try {
     const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
       method: 'POST',
