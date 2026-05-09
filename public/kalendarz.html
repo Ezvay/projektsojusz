@@ -921,8 +921,8 @@ function renderGrid(containerId, section) {
       const cellEnd   = new Date(d); cellEnd.setHours(hour+1,0,0,0)
       // isPast = cała godzina minęła ponad 1h temu (nie można już rezerwować)
       // inProgress = slot trwa teraz lub skończyło się mniej niż 1h temu -> nadal klikalny
-      const inProgress = cellStart <= now && cellEnd > new Date(now.getTime() - 60*60*1000)
-      const isPast    = cellEnd <= new Date(now.getTime() - 60*60*1000)
+      const inProgress = cellStart <= now && cellEnd > new Date(now.getTime() - 3*60*60*1000)
+      const isPast    = cellEnd <= new Date(now.getTime() - 3*60*60*1000)
       const isToday   = d.toDateString() === now.toDateString()
 
       // Find slot covering this cell

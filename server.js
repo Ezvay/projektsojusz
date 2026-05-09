@@ -389,8 +389,9 @@ app.post('/api/slots', authMiddleware, async (req, res) => {
   if (diffH < 1)  return res.status(400).json({ error: 'Min. 1 godzina' })
   if (diffH > 8)  return res.status(400).json({ error: 'Max. 8 godzin' })
   // Można rezerwować do 1h wstecz (np. gdy ktoś wyszedł a slot trwa)
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
-  if (start < oneHourAgo && req.user.role !== 'admin') return res.status(400).json({ error: 'Nie można rezerwować więcej niż 1h w przeszłości' })
+  // Można rezerwować do 3h wstecz (np. gdy slot się zaczął a ktoś nie zdążył się wpisać)
+  const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000)
+  if (start < threeHoursAgo && req.user.role !== 'admin') return res.status(400).json({ error: 'Nie można rezerwować więcej niż 3h w przeszłości' })
 
   // Check collision (nakładanie się)
   const conflict = await slotsCol.findOne({
@@ -410,33 +411,7 @@ app.post('/api/slots', authMiddleware, async (req, res) => {
     })
   }
 
-  // Sprawdź lukę — nie pozwól na przerwę 1-2h między slotami (min. 3h lub 0h)
-  const MIN_GAP_MS = 3 * 60 * 60 * 1000  // 3 godziny
-  const MAX_ALLOWED_GAP_MS = 0            // brak przerwy = ciągłość
-  // Szukaj slotu który kończy się tuż przed nowym (luka mniejsza niż 3h)
-  const slotBefore = await slotsCol.findOne({
-    section,
-    endAt: { $gt: new Date(start.getTime() - MIN_GAP_MS), $lte: start }
-  })
-  if (slotBefore && slotBefore.endAt < start) {
-    const gapMs = start.getTime() - new Date(slotBefore.endAt).getTime()
-    const gapH = Math.round(gapMs / 36000) / 100
-    return res.status(400).json({
-      error: `Zbyt mała przerwa (${gapH}h) po slocie ${slotBefore.nick}. Minimalna przerwa to 3h lub zacznij zaraz po poprzednim slocie.`
-    })
-  }
-  // Szukaj slotu który zaczyna się tuż po nowym (luka mniejsza niż 3h)
-  const slotAfter = await slotsCol.findOne({
-    section,
-    startAt: { $gt: end, $lt: new Date(end.getTime() + MIN_GAP_MS) }
-  })
-  if (slotAfter) {
-    const gapMs = new Date(slotAfter.startAt).getTime() - end.getTime()
-    const gapH = Math.round(gapMs / 36000) / 100
-    return res.status(400).json({
-      error: `Zbyt mała przerwa (${gapH}h) przed slotem ${slotAfter.nick}. Minimalna przerwa to 3h lub zakończ tuż przed następnym slotem.`
-    })
-  }
+  // Brak blokady luk - można rezerwować dowolnie
 
   const note = req.body.note ? String(req.body.note).slice(0,80) : ''
   const slot = {
@@ -1058,19 +1033,7 @@ function startSlotChecker() {
       console.log('⏰ Slot warning:', slot.nick)
     }
 
-    const toExpire = await slotsCol.find({
-      startAt: { $gte: new Date(now.getTime() - 2*60*1000), $lte: now },
-      confirmed: { $ne: true }, expired: { $ne: true }
-    }).toArray()
-    for (const slot of toExpire) {
-      await slotsCol.updateOne({ _id: slot._id }, { $set: { expired: true } })
-      await slotsCol.deleteOne({ _id: slot._id })
-      io.emit('slotsUpdate', { action: 'delete', slotId: String(slot._id) })
-      const expData = { slotId: String(slot._id), nick: slot.nick, section: slot.section }
-      emitToNick(slot.nick, 'slotExpired', expData)
-      io.emit('slotExpiredBroadcast', expData)
-      console.log('❌ Slot expired:', slot.nick)
-    }
+    // System potwierdzeń wyłączony - nie usuwamy slotów automatycznie
   }, 60 * 1000)
 }
 
