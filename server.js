@@ -112,6 +112,9 @@ app.get('/kalendarz',(req,res)=> res.redirect(301,'/kalendarz.html'))
 
 /* ═══ STATE (Grota + Giganty) ═══ */
 let chatMessages        = []  // max 100
+let grotaRoutes         = {}  // id -> { id, name, color, points, visible }
+let grotaLabels         = []  // [ { id, x, y, text, color, size } ]
+let grotaRunners        = {}  // routeId -> { ch -> { nick, guild } }
 let grotaGenerals       = {}
 let grotaKilledGenerals = {}
 let grotaRegions        = {}
@@ -146,6 +149,9 @@ async function connectDB() {
   const doc = await col.findOne({ _id: "main" })
   if (doc) {
     chatMessages        = doc.chatMessages        || []
+    grotaRoutes         = doc.grotaRoutes         || {}
+    grotaLabels         = doc.grotaLabels         || []
+    grotaRunners        = doc.grotaRunners        || {}
     grotaGenerals       = doc.grotaGenerals       || {}
     grotaKilledGenerals = doc.grotaKilledGenerals || {}
     grotaRegions        = doc.grotaRegions        || {}
@@ -241,7 +247,7 @@ async function saveNow() {
     }
     await col.replaceOne({ _id: "main" }, {
       _id: "main",
-      chatMessages, grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
+      chatMessages, grotaRoutes, grotaLabels, grotaRunners, grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
       gigTimers: timersToSave, gigRunning:[...gigRunning], gigWho, delegations,
       savedAt: Date.now()
     }, { upsert: true })
@@ -1000,6 +1006,56 @@ io.on("connection", async socket => {
   })
 
   /* ── Grota ── */
+  /* ── Trasy ── */
+  socket.on('grotaAddRoute', (route) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    grotaRoutes[route.id] = route
+    saveData()
+    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
+  })
+  socket.on('grotaRemoveRoute', (id) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    delete grotaRoutes[id]
+    delete grotaRunners[id]
+    saveData()
+    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
+  })
+  socket.on('grotaToggleRoute', ({ id, visible }) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    if (grotaRoutes[id]) grotaRoutes[id].visible = visible
+    saveData()
+    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
+  })
+  socket.on('grotaClearRoutes', () => {
+    if (!getUser() || getUser().role !== 'admin') return
+    grotaRoutes = {}; grotaLabels = []; grotaRunners = {}
+    saveData()
+    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
+  })
+  socket.on('grotaAddLabel', (label) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    grotaLabels.push(label)
+    saveData()
+    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
+  })
+  socket.on('grotaRemoveLabel', (id) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    grotaLabels = grotaLabels.filter(l => l.id !== id)
+    saveData()
+    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
+  })
+  socket.on('grotaAddRunner', ({ routeId, ch, nick, guild }) => {
+    if (!getUser()) return
+    if (!grotaRunners[routeId]) grotaRunners[routeId] = {}
+    grotaRunners[routeId][ch] = { nick, guild }
+    io.emit('grotaRunnersUpdate', grotaRunners)
+  })
+  socket.on('grotaRemoveRunner', ({ routeId, ch }) => {
+    if (grotaRunners[routeId]) delete grotaRunners[routeId][ch]
+    io.emit('grotaRunnersUpdate', grotaRunners)
+  })
+
+  /* ── Generałowie ── */
   socket.on('grotaAddGeneral', data => {
     const id = 'gen_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
     grotaGenerals[id] = { id, x:data.x, y:data.y, ch:data.ch, foundAt:Date.now() }
@@ -1058,6 +1114,7 @@ io.on("connection", async socket => {
   socket.emit('gigWhoUpdate',              gigWho)
   socket.emit('gigQueueUpdate',            gigQueue)
   socket.emit('delegationsUpdate',         delegations)
+  socket.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
   socket.emit('grotaGeneralsUpdate',       grotaGenerals)
   socket.emit('grotaKilledGeneralsUpdate', grotaKilledGenerals)
   socket.emit('grotaRegionsUpdate',        grotaRegions)

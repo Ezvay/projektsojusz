@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Grota Wygnańców – Projekt Sojusz</title>
 <link rel="icon" type="image/png" href="/logo.png">
+<script src="/auth.js"></script>
+<script src="/login-overlay.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -66,6 +68,18 @@
   .sidebar-section-title.blue{color:#8090d0;border-color:rgba(60,100,180,0.3);}
   .sidebar-section-title.green{color:#50c070;border-color:rgba(50,150,80,0.3);}
   .sidebar-section-title.red{color:#d07070;border-color:rgba(180,60,60,0.3);}
+  /* NOWA LISTA GENERAŁÓW */
+  .gen-channel-row{padding:4px 10px;border-bottom:1px solid rgba(58,46,26,0.2);display:flex;align-items:center;gap:8px;}
+  .gen-ch-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);width:54px;flex-shrink:0;}
+  .gen-slot{flex:1;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.2);border:1px solid rgba(201,168,76,0.08);border-radius:2px;padding:4px 7px;cursor:pointer;transition:all 0.2s;}
+  .gen-slot:hover{border-color:rgba(201,168,76,0.3);}
+  .gen-slot img{width:14px;height:22px;object-fit:contain;opacity:0.7;flex-shrink:0;}
+  .gen-slot-status{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.5px;}
+  .gen-status-unknown {color:rgba(232,224,208,0.35);}
+  .gen-status-found   {color:#60d060;}
+  .gen-status-killed  {color:#e07070;}
+  .gen-slot.s-found{border-color:rgba(60,180,60,0.4);background:rgba(10,40,10,0.4);}
+  .gen-slot.s-killed{border-color:rgba(180,60,60,0.35);background:rgba(40,10,10,0.4);}
 
   /* ACTIVE GENERALS on map — small summary in sidebar */
   .active-gen-item{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(201,168,76,0.15);}
@@ -101,13 +115,6 @@
   .region-remove{font-size:9px;color:#306040;background:none;font-family:'Cinzel',serif;padding:4px 8px;border:1px solid rgba(50,150,80,0.2);border-radius:2px;cursor:pointer;}
   .region-remove:hover{color:#60e090;border-color:rgba(60,200,100,0.5);}
 
-  /* SNAPSHOTS */
-  .snap-panel{padding:12px 14px;border-bottom:1px solid var(--border);}
-  .snap-save-row{display:flex;gap:6px;margin-bottom:8px;}
-  .snap-input{flex:1;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:5px 8px;border-radius:2px;outline:none;}
-  .snap-input:focus{border-color:rgba(201,168,76,0.5);}
-  .snap-save-btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:rgba(201,168,76,0.07);white-space:nowrap;}
-  .snap-save-btn:hover{color:var(--gold);border-color:var(--gold);}
   .snap-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(58,46,26,0.3);}
   .snap-info{flex:1;min-width:0;}
   .snap-name{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -152,6 +159,58 @@
   .rp-input:focus{border-color:rgba(60,180,80,0.7);}
   .rp-confirm{width:100%;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px;border-radius:2px;cursor:pointer;margin-bottom:8px;border:1px solid rgba(60,180,80,0.5);color:#60e090;background:rgba(30,120,50,0.15);}
   .rp-confirm:hover{background:rgba(30,120,50,0.3);}
+
+  /* MINI LOGIN */
+  .mini-auth{display:flex;align-items:center;gap:8px;padding:7px 14px;background:rgba(0,0,0,0.25);border-bottom:1px solid rgba(201,168,76,0.1);}
+  .mini-auth input{background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.18);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:4px 8px;border-radius:2px;outline:none;width:110px;}
+  .mini-auth-btn{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;padding:5px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);background:none;cursor:pointer;border-radius:2px;}
+  .mini-auth-btn:hover{color:var(--gold);}
+  .mini-auth-nick{font-family:'Cinzel',serif;font-size:10px;color:var(--gold);letter-spacing:1px;}
+  .mini-auth-err{font-size:10px;color:#e07070;}
+  /* TRYB RYSOWANIA */
+  .mode-bar{display:none;gap:6px;align-items:center;margin-bottom:8px;padding:7px 10px;background:rgba(0,0,0,0.3);border:1px solid rgba(201,168,76,0.15);border-radius:2px;}
+  .mode-bar.show{display:flex;}
+  .mode-btn{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;padding:5px 12px;border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:none;cursor:pointer;border-radius:2px;transition:all 0.2s;}
+  .mode-btn.on{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1);}
+  /* TOOLBAR RYSOWANIA */
+  .draw-bar{display:none;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.18);border-radius:2px;padding:10px;margin-bottom:8px;}
+  .draw-bar.show{display:block;}
+  .draw-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:7px;}
+  .draw-lbl{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;}
+  .draw-btn{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;padding:4px 9px;border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:none;cursor:pointer;border-radius:2px;transition:all 0.2s;}
+  .draw-btn.on{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1);}
+  .draw-btn:hover{border-color:rgba(201,168,76,0.5);}
+  .cswatch{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:all 0.15s;}
+  .cswatch.on{border-color:#fff;transform:scale(1.25);}
+  .draw-input{background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.18);color:var(--text);font-family:'Crimson Text',serif;font-size:13px;padding:4px 7px;border-radius:2px;outline:none;}
+  /* TRASY PANEL */
+  .routes-section{margin-top:10px;}
+  .routes-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold-dark);text-transform:uppercase;margin-bottom:6px;}
+  .route-item{padding:7px 8px;border-bottom:1px solid rgba(58,46,26,0.2);}
+  .route-header{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+  .route-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .route-name{font-family:'Cinzel',serif;font-size:10px;flex:1;}
+  .route-vis-btn{font-size:8px;padding:2px 6px;border-radius:2px;cursor:pointer;border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:none;font-family:'Cinzel',serif;}
+  .route-vis-btn.on{border-color:rgba(201,168,76,0.5);color:var(--gold);}
+  .ch-row{display:flex;gap:3px;flex-wrap:nowrap;}
+  .ch-btn{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:0;
+    padding:4px 2px;border-radius:2px;cursor:pointer;
+    border:1px solid rgba(201,168,76,0.15);color:var(--text-dim);
+    background:none;transition:all 0.15s;
+    flex:1;text-align:center;min-width:0;
+    display:flex;flex-direction:column;align-items:center;gap:1px;
+    line-height:1.2;
+  }
+  .ch-btn:hover{border-color:rgba(201,168,76,0.4);color:var(--gold);}
+  .ch-btn.active-ch{border-color:transparent;}
+  .ch-btn .ch-num{font-size:8px;font-family:'Cinzel',serif;letter-spacing:1px;}
+  .ch-btn .ch-nick{font-size:8px;font-family:'Crimson Text',serif;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;}
+
+
+  
+  .lo-err{color:#e07070;font-size:12px;margin-top:7px;}
+
 </style>
 </head>
 <body>
@@ -200,8 +259,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
     <div class="tab-bar">
-      <button class="tab-btn active-region" id="tabRegion"  onclick="setTab('region')">📦 Regiony metinów</button>
-      <button class="tab-btn"              id="tabGeneral" onclick="setTab('general')">⚔ Generałowie</button>
+      <button class="tab-btn active-general" id="tabGeneral" onclick="setTab('general')">⚔ Generałowie</button>
     </div>
     <div class="vol-wrap">
       <span>Mapa</span>
@@ -221,6 +279,21 @@
   </div>
 </div>
 
+
+<div class="mini-auth" id="miniAuth" style="display:none;">
+  <div id="maOut" style="display:flex;align-items:center;gap:7px;">
+    <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);">Zaloguj:</span>
+    <input id="maNick" placeholder="Nick..." onkeydown="if(event.key==='Enter')grotaLogin()">
+    <input id="maPass" type="password" placeholder="Hasło..." onkeydown="if(event.key==='Enter')grotaLogin()">
+    <button class="mini-auth-btn" onclick="grotaLogin()">→ Wejdź</button>
+    <span class="mini-auth-err" id="maErr"></span>
+  </div>
+  <div id="maIn" style="display:none;align-items:center;gap:8px;">
+    <span class="mini-auth-nick" id="maNickShow"></span>
+    <button class="mini-auth-btn" onclick="grotaLogout()">Wyloguj</button>
+  </div>
+</div>
+
 <div class="layout">
   <div class="map-wrap">
     <div class="map-container" id="mapContainer">
@@ -230,35 +303,65 @@
       <canvas id="drawCanvas"></canvas>
       <div id="clickOverlay"></div>
       <div class="map-hint" id="mapHint">Wybierz tryb powyżej</div>
+      <canvas id="routeCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none;border-radius:3px;"></canvas>
+      <canvas id="labelCanvas"  style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:7;pointer-events:none;border-radius:3px;"></canvas>
     </div>
   </div>
 
   <div class="sidebar">
-    <!-- SNAPSHOTS -->
-    <div class="snap-panel">
-      <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold-dark);text-transform:uppercase;margin-bottom:8px;">📸 Snapshoty</div>
-      <div class="snap-save-row">
-        <input class="snap-input" id="snapNameInput" placeholder="Nazwa snapshotu...">
-        <button class="snap-save-btn" onclick="saveSnapshot()">Zapisz</button>
+    <!-- TRYB + RYSOWANIE (admin) -->
+    <div class="mode-bar" id="modeBar">
+      <span class="draw-lbl">Tryb:</span>
+      <button class="mode-btn on" id="btnModePlay" onclick="setMode('play')">🎮 Gra</button>
+      <button class="mode-btn" id="btnModeDraw" onclick="setMode('draw')">🎨 Rysowanie</button>
+    </div>
+    <div class="draw-bar" id="drawBar">
+      <div class="draw-row">
+        <span class="draw-lbl">Narzędzie:</span>
+        <button class="draw-btn on" id="dtRoute"  onclick="setTool('route')">✏ Trasa</button>
+        <button class="draw-btn"    id="dtNumber" onclick="setTool('number')">🔢 Numerek</button>
+        <button class="draw-btn"    id="dtErase"  onclick="setTool('erase')">✕ Usuń</button>
       </div>
-      <div id="snapList"></div>
+      <div class="draw-row" id="drRoute">
+        <span class="draw-lbl">Nazwa:</span>
+        <input class="draw-input" id="drName" placeholder="np. Trasa A..." style="width:100px;">
+        <button class="draw-btn on" id="drFinish" onclick="finishRoute()" style="display:none;border-color:rgba(60,200,60,0.4);color:#60c060;">✓ Zakończ</button>
+      </div>
+      <div class="draw-row">
+        <span class="draw-lbl">Kolor:</span>
+        <div id="colorSwatches" style="display:flex;gap:5px;">
+          <div class="cswatch on" style="background:#e04040" data-c="#e04040" onclick="pickColor(this)"></div>
+          <div class="cswatch"    style="background:#4080e0" data-c="#4080e0" onclick="pickColor(this)"></div>
+          <div class="cswatch"    style="background:#40c060" data-c="#40c060" onclick="pickColor(this)"></div>
+          <div class="cswatch"    style="background:#e0c040" data-c="#e0c040" onclick="pickColor(this)"></div>
+          <div class="cswatch"    style="background:#e080e0" data-c="#e080e0" onclick="pickColor(this)"></div>
+          <div class="cswatch"    style="background:#40d0d0" data-c="#40d0d0" onclick="pickColor(this)"></div>
+          <div class="cswatch"    style="background:#ffffff" data-c="#ffffff" onclick="pickColor(this)"></div>
+        </div>
+      </div>
+      <div class="draw-row" id="drNumber" style="display:none;">
+        <span class="draw-lbl">Tekst:</span>
+        <input class="draw-input" id="drNumText" placeholder="1, A..." style="width:60px;">
+        <span class="draw-lbl">Rozm:</span>
+        <input class="draw-input" id="drNumSize" type="number" value="18" min="10" max="48" style="width:50px;">
+      </div>
+      <div class="draw-row">
+        <button class="draw-btn" style="border-color:rgba(200,60,60,0.3);color:#c06060;" onclick="clearAllDraw()">✕ Wyczyść wszystko</button>
+      </div>
+    </div>
+    <!-- TRASY PANEL -->
+    <div class="routes-section" id="routesSection">
+      <div class="routes-title">🗺 Trasy biegania</div>
+      <div id="routesList"><div class="sidebar-empty" style="font-size:11px;color:var(--text-dim);padding:8px;">Brak tras</div></div>
     </div>
 
     <!-- GENERALS panel -->
-    <div id="generalPanel" style="display:none;">
-      <!-- Active on map -->
-      <div class="sidebar-section-title blue">📍 Aktywne na mapie (znalezieni)</div>
-      <div id="activeGeneralList"><div class="sidebar-empty">Brak generałów na mapie</div></div>
-      <!-- Kill history with timers -->
-      <div class="sidebar-section-title red">💀 Zabici — timery respawnu</div>
-      <div id="killedGeneralList"><div class="sidebar-empty">Brak zabitych generałów</div></div>
+    <div id="generalPanel">
+      <div class="sidebar-section-title blue">⚔ Generałowie</div>
+      <div id="genChannelList"></div>
     </div>
 
-    <!-- REGIONS panel -->
-    <div id="regionPanel">
-      <div class="sidebar-section-title green">📦 Aktywne regiony metinów</div>
-      <div id="regionList"><div class="sidebar-empty">Brak aktywnych regionów</div></div>
-    </div>
+
   </div>
 </div>
 
@@ -275,13 +378,12 @@
 </div>
 
 <script>
-const socket=io();
+const socket=io({ auth: { token: localStorage.getItem('sojusz_token')||'' } });
 
 /* ═══ STATE ═══ */
 let generals       = {};   // aktywne piny na mapie
 let killedGenerals = {};   // historia zabitych z timerami
 let regions        = {};
-let snapshots      = [];
 let generalRafs    = {};
 let killedRafs     = {};
 let regionRafs     = {};
@@ -353,6 +455,7 @@ function getRelPos(e){
 
 /* ═══ CLICK OVERLAY ═══ */
 clickOverlay.addEventListener('mousedown',e=>{
+  if(isAdmin && curMode==='draw'){e.preventDefault();return;}
   if(currentTab==='general'){
     const pos=getRelPos(e);
     pendingClick=pos;
@@ -491,14 +594,47 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePopup();closeK
 /* ═══ GENERALS ON MAP ═══ */
 function renderGenerals(){
   generalLayer.innerHTML='';
-  const list=document.getElementById('activeGeneralList');
-  const ids=Object.keys(generals);
-  if(!ids.length){list.innerHTML='<div class="sidebar-empty">Brak generałów na mapie</div>';return;}
-  list.innerHTML='';
-  ids.forEach(id=>{
-    placeGeneralPin(generals[id]);
-    addActiveGeneralSidebar(generals[id]);
-  });
+  const el = document.getElementById('genChannelList');
+  if (!el) return;
+  el.innerHTML = '';
+  for (let ch = 1; ch <= 8; ch++) {
+    // Znajdź generała na tym CH
+    const gen = Object.values(generals).find(g => g.ch === ch);
+    const killed = Object.values(killedGenerals).find(g => g.ch === ch);
+    const row = document.createElement('div');
+    row.className = 'gen-channel-row';
+    // Label kanału
+    const lbl = document.createElement('span');
+    lbl.className = 'gen-ch-label';
+    lbl.textContent = 'Kanał ' + ch;
+    row.appendChild(lbl);
+    // Slot generała
+    const slot = document.createElement('div');
+    if (gen) {
+      slot.className = 'gen-slot s-found';
+      slot.title = 'Kliknij — oznacz jako Zbity';
+      slot.innerHTML = '<img src="/general_icon.png"><span class="gen-slot-status gen-status-found">✓ Znaleziony</span>';
+      slot.onclick = () => { socket.emit('grotaKillGeneral', gen.id); };
+      placeGeneralPin(gen);
+    } else if (killed) {
+      slot.className = 'gen-slot s-killed';
+      slot.title = 'Kliknij — usuń';
+      slot.innerHTML = '<img src="/general_icon.png" style="opacity:0.4;"><span class="gen-slot-status gen-status-killed">💀 Zbity</span>';
+      slot.onclick = () => socket.emit('grotaRemoveKilled', killed.id);
+    } else {
+      slot.className = 'gen-slot';
+      slot.title = 'Kliknij — oznacz jako Znaleziony';
+      slot.innerHTML = '<img src="/general_icon.png" style="opacity:0.25;"><span class="gen-slot-status gen-status-unknown">? Nieznany</span>';
+      const slotCh = ch;
+      slot.onclick = () => {
+        // Oznacz jako znaleziony na tym CH (środek mapy jako domyślna pozycja)
+        const id = 'gen_' + Date.now();
+        socket.emit('grotaAddGeneral', { id, x: 0.5, y: 0.5, ch: slotCh });
+      };
+    }
+    row.appendChild(slot);
+    el.appendChild(row);
+  }
 }
 
 function placeGeneralPin(g){
@@ -552,33 +688,8 @@ function getKilledState(k){
 }
 
 function renderKilledGenerals(){
-  for(const id in killedRafs)cancelAnimationFrame(killedRafs[id]);
-  killedRafs={};
-  const list=document.getElementById('killedGeneralList');
-  const ids=Object.keys(killedGenerals);
-  if(!ids.length){list.innerHTML='<div class="sidebar-empty">Brak zabitych generałów</div>';return;}
-  list.innerHTML='';
-  // Sort by most recently killed first
-  ids.sort((a,b)=>killedGenerals[b].killedAt-killedGenerals[a].killedAt).forEach(id=>{
-    const k=killedGenerals[id];
-    const{state,elapsed,label}=getKilledState(k);
-    const item=document.createElement('div');item.className='killed-item';item.id='ki_'+id;
-    item.innerHTML=`
-      <div class="killed-top">
-        <span class="killed-ch">⚔ CH ${k.ch}</span>
-        <button class="killed-remove" onclick="socket.emit('grotaRemoveKilled','${id}')">✕ Usuń</button>
-      </div>
-      <div class="killed-elapsed" id="ke_${id}">Zabity ${elapsed}</div>
-      <div class="killed-status ${state}" id="ks_${id}">${label}</div>`;
-    list.appendChild(item);
-    // Start live tick
-    (function tickK(){
-      const{state,elapsed,label}=getKilledState(k);
-      const ke=document.getElementById('ke_'+id);if(ke)ke.innerText='Zabity '+elapsed;
-      const ks=document.getElementById('ks_'+id);if(ks){ks.textContent=label;ks.className='killed-status '+state;}
-      killedRafs[id]=requestAnimationFrame(tickK);
-    })();
-  });
+  // Teraz renderujemy wszystko razem w renderGenerals
+  renderGenerals();
 }
 
 /* ═══ REGION SIDEBAR ═══ */
@@ -632,7 +743,6 @@ function renderSnapshots(){
 socket.on('grotaGeneralsUpdate',       data=>{generals=data||{};renderGenerals();});
 socket.on('grotaKilledGeneralsUpdate', data=>{killedGenerals=data||{};renderKilledGenerals();});
 socket.on('grotaRegionsUpdate',        data=>{regions=data||{};renderRegionsCanvas();renderRegionList();});
-socket.on('grotaSnapshotsUpdate',      data=>{snapshots=data||[];renderSnapshots();});
 
 /* ═══ RESET ═══ */
 function openResetModal(){
@@ -640,7 +750,6 @@ function openResetModal(){
     ['r_generals','Piny na mapie (znalezieni)','Usuwa aktywne piny generałów z mapy',true],
     ['r_killed','Historia zabitych','Usuwa wszystkie timery zabitych generałów',true],
     ['r_regions','Regiony metinów','Usuwa wszystkie zaznaczone regiony',true],
-    ['r_snaps','Snapshoty','Usuwa wszystkie zapisane snapshoty',false],
   ].map(([id,name,desc,checked])=>`<div onclick="document.getElementById('${id}').checked=!document.getElementById('${id}').checked"
     style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:3px;border:1px solid rgba(58,46,26,0.3);margin-bottom:6px;cursor:pointer;"
     onmouseover="this.style.background='rgba(200,80,80,0.06)'" onmouseout="this.style.background='transparent'">
@@ -660,7 +769,7 @@ function doReset(){
 }
 
 // Init
-setTab('region');
+setTab('general');
 </script>
 
 <script>
@@ -674,6 +783,283 @@ function _pnew(){const t=Math.random()<0.7?'a':'e';return{t,x:Math.random()*_pc.
 function _pu(p){p.w+=p.ws;p.vx+=(-0.01+Math.random()*0.02);p.vx=Math.max(-0.5,Math.min(0.5,p.vx));p.x+=p.vx+Math.sin(p.w)*0.25;p.y+=p.vy;if(p.t==='e'){p.o+=p.od*0.007;if(p.o>0.5||p.o<0.07)p.od*=-1;}if(p.y>_pc.height+20||p.x<-20||p.x>_pc.width+20){p.x=Math.random()*_pc.width;p.y=-10;p.o=0.1+Math.random()*0.3;}}
 function _pd(p){_px.save();if(p.t==='a'){_px.globalAlpha=p.o;_px.fillStyle=`rgba(180,170,160,${p.o})`;_px.beginPath();_px.ellipse(p.x,p.y,p.s,p.s*0.55,p.w,0,Math.PI*2);_px.fill();}else{const g=_px.createRadialGradient(p.x,p.y,0,p.x,p.y,p.gs);g.addColorStop(0,`rgba(255,140,40,${p.o*0.9})`);g.addColorStop(1,'rgba(180,40,10,0)');_px.fillStyle=g;_px.beginPath();_px.arc(p.x,p.y,p.gs,0,Math.PI*2);_px.fill();_px.globalAlpha=p.o;_px.fillStyle='rgba(255,200,100,0.9)';_px.beginPath();_px.arc(p.x,p.y,p.s*0.4,0,Math.PI*2);_px.fill();}_px.restore();}
 (function _loop(){_px.clearRect(0,0,_pc.width,_pc.height);_ps.forEach(p=>{_pu(p);_pd(p);});requestAnimationFrame(_loop);})();
+
+/* ══════════════════════════════════════
+   MINI LOGIN
+══════════════════════════════════════ */
+let grotaUser = null;
+// Wczytaj nick z localStorage (dla niezalogowanych graczy)
+window._grotaNick  = localStorage.getItem('grotaNick')  || '';
+window._grotaGuild = localStorage.getItem('grotaGuild') || '';
+
+// loTab/skipLogin -> SojuszOverlay
+
+// grotaRegister -> handled by SojuszOverlay
+
+// grotaLogin -> handled by SojuszOverlay
+function grotaLogout() {
+  window.SojuszAuth.logout();
+  grotaUser = null;
+  document.getElementById('modeBar').classList.remove('show');
+  document.getElementById('drawBar').classList.remove('show');
+  isAdmin = false;
+  curMode = 'play';
+  window.SojuszOverlay.show('Grota Wygnańców', true);
+}
+function applyGrotaUser(user) {
+  grotaUser = user;
+  window._grotaNick  = user.nick;
+  window._grotaGuild = user.guild;
+  localStorage.setItem('grotaNick',  user.nick);
+  localStorage.setItem('grotaGuild', user.guild);
+  // Aktualizuj globalny auth bar
+  if (window._saUpdateBar) window._saUpdateBar(user);
+  // Wyślij token przez socket żeby serwer mógł autoryzować
+  socket.auth = { token: localStorage.getItem('sojusz_token')||'' };
+  socket.emit('auth', localStorage.getItem('sojusz_token')||'');
+  if (user.role === 'admin') {
+    isAdmin = true;
+    document.getElementById('modeBar').classList.add('show');
+  }
+}
+// AUTO LOGIN + OVERLAY
+window.addEventListener('sojusz:login', function(e){ applyGrotaUser(e.detail); });
+window.addEventListener('sojusz:logout', function(){ grotaLogout(); });
+window.addEventListener('sojusz:skip',  function(){ /* wejście bez logowania */ });
+(async function(){
+  const user = await window.SojuszAuth.getUser();
+  if (user) { applyGrotaUser(user); }
+  else { window.SojuszOverlay.show('Grota Wygnańców', true); }
+})();
+
+/* ══════════════════════════════════════
+   TRYB MAPY
+══════════════════════════════════════ */
+let isAdmin = false;
+let curMode = 'play'; // 'play' | 'draw'
+let drawTool = 'route';
+let drawColor = '#e04040';
+let curRoutePts = [];
+let curRouteId  = null;
+
+function setMode(mode) {
+  curMode = mode;
+  document.getElementById('btnModePlay').classList.toggle('on', mode === 'play');
+  document.getElementById('btnModeDraw').classList.toggle('on', mode === 'draw');
+  document.getElementById('drawBar').classList.toggle('show', mode === 'draw');
+  document.getElementById('clickOverlay').style.cursor = mode === 'draw' ? 'crosshair' : 'pointer';
+}
+function setTool(t) {
+  drawTool = t;
+  ['Route','Number','Erase'].forEach(x => document.getElementById('dt'+x).classList.toggle('on', 'dt'+x === 'dt'+t.charAt(0).toUpperCase()+t.slice(1)));
+  document.getElementById('drRoute').style.display  = t === 'route'  ? 'flex' : 'none';
+  document.getElementById('drNumber').style.display = t === 'number' ? 'flex' : 'none';
+}
+function pickColor(el) {
+  document.querySelectorAll('.cswatch').forEach(s => s.classList.remove('on'));
+  el.classList.add('on');
+  drawColor = el.dataset.c;
+}
+
+/* ══════════════════════════════════════
+   CANVASY TRAS
+══════════════════════════════════════ */
+const rCanvas = document.getElementById('routeCanvas');
+const lCanvas = document.getElementById('labelCanvas');
+const rCtx = rCanvas ? rCanvas.getContext('2d') : null;
+const lCtx = lCanvas ? lCanvas.getContext('2d') : null;
+
+function syncRouteCanvases() {
+  if (!rCanvas) return;
+  const w = mapContainer.clientWidth, h = mapContainer.clientHeight;
+  if (!w || !h) return;
+  rCanvas.width = w; rCanvas.height = h;
+  lCanvas.width = w; lCanvas.height = h;
+  redrawRoutes(); redrawLabels();
+}
+new ResizeObserver(syncRouteCanvases).observe(mapContainer);
+setTimeout(syncRouteCanvases, 400);
+
+/* ══════════════════════════════════════
+   RYSOWANIE TRAS
+══════════════════════════════════════ */
+let grotaRoutes  = {};
+let grotaLabels  = [];
+let grotaRunners = {};
+
+function redrawRoutes() {
+  if (!rCtx) return;
+  const W = rCanvas.width, H = rCanvas.height;
+  rCtx.clearRect(0,0,W,H);
+  for (const id in grotaRoutes) {
+    const r = grotaRoutes[id];
+    if (!r.visible || r.points.length < 1) continue;
+    rCtx.strokeStyle = r.color; rCtx.lineWidth = 3;
+    rCtx.lineCap = 'round'; rCtx.lineJoin = 'round';
+    rCtx.setLineDash([]);
+    if (r.points.length >= 2) {
+      rCtx.beginPath();
+      rCtx.moveTo(r.points[0].x*W, r.points[0].y*H);
+      for (let i=1;i<r.points.length;i++) rCtx.lineTo(r.points[i].x*W, r.points[i].y*H);
+      rCtx.stroke();
+    }
+    r.points.forEach(p => { rCtx.fillStyle=r.color; rCtx.beginPath(); rCtx.arc(p.x*W,p.y*H,4,0,Math.PI*2); rCtx.fill(); });
+    if (r.points.length) {
+      const last = r.points[r.points.length-1];
+      rCtx.font = 'bold 11px Cinzel,serif'; rCtx.fillStyle = r.color;
+      rCtx.fillText(r.name, last.x*W+6, last.y*H-4);
+    }
+  }
+  // Trasa w trakcie
+  if (curRoutePts.length) {
+    rCtx.strokeStyle = drawColor; rCtx.lineWidth = 2; rCtx.setLineDash([6,4]);
+    rCtx.beginPath(); rCtx.moveTo(curRoutePts[0].x*W, curRoutePts[0].y*H);
+    curRoutePts.forEach(p => rCtx.lineTo(p.x*W, p.y*H)); rCtx.stroke();
+    rCtx.setLineDash([]);
+    curRoutePts.forEach(p => { rCtx.fillStyle=drawColor; rCtx.beginPath(); rCtx.arc(p.x*W,p.y*H,4,0,Math.PI*2); rCtx.fill(); });
+  }
+}
+function redrawLabels() {
+  if (!lCtx) return;
+  const W = lCanvas.width, H = lCanvas.height;
+  lCtx.clearRect(0,0,W,H);
+  grotaLabels.forEach(lb => {
+    lCtx.font = `bold ${lb.size}px Cinzel,serif`;
+    lCtx.strokeStyle = 'rgba(0,0,0,0.8)'; lCtx.lineWidth = 3;
+    lCtx.strokeText(lb.text, lb.x*W, lb.y*H);
+    lCtx.fillStyle = lb.color;
+    lCtx.fillText(lb.text, lb.x*W, lb.y*H);
+  });
+}
+
+function onDrawClick(e) {
+  if (!isAdmin || curMode !== 'draw') return;
+  const rect = mapContainer.getBoundingClientRect();
+  const x = (e.clientX - rect.left)  / mapContainer.clientWidth;
+  const y = (e.clientY - rect.top)   / mapContainer.clientHeight;
+
+  if (drawTool === 'route') {
+    if (!curRouteId) { curRouteId = 'rt_'+Date.now(); curRoutePts = []; document.getElementById('drFinish').style.display=''; }
+    curRoutePts.push({x,y}); redrawRoutes();
+  } else if (drawTool === 'number') {
+    const text = document.getElementById('drNumText').value.trim() || '?';
+    const size = parseInt(document.getElementById('drNumSize').value) || 18;
+    const lb = {id:'lb_'+Date.now(), x, y, text, color:drawColor, size};
+    grotaLabels.push(lb); redrawLabels();
+    socket.emit('grotaAddLabel', lb);
+  } else if (drawTool === 'erase') {
+    const W=lCanvas.width, H=lCanvas.height;
+    const prevLen = grotaLabels.length;
+    grotaLabels = grotaLabels.filter(lb => {
+      const dx=(lb.x-x)*W, dy=(lb.y-y)*H;
+      if (Math.sqrt(dx*dx+dy*dy)<25) { socket.emit('grotaRemoveLabel',lb.id); return false; }
+      return true;
+    });
+    if (grotaLabels.length < prevLen) { redrawLabels(); return; }
+    for (const id in grotaRoutes) {
+      for (const p of grotaRoutes[id].points) {
+        const dx=(p.x-x)*rCanvas.width, dy=(p.y-y)*rCanvas.height;
+        if (Math.sqrt(dx*dx+dy*dy)<25) { delete grotaRoutes[id]; redrawRoutes(); socket.emit('grotaRemoveRoute',id); renderRoutesList(); return; }
+      }
+    }
+  }
+}
+function finishRoute() {
+  if (!curRoutePts.length) return;
+  const name = document.getElementById('drName').value.trim() || 'Trasa';
+  const route = {id:curRouteId, name, color:drawColor, points:[...curRoutePts], visible:true};
+  grotaRoutes[curRouteId] = route;
+  socket.emit('grotaAddRoute', route);
+  curRoutePts=[]; curRouteId=null;
+  document.getElementById('drFinish').style.display='none';
+  document.getElementById('drName').value='';
+  redrawRoutes(); renderRoutesList();
+}
+function clearAllDraw() {
+  if (!confirm('Usunąć wszystkie trasy i numerki?')) return;
+  grotaRoutes={}; grotaLabels=[]; grotaRunners={};
+  redrawRoutes(); redrawLabels(); renderRoutesList();
+  socket.emit('grotaClearRoutes');
+}
+function toggleRouteVisible(id) {
+  if (!grotaRoutes[id]) return;
+  grotaRoutes[id].visible = !grotaRoutes[id].visible;
+  socket.emit('grotaToggleRoute', {id, visible:grotaRoutes[id].visible});
+  redrawRoutes(); renderRoutesList();
+}
+
+// Podłącz klik do mapy
+document.getElementById('clickOverlay').addEventListener('click', function(e) {
+  if (isAdmin && curMode === 'draw') { onDrawClick(e); e.stopPropagation(); }
+});
+
+/* ══════════════════════════════════════
+   PANEL TRAS DLA GRACZY
+══════════════════════════════════════ */
+function renderRoutesList() {
+  const el = document.getElementById('routesList'); if (!el) return;
+  const list = Object.values(grotaRoutes);
+  if (!list.length) { el.innerHTML='<div class="sidebar-empty" style="font-size:11px;color:var(--text-dim);padding:8px;">Brak tras</div>'; return; }
+  el.innerHTML = '';
+  list.forEach(r => {
+    const runners = grotaRunners[r.id] || {};
+    const div = document.createElement('div'); div.className='route-item';
+    const hdr = document.createElement('div'); hdr.className='route-header';
+    hdr.innerHTML = `<div class="route-dot" style="background:${r.color}"></div><span class="route-name">${r.name}</span>`;
+    if (isAdmin) {
+      const vb = document.createElement('button'); vb.className='route-vis-btn'+(r.visible?' on':'');
+      vb.textContent = r.visible?'Widoczna':'Ukryta'; vb.onclick=()=>toggleRouteVisible(r.id); hdr.appendChild(vb);
+    }
+    div.appendChild(hdr);
+    const chRow = document.createElement('div'); chRow.className='ch-row';
+    for (let ch=1;ch<=8;ch++) {
+      const runner = runners[ch];
+      const myNick = window._grotaNick||'';
+      const btn = document.createElement('button'); btn.className='ch-btn'+(runner?' active-ch':'');
+      if (runner) { btn.style.background=r.color+'44'; btn.style.borderColor=r.color; btn.style.color='#fff'; }
+      const numSpan = document.createElement('span'); numSpan.className='ch-num'; numSpan.textContent='CH'+ch;
+      const nickSpan = document.createElement('span'); nickSpan.className='ch-nick';
+      nickSpan.textContent = runner ? runner.nick : '';
+      nickSpan.title = runner ? runner.nick : '';
+      btn.appendChild(numSpan); btn.appendChild(nickSpan);
+      btn.onclick = () => {
+        let nick = window._grotaNick || '';
+        if (!nick) {
+          nick = prompt('Podaj swój nick w grze:');
+          if (!nick || !nick.trim()) return;
+          nick = nick.trim();
+          window._grotaNick = nick;
+          localStorage.setItem('grotaNick', nick);
+        }
+        if (runner && runner.nick===nick) socket.emit('grotaRemoveRunner',{routeId:r.id,ch});
+        else socket.emit('grotaAddRunner',{routeId:r.id,ch,nick,guild:window._grotaGuild||''});
+      };
+      chRow.appendChild(btn);
+    }
+    div.appendChild(chRow);
+    el.appendChild(div);
+  });
+}
+
+/* ══════════════════════════════════════
+   SOCKET EVENTS - TRASY
+══════════════════════════════════════ */
+socket.on('grotaRoutesUpdate', data => {
+  grotaRoutes  = data.routes  || {};
+  grotaLabels  = data.labels  || [];
+  grotaRunners = data.runners || {};
+  // Odczekaj aż canvas będzie gotowy
+  if (rCanvas && rCanvas.width > 0) {
+    redrawRoutes(); redrawLabels();
+  } else {
+    setTimeout(function(){ syncRouteCanvases(); }, 500);
+  }
+  renderRoutesList();
+});
+socket.on('grotaRunnersUpdate', data => {
+  grotaRunners = data; renderRoutesList();
+});
+
 </script>
 </body>
 </html>
