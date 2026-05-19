@@ -37,6 +37,72 @@ const ADMIN_NICK = "Ezvay"
 let REGISTER_CODE = "SojuszProjekt2026"
 
 app.use(express.json())
+// ─── HASŁO DOSTĘPU DO STRONY ───
+const SITE_PASSWORD = process.env.SITE_PASSWORD || 'MecenologiaMT2'
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io') ||
+      req.path.startsWith('/admin/') || req.path === '/auth-check') return next()
+  const cookies = req.headers.cookie || ''
+  const siteAuth = cookies.split(';').map(c => c.trim()).find(c => c.startsWith('site_auth='))
+  if (siteAuth && siteAuth.split('=')[1] === 'ok') return next()
+  if (req.query.pwd === SITE_PASSWORD) {
+    res.setHeader('Set-Cookie', 'site_auth=ok; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax')
+    return res.redirect(req.path)
+  }
+  res.send(`<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Projekt Sojusz</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#090806;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Georgia,serif;}
+.box{background:linear-gradient(160deg,#1e1810,#100d08);border:1px solid rgba(201,168,76,0.4);border-radius:4px;padding:40px 50px;width:360px;text-align:center;box-shadow:0 0 60px rgba(0,0,0,0.9);}
+.logo{font-size:12px;letter-spacing:4px;color:rgba(201,168,76,0.6);text-transform:uppercase;margin-bottom:28px;}
+.title{font-size:22px;color:#c9a84c;margin-bottom:6px;letter-spacing:2px;}
+.sub{font-size:12px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:28px;}
+input{width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.25);color:#e8e0d0;font-size:15px;padding:11px 14px;border-radius:2px;outline:none;text-align:center;letter-spacing:2px;margin-bottom:14px;}
+input:focus{border-color:rgba(201,168,76,0.6);}
+button{width:100%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.4);color:#c9a84c;font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:12px;cursor:pointer;border-radius:2px;transition:all 0.2s;}
+button:hover{background:rgba(201,168,76,0.2);}
+.err{color:#e07070;font-size:12px;margin-top:12px;display:none;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">⚔ Projekt Sojusz</div>
+  <div class="title">Dostęp zastrzeżony</div>
+  <div class="sub">Metin2 Projekt Hard</div>
+  <input type="password" id="pwd" placeholder="Hasło dostępu..." onkeydown="if(event.key==='Enter')check()">
+  <button onclick="check()">→ Wejdź</button>
+  <div class="err" id="err">Nieprawidłowe hasło</div>
+</div>
+<script>
+function check(){
+  var p=document.getElementById('pwd').value;
+  if(!p) return;
+  fetch('/auth-check?pwd='+encodeURIComponent(p))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){location.reload();}
+      else{document.getElementById('err').style.display='block';}
+    });
+}
+</script>
+</body>
+</html>`)
+})
+
+app.get('/auth-check', (req, res) => {
+  if (req.query.pwd === SITE_PASSWORD) {
+    res.setHeader('Set-Cookie', 'site_auth=ok; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax')
+    res.json({ ok: true })
+  } else {
+    res.json({ ok: false })
+  }
+})
+
 app.use(express.static(path.join(__dirname, "public")))
 
 /* ═══ CLEAN URLs ═══ */

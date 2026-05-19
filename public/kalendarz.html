@@ -920,7 +920,7 @@ function renderGrid(containerId, section) {
       const cellStart = new Date(d); cellStart.setHours(hour,0,0,0)
       const cellEnd   = new Date(d); cellEnd.setHours(hour+1,0,0,0)
       // isPast = cała godzina minęła ponad 1h temu (nie można już rezerwować)
-      // inProgress = slot trwa teraz lub skończyło się mniej niż 1h temu -> nadal klikalny
+      // inProgress = slot trwa teraz lub skończyło się mniej niż 3h temu -> nadal klikalny
       const inProgress = cellStart <= now && cellEnd > new Date(now.getTime() - 3*60*60*1000)
       const isPast    = cellEnd <= new Date(now.getTime() - 3*60*60*1000)
       const isToday   = d.toDateString() === now.toDateString()
@@ -1091,7 +1091,7 @@ async function submitReservation() {
   const start = getDateFromDayHour('resDay','resHour')
   if(!start){ document.getElementById('reserveError').textContent='Wybierz dzień i godzinę'; return }
   const now = new Date()
-  if(start < now && currentUser.role !== 'admin'){ document.getElementById('reserveError').textContent='Nie można rezerwować w przeszłości'; return }
+  if(start < new Date(now.getTime() - 3*60*60*1000) && currentUser.role !== 'admin'){ document.getElementById('reserveError').textContent='Nie można rezerwować więcej niż 3h w przeszłości'; return }
   const end = new Date(start); end.setHours(end.getHours()+reserveDuration)
 
   // Admin może rezerwować dla dowolnego nicka
