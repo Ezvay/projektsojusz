@@ -155,8 +155,11 @@
 
   /* ═══ MAPA GIGANTÓW ═══ */
   .map-widget{
-    display:flex;align-items:center;justify-content:center;
-    padding:24px 20px 16px;gap:28px;flex-wrap:wrap;
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:24px 20px 16px;gap:20px;flex-wrap:wrap;
+  }
+  .ping-map-outer{
+    display:flex;flex-direction:column;align-items:center;gap:0;
   }
   /* Outer decorative wrapper */
   .map-outer{
@@ -596,6 +599,105 @@
   .snap-del-btn{background:none;border:none;color:rgba(200,80,80,0.5);cursor:pointer;font-size:10px;padding:2px 4px;}
   .snap-del-btn:hover{color:#e07070;}
 
+
+  /* KOLORY KANAŁÓW */
+  .timer-card.ch1{border-color:rgba(201,168,76,0.35);background:linear-gradient(160deg,rgba(201,168,76,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch1 .timer-name{color:#e8cc80;}
+  .timer-card.ch1 .ch-badge{background:#c9a84c22;border-color:rgba(201,168,76,0.35);color:#e8cc80;}
+  .timer-card.ch2{border-color:rgba(80,128,224,0.35);background:linear-gradient(160deg,rgba(80,128,224,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch2 .timer-name{color:#80a8ff;}
+  .timer-card.ch2 .ch-badge{background:#5080e022;border-color:rgba(80,128,224,0.35);color:#80a8ff;}
+  .timer-card.ch3{border-color:rgba(160,96,208,0.35);background:linear-gradient(160deg,rgba(160,96,208,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch3 .timer-name{color:#c090f0;}
+  .timer-card.ch3 .ch-badge{background:#a060d022;border-color:rgba(160,96,208,0.35);color:#c090f0;}
+  .timer-card.ch4{border-color:rgba(64,176,96,0.35);background:linear-gradient(160deg,rgba(64,176,96,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch4 .timer-name{color:#70d890;}
+  .timer-card.ch4 .ch-badge{background:#40b06022;border-color:rgba(64,176,96,0.35);color:#70d890;}
+  .timer-card.ch5{border-color:rgba(224,120,48,0.35);background:linear-gradient(160deg,rgba(224,120,48,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch5 .timer-name{color:#f0a060;}
+  .timer-card.ch5 .ch-badge{background:#e0783022;border-color:rgba(224,120,48,0.35);color:#f0a060;}
+  .timer-card.ch6{border-color:rgba(208,80,160,0.35);background:linear-gradient(160deg,rgba(208,80,160,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch6 .timer-name{color:#f080c8;}
+  .timer-card.ch6 .ch-badge{background:#d050a022;border-color:rgba(208,80,160,0.35);color:#f080c8;}
+  .timer-card.ch7{border-color:rgba(48,184,184,0.35);background:linear-gradient(160deg,rgba(48,184,184,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch7 .timer-name{color:#60d8d8;}
+  .timer-card.ch7 .ch-badge{background:#30b8b822;border-color:rgba(48,184,184,0.35);color:#60d8d8;}
+  .timer-card.ch8{border-color:rgba(208,64,64,0.35);background:linear-gradient(160deg,rgba(208,64,64,0.08),rgba(8,6,4,0.7));}
+  .timer-card.ch8 .timer-name{color:#f07070;}
+  .timer-card.ch8 .ch-badge{background:#d0404022;border-color:rgba(208,64,64,0.35);color:#f07070;}
+  .ch-badge{display:inline-block;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:3px;border:1px solid;margin-bottom:2px;}
+  .ch-ab-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);opacity:0.7;}
+
+
+  /* MAPKA PINGÓW */
+  .ping-map-wrap{margin:0 0 8px;border:1px solid rgba(201,168,76,0.12);border-radius:3px;overflow:hidden;}
+  .ping-map-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.3);cursor:pointer;user-select:none;border-bottom:1px solid rgba(201,168,76,0.08);}
+  .ping-map-header:hover{background:rgba(0,0,0,0.4);}
+  .ping-map-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold-dark);text-transform:uppercase;}
+  .ping-map-toggle{font-size:11px;color:var(--text-dim);}
+  .ping-map-body{display:none;padding:10px;position:relative;}
+  .ping-map-body.open{display:block;}
+  .ping-map-container{position:relative;width:100%;cursor:crosshair;border-radius:2px;overflow:hidden;}
+  .ping-map-container img{width:100%;display:block;border-radius:2px;}
+  .ping-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+  .ping-ch-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
+  .ping-ch-btn{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;padding:4px 8px;border:1px solid rgba(201,168,76,0.2);color:var(--text-dim);background:none;cursor:pointer;border-radius:2px;transition:all 0.15s;flex:1;text-align:center;}
+  .ping-ch-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1);}
+  .ping-ch-btn:hover{border-color:rgba(201,168,76,0.4);}
+  .ping-clear-btn{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;padding:4px 10px;border:1px solid rgba(180,60,60,0.3);color:#c06060;background:none;cursor:pointer;border-radius:2px;margin-top:6px;width:100%;}
+  .ping-clear-btn:hover{border-color:rgba(220,80,80,0.5);}
+
+
+  /* PING CH POPUP */
+  .ping-ch-popup{
+    position:fixed;z-index:800;
+    background:linear-gradient(160deg,#1e1810,#100d08);
+    border:1px solid rgba(201,168,76,0.4);border-radius:4px;
+    padding:14px 16px;box-shadow:0 8px 40px rgba(0,0,0,0.9);
+    min-width:180px;
+  }
+  .ping-ch-popup-title{
+    font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;
+    color:var(--gold-dark);text-transform:uppercase;margin-bottom:10px;
+  }
+  .ping-ch-popup-btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .ping-ch-popup-btn{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;
+    padding:6px 12px;border-radius:2px;cursor:pointer;
+    border:1px solid rgba(201,168,76,0.3);color:var(--gold-dark);
+    background:rgba(201,168,76,0.07);transition:all 0.15s;
+  }
+  .ping-ch-popup-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.15);}
+  .ping-ch-popup-close{
+    display:block;width:100%;margin-top:8px;
+    font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;
+    padding:5px;border:1px solid rgba(180,60,60,0.25);
+    color:#c06060;background:none;cursor:pointer;border-radius:2px;
+  }
+  /* Ping canvas on map */
+  .ping-frame-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+  /* Podpis mapy pod ramką */
+  .ping-map-label{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;
+    color:var(--gold-dark);text-transform:uppercase;margin-top:8px;
+  }
+  /* Info-bar pod mapami z kto bije + kalendarz */
+  .gig-info-bar{
+    display:flex;align-items:stretch;justify-content:center;
+    gap:0;padding:0 20px 16px;flex-wrap:wrap;
+  }
+  .gig-info-cell{
+    flex:1;min-width:200px;max-width:360px;
+    border:1px solid rgba(201,168,76,0.15);
+    padding:10px 16px;background:rgba(0,0,0,0.25);
+  }
+  .gig-info-cell:first-child{border-right:none;border-radius:3px 0 0 3px;}
+  .gig-info-cell:last-child{border-radius:0 3px 3px 0;}
+  .gig-info-cell.cal-cell{
+    display:flex;align-items:center;justify-content:center;
+    border-left:none;
+  }
+
 </style>
 </head>
 <body>
@@ -634,42 +736,26 @@
 
   <!-- ══ GÓRA ══ -->
   
-  <!-- ═══ MAPA GIGANTÓW ═══ -->
-  <div class="map-widget">
-    <div class="map-outer">
-      <div class="map-corner-tr"></div>
-      <div class="map-corner-bl"></div>
-      <div class="map-inner-border">
-        <div class="map-frame">
-          <img src="/giganty_mapa.jpg" alt="Osada Tysięcy">
-          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-        <!-- GÓRA region — pomarańczowy, zgodnie z rysunkiem na mapie -->
-        <rect id="svgTop"
-          x="68" y="22" width="380" height="158" rx="28"
-          fill="rgba(255,120,20,0)" stroke="rgba(255,140,40,0)"
-          stroke-width="3.5"
-          style="transition:fill 0.5s,stroke 0.5s;"/>
-        <!-- DÓŁ region — niebieski -->
-        <rect id="svgBot"
-          x="40" y="195" width="415" height="200" rx="28"
-          fill="rgba(40,120,255,0)" stroke="rgba(60,140,255,0)"
-          stroke-width="3.5"
-          style="transition:fill 0.5s,stroke 0.5s;"/>
-        <!-- Labels on map -->
-        <text id="svgTopLabel" x="258" y="112"
-          text-anchor="middle" font-family="Cinzel,serif" font-size="18" font-weight="600"
-          fill="rgba(255,160,60,0)" style="transition:fill 0.5s;"
-          stroke="rgba(0,0,0,0)" stroke-width="3" paint-order="stroke">GÓRA</text>
-        <text id="svgBotLabel" x="258" y="300"
-          text-anchor="middle" font-family="Cinzel,serif" font-size="18" font-weight="600"
-          fill="rgba(80,160,255,0)" style="transition:fill 0.5s;"
-          stroke="rgba(0,0,0,0)" stroke-width="3" paint-order="stroke">DÓŁ</text>
-          </svg>
+  <!-- ═══ MAPY PINGÓW ═══ -->
+  <div class="map-widget" id="mapWidget">
+
+    <!-- LEWA MAPKA: CH 1–4 -->
+    <div class="ping-map-outer">
+      <div class="map-outer" id="pingOuterTop">
+        <div class="map-corner-tr"></div>
+        <div class="map-corner-bl"></div>
+        <div class="map-inner-border">
+          <div class="map-frame" id="pingFrameTop" style="overflow:visible;">
+            <img src="/giganty_mapa.jpg" alt="CH 1–4" id="pingImgTop" style="filter:brightness(0.88) saturate(0.92) contrast(1.05);cursor:crosshair;display:block;" onload="redrawPingsSVG('top')" onclick="onPingMapClickNew(event,'top')">
+
+            <svg id="pingSvgTop" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:10;"></svg>
+          </div>
         </div>
+        <div class="map-title-banner">CH 1–4</div>
       </div>
-      <div class="map-title-banner">Osada Tysięcy</div>
     </div>
 
+    <!-- ŚRODEK: Poradnik -->
     <div class="scroll-widget">
       <div class="scroll-corner tl"></div><div class="scroll-corner tr"></div>
       <div class="scroll-corner bl"></div><div class="scroll-corner br"></div>
@@ -679,35 +765,66 @@
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong style="color:#60e080;">Timer zielony</strong> — metin już jest</span></div>
       <div class="scroll-divider"></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Wpisz nick i godzinę do kiedy bijesz</span></div>
-      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Dźwięk osobny dla Góry i Dołu</span></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Dźwięk osobny dla CH 1–4 i CH 5–8</span></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Zapisz się do kolejki — następny gracz czeka</span></div>
       <div class="scroll-divider"></div>
       <div class="scroll-item"><span class="scroll-bullet">▸</span><span><strong style="color:#f0c060;">1 pip</strong> = żółty &nbsp;|&nbsp; <strong style="color:#60e080;">3 pipy</strong> = zielony</span></div>
+      <div class="scroll-divider"></div>
+      <div class="scroll-item"><span class="scroll-bullet">▸</span><span>Kliknij mapkę → wybierz CH → ping metina</span></div>
     </div>
 
-    <div class="map-legend">
+    <!-- PRAWA MAPKA: CH 5–8 -->
+    <div class="ping-map-outer">
+      <div class="map-outer" id="pingOuterBot">
+        <div class="map-corner-tr"></div>
+        <div class="map-corner-bl"></div>
+        <div class="map-inner-border">
+          <div class="map-frame" id="pingFrameBot" style="overflow:visible;">
+            <img src="/giganty_mapa.jpg" alt="CH 5–8" id="pingImgBot" style="filter:brightness(0.88) saturate(0.7) contrast(1.05) hue-rotate(200deg);cursor:crosshair;display:block;" onload="redrawPingsSVG('bottom')" onclick="onPingMapClickNew(event,'bottom')">
+
+            <svg id="pingSvgBot" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:10;"></svg>
+          </div>
+        </div>
+        <div class="map-title-banner">CH 5–8</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- INFO BAR: kto bije + kalendarz -->
+  <div class="gig-info-bar">
+    <div class="gig-info-cell">
       <div class="map-legend-item legend-top" id="legendTop">
         <div class="legend-dot top-dot"></div>
         <div class="legend-label">
-          <div class="legend-zone">🔥 GÓRA</div>
+          <div class="legend-zone">⚔ CH 1–4</div>
           <div class="legend-who" id="legendWhoTop">— nikt nie bije —</div>
         </div>
       </div>
-      <div class="map-legend-item legend-bottom" id="legendBot">
-        <div class="legend-dot bot-dot"></div>
-        <div class="legend-label">
-          <div class="legend-zone">🌊 DÓŁ</div>
-          <div class="legend-who" id="legendWhoBot">— nikt nie bije —</div>
-        </div>
-      </div>
-
-      <!-- Przycisk kalendarza pod legendą -->
+    </div>
+    <div class="gig-info-cell cal-cell">
       <a href="/kalendarz.html" class="cal-nav-btn">
         <span class="cal-nav-icon">📅</span>
         <div class="cal-nav-text">Kalendarz<br><span class="cal-nav-sub">Rezerwacje slotów</span></div>
       </a>
     </div>
+    <div class="gig-info-cell">
+      <div class="map-legend-item legend-bottom" id="legendBot">
+        <div class="legend-dot bot-dot"></div>
+        <div class="legend-label">
+          <div class="legend-zone">⚔ CH 5–8</div>
+          <div class="legend-who" id="legendWhoBot">— nikt nie bije —</div>
+        </div>
+      </div>
+    </div>
   </div>
+
+<!-- POPUP WYBORU CH -->
+<div id="pingChPopup" class="ping-ch-popup" style="display:none;">
+  <div class="ping-ch-popup-title" id="pingChPopupTitle">Wybierz kanał</div>
+  <div class="ping-ch-popup-btns" id="pingChPopupBtns"></div>
+  <button class="ping-ch-popup-close" onclick="closePingPopup()">✕ Anuluj</button>
+</div>
 
 <!-- OVERRIDE POPUP (wyskakuje gdy ktoś prosi o Twój slot) -->
 <div class="override-popup-overlay hidden" id="overridePopupOverlay">
@@ -771,12 +888,12 @@
 <div class="active-bar">
   <div class="active-section top-active">
     <div class="active-dot top"></div>
-    <span class="active-zone top">Góra</span>
+    <span class="active-zone top">CH 1–4</span>
     <div id="activeTopInfo"><span class="active-empty">— nikt nie ma slotu —</span></div>
   </div>
   <div class="active-section bot-active">
     <div class="active-dot bot"></div>
-    <span class="active-zone bot">Dół</span>
+    <span class="active-zone bot">CH 5–8</span>
     <div id="activeBotInfo"><span class="active-empty">— nikt nie ma slotu —</span></div>
   </div>
 </div>
@@ -785,8 +902,8 @@
 <div class="section-wrap" id="sectionTop" style="display:none;">
     <div class="section-header" onclick="toggleSection('top')">
       <div class="section-header-left">
-        <span class="section-badge top-badge">🔥 Góra</span>
-        <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów</span>
+        <span class="section-badge top-badge">⚔ CH 1–4</span>
+        <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów (2×CH)</span>
         <span id="timerLockTop" class="timer-locked-notice" style="display:none;">🔒 Zaloguj się lub zarezerwuj slot</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;" onclick="event.stopPropagation()">
@@ -797,8 +914,8 @@
           <div class="layout-tile" onclick="setLayout('top','layout-1x8-vertical')"   style="grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;" onclick="event.stopPropagation()">
-          <button class="toggle-btn" id="muteTop" onclick="toggleMute('top')" title="Wycisz Górę" style="font-size:13px;">🔊</button>
-          <input type="range" id="volTop" min="0" max="1" step="0.05" style="width:60px;accent-color:#e09040;" title="Głośność Góry">
+          <button class="toggle-btn" id="muteTop" onclick="toggleMute('top')" title="Wycisz CH 1–4" style="font-size:13px;">🔊</button>
+          <input type="range" id="volTop" min="0" max="1" step="0.05" style="width:60px;accent-color:#e09040;" title="Głośność CH 1–4">
         </div>
         <button class="toggle-btn" id="toggleTop">▾</button>
       </div>
@@ -810,8 +927,8 @@
 <div class="section-wrap" id="sectionBottom" style="display:none;">
     <div class="section-header" onclick="toggleSection('bottom')">
       <div class="section-header-left">
-        <span class="section-badge bot-badge">🌊 Dół</span>
-        <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów</span>
+        <span class="section-badge bot-badge">⚔ CH 5–8</span>
+        <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;">8 timerów (2×CH)</span>
         <span id="timerLockBot" class="timer-locked-notice" style="display:none;">🔒 Zaloguj się lub zarezerwuj slot</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;" onclick="event.stopPropagation()">
@@ -822,8 +939,8 @@
           <div class="layout-tile" onclick="setLayout('bottom','layout-1x8-vertical')"   style="grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)"><div></div><div></div><div></div><div></div></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;" onclick="event.stopPropagation()">
-          <button class="toggle-btn" id="muteBottom" onclick="toggleMute('bottom')" title="Wycisz Dół" style="font-size:13px;">🔊</button>
-          <input type="range" id="volBottom" min="0" max="1" step="0.05" style="width:60px;accent-color:#6090e0;" title="Głośność Dołu">
+          <button class="toggle-btn" id="muteBottom" onclick="toggleMute('bottom')" title="Wycisz CH 5–8" style="font-size:13px;">🔊</button>
+          <input type="range" id="volBottom" min="0" max="1" step="0.05" style="width:60px;accent-color:#6090e0;" title="Głośność CH 5–8">
         </div>
         <button class="toggle-btn" id="toggleBottom">▾</button>
       </div>
@@ -916,6 +1033,7 @@ function showLoggedInBar(){
     document.getElementById('adminFab').style.display = '';
     loadSnapshotList();
     loadSoundList();
+    initThresholdInputs();
   }
   document.getElementById('authMiniUserInfo').textContent = currentUser.nick + ' · ' + currentUser.guild + (currentUser.role==='admin'?' · Admin':'');
   // Obsłuż powiadomienia które czekały aż się zalogujemy
@@ -1183,11 +1301,26 @@ function tripleBeep(s){ beepFor(s,820,0.12); setTimeout(function(){beepFor(s,820
 function singleBeep(s){ beepFor(s,600,0.65); }
 
 /* ═══ CREATE TIMER CARD ═══ */
+/* ═══ PROGI TIMERÓW ═══ */
+var gigYellowSecs = parseInt(localStorage.getItem('gig_yellow')) || 1500;  // 25 min
+var gigGreenSecs  = parseInt(localStorage.getItem('gig_green'))  || 1800; // 30 min
+
 const displays={};
 function createTimer(id, section){
-  const label=id.replace('KG_CH','CH ').replace('KGD_CH','CH ');
-  const card=document.createElement('div'); card.className='timer-card state-grey';
-  const name=document.createElement('div'); name.className='timer-name'; name.innerText=label;
+  var _lm=id.match(/KGD?_CH(\d+)([AB])/);
+  var chNum=_lm?_lm[1]:'';
+  var chAB=_lm?_lm[2]:'';
+  const card=document.createElement('div');
+  card.className='timer-card state-grey'+(chNum?' ch'+chNum:'');
+  // Nazwa: badge z numerem CH + mała litera A/B
+  const name=document.createElement('div'); name.className='timer-name';
+  if(chNum){
+    var badge=document.createElement('span'); badge.className='ch-badge'; badge.textContent='CH'+chNum;
+    var abLbl=document.createElement('span'); abLbl.className='ch-ab-label'; abLbl.textContent=' '+chAB;
+    name.appendChild(badge); name.appendChild(abLbl);
+  } else {
+    name.innerText=id;
+  }
   const disp=document.createElement('div'); disp.className='timer-display'; disp.innerText='00:00:00';
   const btns=document.createElement('div'); btns.className='timer-btns';
   const bStart=document.createElement('button'); bStart.className='btn btn-start'; bStart.innerText='Start';
@@ -1213,18 +1346,33 @@ function createTimer(id, section){
   return { card, disp, section, beepYellow:false, beepGreen:false };
 }
 
-for(let i=1;i<=8;i++){ const id='KG_CH'+i;  const t=createTimer(id,'top');    document.getElementById('timersTop').appendChild(t.card);    displays[id]=t; }
-for(let i=1;i<=8;i++){ const id='KGD_CH'+i; const t=createTimer(id,'bottom'); document.getElementById('timersBottom').appendChild(t.card); displays[id]=t; }
+for(let i=1;i<=4;i++){
+  ['A','B'].forEach(function(ab){
+    var id='KG_CH'+i+ab;
+    var t=createTimer(id,'top');
+    document.getElementById('timersTop').appendChild(t.card);
+    displays[id]=t;
+  });
+}
+for(let i=5;i<=8;i++){
+  ['A','B'].forEach(function(ab){
+    var id='KGD_CH'+i+ab;
+    var t=createTimer(id,'bottom');
+    document.getElementById('timersBottom').appendChild(t.card);
+    displays[id]=t;
+  });
+}
 
 socket.on('update', function(data){
   for(const id in data){
     if(!displays[id]) continue;
     const sec=data[id], t=displays[id];
     t.disp.innerText=format(sec);
-    const state=sec===0?'state-grey':sec<1500?'state-red':sec<1800?'state-yellow':'state-green';
-    t.card.className='timer-card '+state;
-    if(sec>=1500&&sec<1502&&!t.beepYellow){ singleBeep(t.section); t.beepYellow=true; }
-    if(sec>=1800&&sec<1802&&!t.beepGreen) { tripleBeep(t.section); t.beepGreen=true; }
+    const state=sec===0?'state-grey':sec<gigYellowSecs?'state-red':sec<gigGreenSecs?'state-yellow':'state-green';
+    var _chcls=(t.card.className.match(/\bch\d+\b/)||[''])[0];
+    t.card.className='timer-card '+state+(_chcls?' '+_chcls:'');
+    if(sec>=gigYellowSecs&&sec<gigYellowSecs+2&&!t.beepYellow){ singleBeep(t.section); t.beepYellow=true; }
+    if(sec>=gigGreenSecs&&sec<gigGreenSecs+2&&!t.beepGreen) { tripleBeep(t.section); t.beepGreen=true; }
     if(sec===0){ t.beepYellow=false; t.beepGreen=false; }
   }
 });
@@ -1643,6 +1791,45 @@ function saveTimerSnapshot(){
     .catch(function(e){ showGigToast('Błąd: ' + e.message, '#e07070'); });
 }
 
+/* ── Progi timerów ── */
+function initThresholdInputs(){
+  var yi = document.getElementById('threshYellowInput');
+  var gi = document.getElementById('threshGreenInput');
+  if(yi) yi.value = Math.round(gigYellowSecs/60);
+  if(gi) gi.value = Math.round(gigGreenSecs/60);
+}
+
+function saveThresholds(){
+  var yi = document.getElementById('threshYellowInput');
+  var gi = document.getElementById('threshGreenInput');
+  if(!yi||!gi) return;
+  var yMin = parseInt(yi.value)||10;
+  var gMin = parseInt(gi.value)||40;
+  if(gMin <= yMin){ showGigToast('Zielony musi być > żółty', '#e07070'); return; }
+  gigYellowSecs = yMin * 60;
+  gigGreenSecs  = gMin * 60;
+  localStorage.setItem('gig_yellow', gigYellowSecs);
+  localStorage.setItem('gig_green',  gigGreenSecs);
+  // Wyślij do serwera żeby wszyscy mieli te same progi
+  var token = getToken();
+  fetch('/admin/set-thresholds', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body: JSON.stringify({ yellowSecs: gigYellowSecs, greenSecs: gigGreenSecs })
+  }).then(function(r){ return r.json(); })
+    .then(function(d){ if(d.ok) showGigToast('✅ Progi zapisane: '+yMin+'min / '+gMin+'min','#60d060'); });
+}
+
+// Odbierz progi od serwera (gdy admin zmieni - wszyscy dostają update)
+socket.on('gigThresholdsUpdate', function(data){
+  gigYellowSecs = data.yellowSecs || 600;
+  gigGreenSecs  = data.greenSecs  || 2400;
+  localStorage.setItem('gig_yellow', gigYellowSecs);
+  localStorage.setItem('gig_green',  gigGreenSecs);
+  initThresholdInputs();
+  showGigToast('⏱ Progi zaktualizowane: '+Math.round(gigYellowSecs/60)+'min / '+Math.round(gigGreenSecs/60)+'min','#c9a84c');
+});
+
 function loadSnapshotList(){
   try { localSnapshots = JSON.parse(localStorage.getItem('timer_snapshots') || '[]'); } catch(e){ localSnapshots = []; }
   renderSnapshotList();
@@ -1851,6 +2038,197 @@ socket.on('playTTS', function(data){
   } catch(e){ console.error('TTS playback error:', e); }
 });
 
+
+/* ═══ MAPKA PINGÓW ═══ */
+var gigPings = { top: {}, bottom: {} };
+var pingPendingClick = null;
+var CH_PING_COLORS = {
+  1:'#e8cc80', 2:'#80a8ff', 3:'#c090f0', 4:'#70d890',
+  5:'#f0a060', 6:'#f080c8', 7:'#60d8d8', 8:'#f07070'
+};
+
+function redrawPingsSVG(section) {
+  var svgEl = document.getElementById(section==='top'?'pingSvgTop':'pingSvgBot');
+  if (!svgEl) return;
+  svgEl.innerHTML = '';
+  var chPings = gigPings[section] || {};
+  Object.keys(chPings).forEach(function(ch) {
+    var p = chPings[ch];
+    if (!p || p.x === undefined) return;
+    var color = CH_PING_COLORS[parseInt(ch)] || '#c9a84c';
+    var px = p.x * 100;
+    var py = p.y * 100;
+    var ns = 'http://www.w3.org/2000/svg';
+    var nick = p.nick || '';
+
+    // Cień
+    var shadow = document.createElementNS(ns,'circle');
+    shadow.setAttribute('cx', px+0.3); shadow.setAttribute('cy', py+0.4);
+    shadow.setAttribute('r','3.8');
+    shadow.setAttribute('fill','rgba(0,0,0,0.5)');
+    svgEl.appendChild(shadow);
+
+    // Kółko główne
+    var circ = document.createElementNS(ns,'circle');
+    circ.setAttribute('cx', px); circ.setAttribute('cy', py);
+    circ.setAttribute('r','3.5');
+    circ.setAttribute('fill', color);
+    circ.setAttribute('stroke','#000');
+    circ.setAttribute('stroke-width','0.7');
+    svgEl.appendChild(circ);
+
+    // Highlight
+    var hi = document.createElementNS(ns,'circle');
+    hi.setAttribute('cx', px-0.9); hi.setAttribute('cy', py-1);
+    hi.setAttribute('r','1.3');
+    hi.setAttribute('fill','rgba(255,255,255,0.28)');
+    svgEl.appendChild(hi);
+
+    // CH numer — cienki kontur + fill
+    var tCh = document.createElementNS(ns,'text');
+    tCh.setAttribute('x', px); tCh.setAttribute('y', py+0.4);
+    tCh.setAttribute('text-anchor','middle');
+    tCh.setAttribute('dominant-baseline','middle');
+    tCh.setAttribute('font-family','Arial Black,Arial,sans-serif');
+    tCh.setAttribute('font-size','2.8');
+    tCh.setAttribute('font-weight','900');
+    tCh.setAttribute('stroke','rgba(0,0,0,0.9)');
+    tCh.setAttribute('stroke-width','0.6');
+    tCh.setAttribute('paint-order','stroke');
+    tCh.setAttribute('fill','#fff');
+    tCh.textContent = ch;
+    svgEl.appendChild(tCh);
+
+    // Nick — małe tło + tekst pod kółkiem
+    if (nick) {
+      var nw = nick.length * 1.9 + 2.5;
+      var nbg = document.createElementNS(ns,'rect');
+      nbg.setAttribute('x', px-nw/2); nbg.setAttribute('y', py+4.2);
+      nbg.setAttribute('width', nw); nbg.setAttribute('height','2.8');
+      nbg.setAttribute('rx','0.7');
+      nbg.setAttribute('fill','rgba(0,0,0,0.78)');
+      nbg.setAttribute('stroke', color);
+      nbg.setAttribute('stroke-width','0.35');
+      svgEl.appendChild(nbg);
+
+      var tN = document.createElementNS(ns,'text');
+      tN.setAttribute('x', px); tN.setAttribute('y', py+5.7);
+      tN.setAttribute('text-anchor','middle');
+      tN.setAttribute('dominant-baseline','middle');
+      tN.setAttribute('font-family','Arial,sans-serif');
+      tN.setAttribute('font-size','2');
+      tN.setAttribute('font-weight','bold');
+      tN.setAttribute('fill', color);
+      tN.textContent = nick;
+      svgEl.appendChild(tN);
+    }
+  });
+}
+
+function onPingMapClickNew(e, section) {
+  if (!currentUser) return;
+  var img = document.getElementById(section==='top'?'pingImgTop':'pingImgBot');
+  if (!img) return;
+  var rect = img.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / rect.width;
+  var y = (e.clientY - rect.top)  / rect.height;
+  x = Math.max(0, Math.min(1, x));
+  y = Math.max(0, Math.min(1, y));
+
+  // Sprawdź czy kliknięto blisko istniejącego pinga (promień 6% mapy)
+  var chPings = gigPings[section] || {};
+  var threshold = 0.07;
+  for (var ch in chPings) {
+    var p = chPings[ch];
+    var dx = p.x - x, dy = p.y - y;
+    if (Math.sqrt(dx*dx + dy*dy) < threshold) {
+      // Kliknięto w ping - usuń go
+      {
+        delete gigPings[section][ch];
+        redrawPingsSVG(section);
+        socket.emit('gigRemovePing', { section: section, ch: parseInt(ch) });
+      }
+      return;
+    }
+  }
+
+  // Brak pinga w pobliżu - otwórz popup nowego pinga
+  pingPendingClick = { section: section, x: x, y: y };
+  openPingPopup(section, e.clientX, e.clientY);
+}
+
+function openPingPopup(section, cx, cy) {
+  var popup = document.getElementById('pingChPopup');
+  var title = document.getElementById('pingChPopupTitle');
+  var btns  = document.getElementById('pingChPopupBtns');
+  if (!popup) return;
+  var chStart = section==='top' ? 1 : 5;
+  var chEnd   = section==='top' ? 4 : 8;
+  title.textContent = 'Wybierz kanał (' + (section==='top'?'CH 1–4':'CH 5–8') + ')';
+  btns.innerHTML = '';
+  for (var c = chStart; c <= chEnd; c++) {
+    (function(ch){
+      var btn = document.createElement('button');
+      btn.className = 'ping-ch-popup-btn';
+      btn.textContent = 'CH ' + ch;
+      var color = CH_PING_COLORS[ch] || '#c9a84c';
+      btn.style.borderColor = color;
+      btn.style.color = color;
+      btn.onclick = function(){ confirmPing(ch); };
+      btns.appendChild(btn);
+    })(c);
+  }
+  popup.style.display = 'block';
+  var pw = 200, ph = 150;
+  var left = Math.min(cx + 10, window.innerWidth  - pw - 10);
+  var top  = Math.min(cy + 10, window.innerHeight - ph - 10);
+  popup.style.left = left + 'px';
+  popup.style.top  = top  + 'px';
+  setTimeout(function(){
+    document.addEventListener('click', closePingPopupOutside, { once: true });
+  }, 100);
+}
+
+function closePingPopupOutside(e) {
+  var popup = document.getElementById('pingChPopup');
+  if (popup && !popup.contains(e.target)) closePingPopup();
+}
+
+function closePingPopup() {
+  var popup = document.getElementById('pingChPopup');
+  if (popup) popup.style.display = 'none';
+  pingPendingClick = null;
+}
+
+function confirmPing(ch) {
+  if (!pingPendingClick || !currentUser) { closePingPopup(); return; }
+  // Zapisz przed zamknięciem popupu (closePingPopup zeruje pingPendingClick)
+  var section = pingPendingClick.section;
+  var x = pingPendingClick.x, y = pingPendingClick.y;
+  closePingPopup();
+  if (!gigPings[section]) gigPings[section] = {};
+  gigPings[section][ch] = { x: x, y: y, ch: ch, nick: currentUser.nick, ts: Date.now() };
+  redrawPingsSVG(section);
+  socket.emit('gigAddPing', { section: section, ch: ch, x: x, y: y, nick: currentUser.nick });
+}
+
+function clearPings(section) {
+  gigPings[section] = {};
+  redrawPingsSVG(section);
+  socket.emit('gigClearPings', { section: section });
+}
+
+socket.on('gigPingsUpdate', function(data) {
+  gigPings = data || { top: {}, bottom: {} };
+  redrawPingsSVG('top');
+  redrawPingsSVG('bottom');
+});
+
+socket.on('connect', function(){
+  var tok = typeof getToken === 'function' ? getToken() : localStorage.getItem('sojusz_token');
+  if (tok) socket.emit('auth', tok);
+});
+
 </script>
 
 <!-- CZAT FAB -->
@@ -1894,6 +2272,26 @@ socket.on('playTTS', function(data){
     <div class="admin-panel-label">💾 Snapshot timerów</div>
     <button class="admin-snap-btn" onclick="saveTimerSnapshot()">💾 Zapisz obecny stan timerów</button>
     <div class="admin-snap-list" id="snapshotList"></div>
+  </div>
+
+  <div class="admin-panel-section">
+    <div class="admin-panel-label">⏱ Progi timerów</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);width:90px;">🟡 Żółty (min):</span>
+        <input type="number" id="threshYellowInput" min="1" max="60" value="25"
+          style="width:52px;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Cinzel',serif;font-size:11px;padding:4px 6px;border-radius:2px;outline:none;text-align:center;">
+        <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);">min</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);width:90px;">🟢 Zielony (min):</span>
+        <input type="number" id="threshGreenInput" min="1" max="60" value="30"
+          style="width:52px;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.2);color:var(--text);font-family:'Cinzel',serif;font-size:11px;padding:4px 6px;border-radius:2px;outline:none;text-align:center;">
+        <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--text-dim);">min</span>
+      </div>
+      <button class="admin-snap-btn" style="margin-top:2px;" onclick="saveThresholds()">💾 Zapisz progi</button>
+      <div id="threshStatus" style="font-size:9px;color:var(--text-dim);"></div>
+    </div>
   </div>
 
   <div class="admin-panel-section">

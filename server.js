@@ -37,6 +37,95 @@ const ADMIN_NICK = "Ezvay"
 let REGISTER_CODE = "SojuszProjekt2026"
 
 app.use(express.json())
+
+/* ═══ WŁASNE TIMERY ═══ */
+let customTimerSessions = {}  // in-memory: id -> session
+let customIntervals = {}
+
+app.get('/api/custom-timers', authMiddleware, (req, res) => {
+  const nick = req.user.nick
+  const list = Object.values(customTimerSessions)
+    .filter(s => s.shared || s.owner === nick || req.user.role === 'admin')
+    .map(s => ({ id:s.id, name:s.name, owner:s.owner, shared:s.shared,
+      location:s.location, objects:s.objects, yellowMin:s.yellowMin, greenMin:s.greenMin }))
+  res.json(list)
+})
+
+app.post('/api/custom-timers', authMiddleware, (req, res) => {
+  const { name, location, objects, yellowMin, greenMin, shared } = req.body
+  if (!name || !objects || !objects.length) return res.status(400).json({ error: 'Brak danych' })
+  const id = 'ct_' + Date.now() + '_' + Math.random().toString(36).slice(2,6)
+  const timers = {}
+  objects.slice(0,2).forEach((obj, o) => {
+    for (let ch = 1; ch <= 8; ch++) {
+      timers[id+'_obj'+o+'_ch'+ch] = { elapsed: 0, running: false }
+    }
+  })
+  customTimerSessions[id] = {
+    id, name, location: location||name, objects: objects.slice(0,2),
+    yellowMin: yellowMin||25, greenMin: greenMin||30,
+    shared: !!shared, owner: req.user.nick, timers, createdAt: Date.now()
+  }
+  io.emit('customSessionCreated', { id, owner: req.user.nick, shared: !!shared })
+  res.json({ ok: true, id })
+})
+
+app.delete('/api/custom-timers/:id', authMiddleware, (req, res) => {
+  const s = customTimerSessions[req.params.id]
+  if (!s) return res.status(404).json({ error: 'Nie znaleziono' })
+  if (s.owner !== req.user.nick && req.user.role !== 'admin') return res.status(403).json({ error: 'Brak dostępu' })
+  Object.keys(s.timers).forEach(tid => {
+    if (customIntervals[tid]) { clearInterval(customIntervals[tid]); delete customIntervals[tid] }
+  })
+  delete customTimerSessions[req.params.id]
+  io.emit('customSessionDeleted', { id: req.params.id })
+  res.json({ ok: true })
+})
+
+app.get('/api/custom-timers/:id/state', authMiddleware, (req, res) => {
+  const s = customTimerSessions[req.params.id]
+  if (!s) return res.status(404).json({ error: 'Nie znaleziono' })
+  const snap = {}
+  for (const tid in s.timers) {
+    const t = s.timers[tid]
+    snap[tid] = (t.running && t.startedAt)
+      ? Math.floor(t.elapsed + (Date.now() - t.startedAt) / 1000)
+      : (t.elapsed || 0)
+  }
+  res.json({ session: { id:s.id, name:s.name, location:s.location, objects:s.objects,
+    yellowMin:s.yellowMin, greenMin:s.greenMin, shared:s.shared, owner:s.owner },
+    timers: snap, running: Object.keys(s.timers).filter(tid => s.timers[tid].running) })
+})
+
+app.post('/api/custom-timers/:id/action', authMiddleware, (req, res) => {
+  const s = customTimerSessions[req.params.id]
+  if (!s) return res.status(404).json({ error: 'Nie znaleziono' })
+  if (!s.shared && s.owner !== req.user.nick && req.user.role !== 'admin')
+    return res.status(403).json({ error: 'Brak dostępu' })
+  const { action, timerId } = req.body
+  const t = s.timers[timerId]
+  if (!t) return res.status(404).json({ error: 'Timer nie znaleziony' })
+  if (action === 'start') {
+    if (customIntervals[timerId]) return res.json({ ok: true })
+    t.running = true; t.startedAt = Date.now()
+    customIntervals[timerId] = setInterval(() => {
+      const elapsed = Math.floor(t.elapsed + (Date.now() - t.startedAt) / 1000)
+      io.to('ct_' + s.id).emit('customTimerUpdate', { sessionId: s.id, timerId, elapsed })
+    }, 1000)
+  } else if (action === 'stop') {
+    if (t.running && t.startedAt) { t.elapsed = Math.floor(t.elapsed + (Date.now() - t.startedAt) / 1000); delete t.startedAt }
+    t.running = false
+    if (customIntervals[timerId]) { clearInterval(customIntervals[timerId]); delete customIntervals[timerId] }
+    io.to('ct_' + s.id).emit('customTimerUpdate', { sessionId: s.id, timerId, elapsed: t.elapsed })
+  } else if (action === 'reset') {
+    if (customIntervals[timerId]) { clearInterval(customIntervals[timerId]); delete customIntervals[timerId] }
+    t.elapsed = 0; t.running = false; delete t.startedAt
+    io.to('ct_' + s.id).emit('customTimerUpdate', { sessionId: s.id, timerId, elapsed: 0 })
+  }
+  res.json({ ok: true })
+})
+
+
 // ─── HASŁO DOSTĘPU DO STRONY ───
 const SITE_PASSWORD = process.env.SITE_PASSWORD || 'MecenologiaMT2'
 
@@ -120,6 +209,7 @@ let grotaKilledGenerals = {}
 let grotaRegions        = {}
 let grotaSnapshots      = []
 let gigTimers           = {}
+let gigPings            = { top: {}, bottom: {} }  // section -> { ch -> [{x,y,nick,ts}] }
 let gigRunning          = new Set()
 let gigWho              = { top: null, bottom: null }
 let gigQueue            = { top: [], bottom: [] }
@@ -159,6 +249,7 @@ async function connectDB() {
     // Wczytaj timery - zachowaj kompatybilność ze starym formatem
     const loadedTimers = doc.gigTimers || {}
     gigTimers = {}
+    gigPings            = doc.gigPings            || { top: {}, bottom: {} }
     for (const id in loadedTimers) {
       const t = loadedTimers[id]
       if (typeof t === 'number') {
@@ -247,7 +338,7 @@ async function saveNow() {
     }
     await col.replaceOne({ _id: "main" }, {
       _id: "main",
-      chatMessages, grotaRoutes, grotaLabels, grotaRunners, grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
+      chatMessages, gigPings, grotaRoutes, grotaLabels, grotaRunners, grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
       gigTimers: timersToSave, gigRunning:[...gigRunning], gigWho, delegations,
       savedAt: Date.now()
     }, { upsert: true })
@@ -317,6 +408,24 @@ app.post('/api/admin/register-code', authMiddleware, adminOnly, async (req, res)
   REGISTER_CODE = newCode.trim()
   if (col) await col.updateOne({ _id: "main" }, { $set: { registerCode: REGISTER_CODE } }, { upsert: true })
   res.json({ ok: true })
+})
+
+// Progi timerów (żółty/zielony) - synchronizowane przez socket do wszystkich
+let gigThresholds = { yellowSecs: 600, greenSecs: 2400 }
+
+app.post('/admin/set-thresholds', authMiddleware, adminOnly, (req, res) => {
+  const { yellowSecs, greenSecs } = req.body
+  if (!yellowSecs || !greenSecs || greenSecs <= yellowSecs)
+    return res.status(400).json({ error: 'Nieprawidłowe progi' })
+  gigThresholds.yellowSecs = yellowSecs
+  gigThresholds.greenSecs  = greenSecs
+  // Wyślij do wszystkich klientów
+  io.emit('gigThresholdsUpdate', gigThresholds)
+  res.json({ ok: true })
+})
+
+app.get('/admin/get-thresholds', (req, res) => {
+  res.json(gigThresholds)
 })
 
 // Przywróć snapshot timerów (admin)
@@ -900,6 +1009,33 @@ io.on("connection", async socket => {
     } catch(e) {}
   })
 
+  /* ── Pingi na mapie ── */
+  socket.on('gigAddPing', (data) => {
+    const { section, ch, x, y, nick } = data
+    if (!section || !ch) return
+    if (!gigPings[section]) gigPings[section] = {}
+    gigPings[section][ch] = { x, y, nick, ts: Date.now() }
+    saveData()
+    io.emit('gigPingsUpdate', gigPings)
+  })
+  socket.on('gigRemovePing', (data) => {
+    const { section, ch } = data
+    if (section && ch !== undefined && gigPings[section]) {
+      delete gigPings[section][ch]
+      delete gigPings[section][String(ch)]
+      saveData()
+      io.emit('gigPingsUpdate', gigPings)
+    }
+  })
+  socket.on('gigClearPings', (data) => {
+    if (data && data.section) gigPings[data.section] = {}
+    else gigPings = { top: {}, bottom: {} }
+    saveData()
+    io.emit('gigPingsUpdate', gigPings)
+  })
+
+  socket.on('joinCustomSession', (sessionId) => { socket.join('ct_' + sessionId) })
+  socket.on('leaveCustomSession', (sessionId) => { socket.leave('ct_' + sessionId) })
   socket.on('disconnect', () => {
     const u = getUser()
     if (u && userSockets[u.nick]) {
@@ -1119,6 +1255,8 @@ io.on("connection", async socket => {
   socket.emit('grotaKilledGeneralsUpdate', grotaKilledGenerals)
   socket.emit('grotaRegionsUpdate',        grotaRegions)
   socket.emit('grotaSnapshotsUpdate',      grotaSnapshots)
+  socket.emit('gigPingsUpdate',            gigPings)
+  socket.emit('gigThresholdsUpdate',       gigThresholds)
 })
 
 /* ═══ SHUTDOWN ═══ */
@@ -1139,6 +1277,7 @@ process.on("SIGTERM", () => shutdown("SIGTERM"))
 process.on("SIGINT",  () => shutdown("SIGINT"))
 
 /* ═══ START ═══ */
+
 function startSlotChecker() {
   setInterval(async () => {
     if (!slotsCol) return

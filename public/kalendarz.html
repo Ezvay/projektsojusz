@@ -347,8 +347,8 @@ body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min
     <div class="modal-row">
       <label>Sekcja:</label>
       <div class="section-toggle">
-        <button class="sec-btn active-top" id="secTop" onclick="setSection('top')">🔥 Góra</button>
-        <button class="sec-btn" id="secBot" onclick="setSection('bottom')">🌊 Dół</button>
+        <button class="sec-btn active-top" id="secTop" onclick="setSection('top')">⚔ CH 1–4</button>
+        <button class="sec-btn" id="secBot" onclick="setSection('bottom')">⚔ CH 5–8</button>
       </div>
     </div>
     <div class="modal-row">
@@ -525,11 +525,11 @@ body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min
   </div>
 
   <!-- GRID GÓRA -->
-  <div class="cal-section-label top-lbl">🔥 Góra</div>
+  <div class="cal-section-label top-lbl">⚔ CH 1–4</div>
   <div class="cal-grid" id="calTop"></div>
 
   <!-- GRID DÓŁ -->
-  <div class="cal-section-label bot-lbl">🌊 Dół</div>
+  <div class="cal-section-label bot-lbl">⚔ CH 5–8</div>
   <div class="cal-grid" id="calBot"></div>
 </div>
 
@@ -682,7 +682,7 @@ function showOverrideRequest(data) {
   const container = document.getElementById('overrideNotifications')
   const id = 'ovr_'+data.overrideId
   const s = new Date(data.newStartAt), e = new Date(data.newEndAt)
-  const secLabel = data.section==='top'?'🔥 Góra':'🌊 Dół'
+  const secLabel = data.section==='top'?'⚔ CH 1–4':'⚔ CH 5–8'
   const div = document.createElement('div')
   div.className = 'override-notification'
   div.id = id
@@ -739,7 +739,7 @@ function renderBellItems(){
   container.innerHTML = ''
   pendingOverrides.forEach(function(ovr){
     var s = new Date(ovr.newStartAt), e = new Date(ovr.newEndAt)
-    var secLabel = ovr.section==='top' ? '🔥 Góra' : '🌊 Dół'
+    var secLabel = ovr.section==='top' ? '⚔ CH 1–4' : '⚔ CH 5–8'
     var div = document.createElement('div')
     div.className = 'bell-item'
     div.id = 'bell_'+ovr._id
@@ -1151,7 +1151,7 @@ function openOverrideDialog(slotId, section) {
   const slotStart = new Date(slot.startAt)
   const slotEnd   = new Date(slot.endAt)
   // Info o slocie
-  var secLabel = section==='top' ? '🔥 Góra' : '🌊 Dół'
+  var secLabel = section==='top' ? '⚔ CH 1–4' : '⚔ CH 5–8'
   document.getElementById('ovrSlotInfo').innerHTML =
     'Slot: <strong>'+esc(slot.nick)+'</strong>'+(slot.guild ? ' ('+esc(slot.guild)+')' : '')+'<br>'+
     secLabel+': '+fmtDt(slotStart)+' → '+fmtTime(slotEnd)
@@ -1258,8 +1258,8 @@ function renderStatusBar() {
   const activeTop = slots.find(s => s.section==='top'    && new Date(s.startAt)<=now && new Date(s.endAt)>now)
   const activeBot = slots.find(s => s.section==='bottom' && new Date(s.startAt)<=now && new Date(s.endAt)>now)
   bar.innerHTML = [
-    activeTop ? `<span class="status-item active-top">🔥 Góra: <strong>${esc(activeTop.nick)}</strong> (${esc(activeTop.guild)}) do ${fmtTime(new Date(activeTop.endAt))}</span>` : '<span class="status-item" style="color:var(--text-dim)">🔥 Góra: wolne</span>',
-    activeBot ? `<span class="status-item active-bot">🌊 Dół: <strong>${esc(activeBot.nick)}</strong> (${esc(activeBot.guild)}) do ${fmtTime(new Date(activeBot.endAt))}</span>` : '<span class="status-item" style="color:var(--text-dim)">🌊 Dół: wolne</span>',
+    activeTop ? `<span class="status-item active-top">⚔ CH 1–4: <strong>${esc(activeTop.nick)}</strong> (${esc(activeTop.guild)}) do ${fmtTime(new Date(activeTop.endAt))}</span>` : '<span class="status-item" style="color:var(--text-dim)">⚔ CH 1–4: wolne</span>',
+    activeBot ? `<span class="status-item active-bot">⚔ CH 5–8: <strong>${esc(activeBot.nick)}</strong> (${esc(activeBot.guild)}) do ${fmtTime(new Date(activeBot.endAt))}</span>` : '<span class="status-item" style="color:var(--text-dim)">⚔ CH 5–8: wolne</span>',
   ].join('')
   // Refresh every minute
 }
@@ -1278,7 +1278,7 @@ function renderDelegations() {
   if (!items.length) { el.innerHTML = '<div class="active-delegation" style="color:var(--text-dim)">Brak aktywnych delegacji</div>'; return }
   el.innerHTML = items.map(([sec, d]) =>
     `<div class="active-delegation">
-      ${sec==='top'?'🔥 Góra':'🌊 Dół'}: <strong>${esc(d.fromNick)}</strong> → <strong>${esc(d.toNick)}</strong>
+      ${sec==='top'?'⚔ CH 1–4':'⚔ CH 5–8'}: <strong>${esc(d.fromNick)}</strong> → <strong>${esc(d.toNick)}</strong>
       (do ${fmtTime(new Date(d.expiresAt))})
       ${(d.fromNick===currentUser.nick||currentUser.role==='admin') ? `<button onclick="removeDelegate('${sec}')" style="font-family:'Cinzel',serif;font-size:9px;color:#c07070;background:none;border:none;cursor:pointer;margin-left:8px;">✕ Cofnij</button>` : ''}
     </div>`).join('')
@@ -1310,7 +1310,7 @@ function populateMySlots() {
     opt.dataset.section = s.section
     opt.dataset.startAt = s.startAt
     opt.dataset.endAt   = s.endAt
-    const secLabel = s.section==='top'?'🔥 Góra':'🌊 Dół'
+    const secLabel = s.section==='top'?'⚔ CH 1–4':'⚔ CH 5–8'
     opt.textContent = secLabel+': '+fmtDt(start)+' → '+fmtTime(end)
     sel.appendChild(opt)
   })
@@ -1540,7 +1540,7 @@ function showConfirmPrompt(data) {
   if(!currentUser || data.nick !== currentUser.nick) return
   pendingConfirmSlotId = data.slotId
   var s = new Date(data.startAt), e = new Date(data.endAt)
-  var secLabel = data.section==='top' ? '🔥 Góra' : '🌊 Dół'
+  var secLabel = data.section==='top' ? '⚔ CH 1–4' : '⚔ CH 5–8'
   document.getElementById('confirmInfo').innerHTML =
     'Twój slot zaraz się zaczyna!<br>' +
     '<strong>' + secLabel + ': ' + fmtTime(s) + ' → ' + fmtTime(e) + '</strong><br>' +

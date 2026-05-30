@@ -123,6 +123,7 @@ input[type=range]{accent-color:var(--gold);cursor:pointer;width:60px;}
 .obj-label::after{content:"";flex:1;height:1px;background:rgba(201,168,76,0.1);}
 /* EMPTY */
 .empty-state{text-align:center;padding:50px 20px;font-family:"Cinzel",serif;font-size:10px;letter-spacing:2px;color:var(--text-dim);}
+
 </style>
 </head>
 <body>
@@ -366,7 +367,7 @@ function renderSession(cfg){
   var hdr=document.createElement('div'); hdr.className='section-header';
   hdr.onclick=function(){ toggleSess(id); };
   var hLeft=document.createElement('div'); hLeft.className='section-header-left';
-  var toggleBtn=document.createElement('button'); toggleBtn.className='toggle-btn'; toggleBtn.id='toggle_'+id; toggleBtn.textContent='▾'; toggleBtn.onclick=function(e){e.stopPropagation();toggleSess(id);};
+  var toggleBtn=document.createElement('button'); toggleBtn.className='toggle-btn'; toggleBtn.id='toggle_'+id; toggleBtn.textContent='▸'; toggleBtn.onclick=function(e){e.stopPropagation();toggleSess(id);};
   var badge=document.createElement('span'); badge.className='section-badge'; badge.textContent='⏱ '+(cfg.location||cfg.name);
   var count=document.createElement('span'); count.className='section-count'; count.textContent=(cfg.objects.length*8)+' timerów';
   var meta=document.createElement('span'); meta.className='section-meta'; meta.textContent='🟡 '+cfg.yellowMin+'min   🟢 '+cfg.greenMin+'min';
@@ -402,7 +403,7 @@ function renderSession(cfg){
   wrap.appendChild(hdr);
 
   // Body
-  var body=document.createElement('div'); body.id='sessBody_'+id;
+  var body=document.createElement('div'); body.id='sessBody_'+id; body.style.display='none';
   cfg.objects.forEach(function(objName,objIdx){
     if(objIdx>0){var hr=document.createElement('div');hr.style.cssText='height:1px;background:rgba(201,168,76,0.08);margin:0 18px;';body.appendChild(hr);}
     var lbl=document.createElement('div'); lbl.className='obj-label'; lbl.textContent='⚔ '+objName; body.appendChild(lbl);
