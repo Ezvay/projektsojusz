@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="/logo.png">
 <script src="/auth.js"></script>
 <script src="/lure-map.js"></script>
+<script src="/map-sync.js"></script>
 <script src="/login-overlay.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -365,7 +366,7 @@
 </div>
 
 <script>
-const socket=io({ auth: { token: window.SojuszAuth.getToken()||'' } });
+const socket=connectLiveMap('smierc');
 
 /* ═══ STATE ═══ */
 let generals       = {};   // aktywne piny na mapie
@@ -554,9 +555,8 @@ function closePopup(){popup.classList.add('hidden');pendingClick=null;}
 popup.addEventListener('click',e=>{if(e.target===popup)closePopup();});
 
 function confirmAddGeneral(ch){
-  if(!pendingClick)return;
-  socket.emit('smiercAddGeneral',{x:pendingClick.x,y:pendingClick.y,ch});
-  closePopup();
+  if(!pendingClick||!socket.canEdit())return;
+  socket.emit('smiercAddGeneral',{x:pendingClick.x,y:pendingClick.y,ch},ok=>{if(ok)closePopup();});
 }
 
 /* ═══ KILL CONFIRM POPUP ═══ */
@@ -621,7 +621,7 @@ function renderGenerals(){
   }
 }
 
-const lureMap=createLureMap({container:mapContainer,layer:generalLayer,socket,prefix:'smierc',getGenerals:()=>generals,getLabels:()=>smiercLabels,canDrag:()=>curMode==='play',onClick:openKillPopup});
+const lureMap=createLureMap({container:mapContainer,layer:generalLayer,socket,prefix:'smierc',getGenerals:()=>generals,getLabels:()=>smiercLabels,canDrag:()=>curMode==='play'&&socket.canEdit(),onClick:openKillPopup});
 function placeGeneralPin(g){
   const destination=smiercLabels.find(l=>l.id===g.lureLabelId)||g;
   const m=document.createElement('div');
@@ -796,7 +796,7 @@ function applySmiercUser(user) {
   // Aktualizuj globalny auth bar
   if (window._saUpdateBar) window._saUpdateBar(user);
   // Wyślij token przez socket żeby serwer mógł autoryzować
-  socket.auth = { token: window.SojuszAuth.getToken()||'' };
+  socket.auth = { map:'smierc' };
   socket.emit('auth', window.SojuszAuth.getToken()||'');
   if (user.role === 'admin') {
     isAdmin = true;
@@ -914,7 +914,7 @@ function redrawLabels() {
 }
 
 function onDrawClick(e) {
-  if (!isAdmin || curMode !== 'draw') return;
+  if (!isAdmin || curMode !== 'draw' || !socket.canEdit()) return;
   const rect = mapContainer.getBoundingClientRect();
   const x = (e.clientX - rect.left)  / mapContainer.clientWidth;
   const y = (e.clientY - rect.top)   / mapContainer.clientHeight;
@@ -926,46 +926,40 @@ function onDrawClick(e) {
     const text = document.getElementById('drNumText').value.trim() || '?';
     const size = parseInt(document.getElementById('drNumSize').value) || 18;
     const lb = {id:'lb_'+Date.now(), x, y, text, color:drawColor, size};
-    smiercLabels.push(lb); redrawLabels();
+
     socket.emit('smiercAddLabel', lb);
   } else if (drawTool === 'erase') {
     const W=lCanvas.width, H=lCanvas.height;
-    const prevLen = smiercLabels.length;
-    smiercLabels = smiercLabels.filter(lb => {
-      const dx=(lb.x-x)*W, dy=(lb.y-y)*H;
-      if (Math.sqrt(dx*dx+dy*dy)<25) { socket.emit('smiercRemoveLabel',lb.id); return false; }
-      return true;
-    });
-    if (smiercLabels.length < prevLen) { redrawLabels(); return; }
+    const label=smiercLabels.find(lb=>Math.hypot((lb.x-x)*W,(lb.y-y)*H)<25);
+    if(label){socket.emit('smiercRemoveLabel',label.id);return;}
     for (const id in smiercRoutes) {
       for (const p of smiercRoutes[id].points) {
         const dx=(p.x-x)*rCanvas.width, dy=(p.y-y)*rCanvas.height;
-        if (Math.sqrt(dx*dx+dy*dy)<25) { delete smiercRoutes[id]; redrawRoutes(); socket.emit('smiercRemoveRoute',id); renderRoutesList(); return; }
+        if (Math.sqrt(dx*dx+dy*dy)<25) { socket.emit('smiercRemoveRoute',id); return; }
       }
     }
   }
 }
 function finishRoute() {
-  if (!curRoutePts.length) return;
+  if (!curRoutePts.length || !socket.canEdit()) return;
   const name = document.getElementById('drName').value.trim() || 'Trasa';
   const route = {id:curRouteId, name, color:drawColor, points:[...curRoutePts], visible:true};
-  smiercRoutes[curRouteId] = route;
-  socket.emit('smiercAddRoute', route);
-  curRoutePts=[]; curRouteId=null;
-  document.getElementById('drFinish').style.display='none';
-  document.getElementById('drName').value='';
-  redrawRoutes(); renderRoutesList();
+
+  const button=document.getElementById('drFinish');button.disabled=true;
+  socket.emit('smiercAddRoute', route,ok=>{
+    button.disabled=false;if(!ok)return;
+    curRoutePts=[];curRouteId=null;button.style.display='none';
+    document.getElementById('drName').value='';redrawRoutes();renderRoutesList();
+  });
 }
 function clearAllDraw() {
   if (!confirm('Usunąć wszystkie trasy i numerki?')) return;
-  smiercRoutes={}; smiercLabels=[]; smiercRunners={};
-  redrawRoutes(); redrawLabels(); renderRoutesList();
+
   socket.emit('smiercClearRoutes');
 }
 function toggleRouteVisible(id) {
   if (!smiercRoutes[id]) return;
-  smiercRoutes[id].visible = !smiercRoutes[id].visible;
-  socket.emit('smiercToggleRoute', {id, visible:smiercRoutes[id].visible});
+  socket.emit('smiercToggleRoute', {id, visible:!smiercRoutes[id].visible});
   redrawRoutes(); renderRoutesList();
 }
 
@@ -1000,7 +994,7 @@ function renderRoutesList() {
       if (runner) { btn.style.background=r.color+'44'; btn.style.borderColor=r.color; btn.style.color='#fff'; }
       const numSpan = document.createElement('span'); numSpan.className='ch-num'; numSpan.textContent='CH'+ch;
       const nickSpan = document.createElement('span'); nickSpan.className='ch-nick';
-      nickSpan.textContent = runner ? runner.nick : '';
+      nickSpan.textContent = runner ? (runner.displayName||runner.nick) : '';
       nickSpan.title = runner ? runner.nick : '';
       btn.appendChild(numSpan); btn.appendChild(nickSpan);
       btn.onclick = () => {
@@ -1026,9 +1020,9 @@ function renderRoutesList() {
    SOCKET EVENTS - TRASY
 ══════════════════════════════════════ */
 socket.on('smiercRoutesUpdate', data => {
-  smiercRoutes  = data.routes  || {};
-  smiercLabels  = data.labels  || [];
-  smiercRunners = data.runners || {};
+  if(data.routes!==undefined)smiercRoutes=data.routes;
+  if(data.labels!==undefined)smiercLabels=data.labels;
+  if(data.runners!==undefined)smiercRunners=data.runners;
   // Odczekaj aż canvas będzie gotowy
   if (rCanvas && rCanvas.width > 0) {
     redrawRoutes(); redrawLabels();

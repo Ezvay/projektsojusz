@@ -2,6 +2,7 @@ const express         = require("express")
 const app             = express()
 const http            = require("http").createServer(app)
 const io              = require("socket.io")(http)
+const maps = require("./map-state")(io)
 const { MongoClient, ObjectId } = require("mongodb")
 const path            = require("path")
 const fs              = require("fs")
@@ -122,7 +123,10 @@ app.post('/api/custom-timers/:id/action', authMiddleware, (req, res) => {
 })
 
 
-app.use(express.static(path.join(__dirname, "public")))
+app.use(express.static(path.join(__dirname, "public"),{setHeaders(res,file){
+  if(/\.(png|jpg|jpeg|mp3)$/i.test(file))res.setHeader('Cache-Control','private, max-age=604800');
+  else res.setHeader('Cache-Control','no-cache');
+}}))
 
 /* ═══ CLEAN URLs ═══ */
 app.get('/mapa-smierci', (req,res) => res.redirect(301,'/smierc.html'))
@@ -179,6 +183,7 @@ async function connectDB() {
 
   // Load state
   const doc = await col.findOne({ _id: "main" })
+  await maps.init(db,doc||{})
   if (doc) {
     chatMessages        = doc.chatMessages        || []
     grotaRoutes         = doc.grotaRoutes         || {}
@@ -277,18 +282,16 @@ async function saveNow() {
         timersToSave[id] = t
       }
     }
-    await col.replaceOne({ _id: "main" }, {
+    await col.updateOne({ _id: "main" }, { $set: {
       _id: "main",
-      smiercRoutes, smiercLabels, smiercRunners, smiercGenerals, smiercKilledGenerals, smiercRegions, smiercSnapshots,
-      chatMessages, gigPings, grotaRoutes, grotaLabels, grotaRunners, grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
+      chatMessages, gigPings,
       gigTimers: timersToSave, gigRunning:[...gigRunning], gigWho, delegations,
       savedAt: Date.now()
-    }, { upsert: true })
+    } }, { upsert: true })
   } catch(e) { console.error("Save error:", e.message) }
 }
 function saveData() {
-  if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(saveNow, 500)
+  if (!saveTimer) saveTimer = setTimeout(() => { saveTimer=null; saveNow(); }, 500)
 }
 
 /* ═══ AUTH MIDDLEWARE ═══ */
@@ -340,7 +343,7 @@ app.post('/admin/restore-snapshot', authMiddleware, adminOnly, async (req, res) 
       gigTimers[id] = { elapsed: timers[id] || 0, running: false }
     }
     await saveNow()
-    io.emit('update', getTimersSnapshot())
+    io.to('timer-viewers').emit('update', getTimersSnapshot())
     res.json({ ok: true })
   } catch(e) { res.status(500).json({ error: e.message }) }
 })
@@ -802,6 +805,11 @@ function getTimersSnapshot() {
   return snap
 }
 
+// One shared broadcast instead of one for every running timer.
+setInterval(() => {
+  if(gigRunning.size && io.sockets.adapter.rooms.get('timer-viewers')?.size)
+    io.to('timer-viewers').emit('update',getTimersSnapshot());
+},1000);
 function startGig(id) {
   if (gigIntervals[id]) return
   if (!gigTimers[id] || typeof gigTimers[id] === 'number') {
@@ -811,14 +819,11 @@ function startGig(id) {
     gigTimers[id].startedAt = Date.now()
   }
   gigRunning.add(id)
-  gigIntervals[id] = setInterval(() => {
-    io.emit('update', getTimersSnapshot())
-    const elapsed = getTimerSeconds(id)
-    saveData()  // co sekundę - zawsze aktualny stan w MongoDB
-  }, 1000)
+  gigIntervals[id] = true
+  saveData()
+  io.to('timer-viewers').emit('update', getTimersSnapshot())
 }
 function stopGig(id) {
-  clearInterval(gigIntervals[id])
   delete gigIntervals[id]
   gigRunning.delete(id)
   if (gigTimers[id] && typeof gigTimers[id] === 'object') {
@@ -829,12 +834,11 @@ function stopGig(id) {
   saveData()
 }
 function resetGig(id) {
-  clearInterval(gigIntervals[id])
   delete gigIntervals[id]
   gigRunning.delete(id)
   gigTimers[id] = { elapsed: 0, running: false }
   saveData()
-  io.emit('update', getTimersSnapshot())
+  io.to('timer-viewers').emit('update', getTimersSnapshot())
 }
 
 /* ═══ AUTO QUEUE CHECK ═══ */
@@ -1026,249 +1030,14 @@ io.on("connection", async socket => {
     gigQueue[section] = []; saveData(); io.emit('gigQueueUpdate', gigQueue)
   })
 
-  /* ── Grota ── */
-  /* ── Trasy ── */
-  socket.on('grotaAddRoute', (route) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    grotaRoutes[route.id] = route
-    saveData()
-    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
-  })
-  socket.on('grotaRemoveRoute', (id) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    delete grotaRoutes[id]
-    delete grotaRunners[id]
-    saveData()
-    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
-  })
-  socket.on('grotaToggleRoute', ({ id, visible }) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    if (grotaRoutes[id]) grotaRoutes[id].visible = visible
-    saveData()
-    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
-  })
-  socket.on('grotaClearRoutes', () => {
-    if (!getUser() || getUser().role !== 'admin') return
-    grotaRoutes = {}; grotaLabels = []; grotaRunners = {}
-    saveData()
-    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
-  })
-  socket.on('grotaAddLabel', (label) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    grotaLabels.push(label)
-    saveData()
-    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
-  })
-  socket.on('grotaRemoveLabel', (id) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    grotaLabels = grotaLabels.filter(l => l.id !== id)
-    saveData()
-    io.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
-  })
-  socket.on('grotaAddRunner', ({ routeId, ch, nick, guild }) => {
-    if (!getUser()) return
-    if (!grotaRunners[routeId]) grotaRunners[routeId] = {}
-    grotaRunners[routeId][ch] = { nick, guild }
-    io.emit('grotaRunnersUpdate', grotaRunners)
-  })
-  socket.on('grotaRemoveRunner', ({ routeId, ch }) => {
-    if (grotaRunners[routeId]) delete grotaRunners[routeId][ch]
-    io.emit('grotaRunnersUpdate', grotaRunners)
-  })
-
-  /* ── Generałowie ── */
-  socket.on('grotaSetLure', data => {
-    if(!getUser() || !data || typeof data.id!=='string' || typeof data.labelId!=='string') return;
-    const general=grotaGenerals[data.id];
-    const label=grotaLabels.find(l=>l.id===data.labelId);
-    if(!general || !label) return;
-    general.lureLabelId=label.id;
-    saveData();io.emit('grotaGeneralsUpdate',grotaGenerals);
-  });
-  socket.on('grotaAddGeneral', data => {
-    if(!getUser() || !data || !Number.isFinite(data.x) || !Number.isFinite(data.y) || data.x<0 || data.x>1 || data.y<0 || data.y>1 || !Number.isInteger(data.ch) || data.ch<1 || data.ch>8) return;
-    if(Object.values(grotaGenerals).some(g=>g.ch===data.ch)) return;
-    const id = 'gen_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
-    grotaGenerals[id] = { id, x:data.x, y:data.y, ch:data.ch, foundAt:Date.now() }
-    saveData(); io.emit('grotaGeneralsUpdate', grotaGenerals)
-  })
-  socket.on('grotaKillGeneral', id => {
-    const gen = grotaGenerals[id]; if(!gen) return
-    delete grotaGenerals[id]
-    const kid = 'killed_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
-    grotaKilledGenerals[kid] = { id:kid, ch:gen.ch, x:gen.x, y:gen.y, killedAt:Date.now() }
-    saveData(); io.emit('grotaGeneralsUpdate', grotaGenerals); io.emit('grotaKilledGeneralsUpdate', grotaKilledGenerals)
-  })
-  socket.on('grotaRemoveKilled', id => {
-    delete grotaKilledGenerals[id]; saveData(); io.emit('grotaKilledGeneralsUpdate', grotaKilledGenerals)
-  })
-  socket.on('grotaRemoveGeneral', id => {
-    delete grotaGenerals[id]; saveData(); io.emit('grotaGeneralsUpdate', grotaGenerals)
-  })
-  socket.on('grotaAddRegion', data => {
-    const id = 'reg_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
-    grotaRegions[id] = { id, x1:data.x1, y1:data.y1, x2:data.x2, y2:data.y2, player:data.player, guild:data.guild, addedAt:Date.now() }
-    saveData(); io.emit('grotaRegionsUpdate', grotaRegions)
-  })
-  socket.on('grotaRemoveRegion', id => {
-    delete grotaRegions[id]; saveData(); io.emit('grotaRegionsUpdate', grotaRegions)
-  })
-  socket.on('grotaSaveSnapshot', data => {
-    const snap = { id:'snap_'+Date.now(), name:data.name||'Snapshot', ts:Date.now(),
-      generals:JSON.parse(JSON.stringify(grotaGenerals)),
-      killedGenerals:JSON.parse(JSON.stringify(grotaKilledGenerals)),
-      regions:JSON.parse(JSON.stringify(grotaRegions)) }
-    grotaSnapshots.unshift(snap)
-    if(grotaSnapshots.length>10) grotaSnapshots=grotaSnapshots.slice(0,10)
-    saveData(); io.emit('grotaSnapshotsUpdate', grotaSnapshots)
-  })
-  socket.on('grotaLoadSnapshot', snapId => {
-    const snap = grotaSnapshots.find(s=>s.id===snapId); if(!snap) return
-    grotaGenerals=JSON.parse(JSON.stringify(snap.generals||{}))
-    grotaKilledGenerals=JSON.parse(JSON.stringify(snap.killedGenerals||{}))
-    grotaRegions=JSON.parse(JSON.stringify(snap.regions||{}))
-    saveData()
-    io.emit('grotaGeneralsUpdate',grotaGenerals)
-    io.emit('grotaKilledGeneralsUpdate',grotaKilledGenerals)
-    io.emit('grotaRegionsUpdate',grotaRegions)
-  })
-  socket.on('grotaDeleteSnapshot', snapId => {
-    grotaSnapshots=grotaSnapshots.filter(s=>s.id!==snapId); saveData(); io.emit('grotaSnapshotsUpdate',grotaSnapshots)
-  })
-  socket.on('grotaClearSnapshots', () => {
-    grotaSnapshots=[]; saveData(); io.emit('grotaSnapshotsUpdate',grotaSnapshots)
-  })
-
-
-  /* ── Smierc ── */
-  /* ── Trasy ── */
-  socket.on('smiercAddRoute', (route) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    smiercRoutes[route.id] = route
-    saveData()
-    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
-  })
-  socket.on('smiercRemoveRoute', (id) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    delete smiercRoutes[id]
-    delete smiercRunners[id]
-    saveData()
-    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
-  })
-  socket.on('smiercToggleRoute', ({ id, visible }) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    if (smiercRoutes[id]) smiercRoutes[id].visible = visible
-    saveData()
-    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
-  })
-  socket.on('smiercClearRoutes', () => {
-    if (!getUser() || getUser().role !== 'admin') return
-    smiercRoutes = {}; smiercLabels = []; smiercRunners = {}
-    saveData()
-    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
-  })
-  socket.on('smiercAddLabel', (label) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    smiercLabels.push(label)
-    saveData()
-    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
-  })
-  socket.on('smiercRemoveLabel', (id) => {
-    if (!getUser() || getUser().role !== 'admin') return
-    smiercLabels = smiercLabels.filter(l => l.id !== id)
-    saveData()
-    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
-  })
-  socket.on('smiercAddRunner', ({ routeId, ch, nick, guild }) => {
-    if (!getUser()) return
-    if (!smiercRunners[routeId]) smiercRunners[routeId] = {}
-    smiercRunners[routeId][ch] = { nick, guild }
-    saveData(); io.emit('smiercRunnersUpdate', smiercRunners)
-  })
-  socket.on('smiercRemoveRunner', ({ routeId, ch }) => {
-    if (smiercRunners[routeId]) delete smiercRunners[routeId][ch]
-    saveData(); io.emit('smiercRunnersUpdate', smiercRunners)
-  })
-
-  /* ── Generałowie ── */
-  socket.on('smiercSetLure', data => {
-    if(!getUser() || !data || typeof data.id!=='string' || typeof data.labelId!=='string') return;
-    const general=smiercGenerals[data.id];
-    const label=smiercLabels.find(l=>l.id===data.labelId);
-    if(!general || !label) return;
-    general.lureLabelId=label.id;
-    saveData();io.emit('smiercGeneralsUpdate',smiercGenerals);
-  });
-  socket.on('smiercAddGeneral', data => {
-    if(!getUser() || !data || !Number.isFinite(data.x) || !Number.isFinite(data.y) || data.x<0 || data.x>1 || data.y<0 || data.y>1 || !Number.isInteger(data.ch) || data.ch<1 || data.ch>8) return;
-    if(Object.values(smiercGenerals).some(g=>g.ch===data.ch)) return;
-    const id = 'gen_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
-    smiercGenerals[id] = { id, x:data.x, y:data.y, ch:data.ch, foundAt:Date.now() }
-    saveData(); io.emit('smiercGeneralsUpdate', smiercGenerals)
-  })
-  socket.on('smiercKillGeneral', id => {
-    const gen = smiercGenerals[id]; if(!gen) return
-    delete smiercGenerals[id]
-    const kid = 'killed_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
-    smiercKilledGenerals[kid] = { id:kid, ch:gen.ch, x:gen.x, y:gen.y, killedAt:Date.now() }
-    saveData(); io.emit('smiercGeneralsUpdate', smiercGenerals); io.emit('smiercKilledGeneralsUpdate', smiercKilledGenerals)
-  })
-  socket.on('smiercRemoveKilled', id => {
-    delete smiercKilledGenerals[id]; saveData(); io.emit('smiercKilledGeneralsUpdate', smiercKilledGenerals)
-  })
-  socket.on('smiercRemoveGeneral', id => {
-    delete smiercGenerals[id]; saveData(); io.emit('smiercGeneralsUpdate', smiercGenerals)
-  })
-  socket.on('smiercAddRegion', data => {
-    const id = 'reg_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
-    smiercRegions[id] = { id, x1:data.x1, y1:data.y1, x2:data.x2, y2:data.y2, player:data.player, guild:data.guild, addedAt:Date.now() }
-    saveData(); io.emit('smiercRegionsUpdate', smiercRegions)
-  })
-  socket.on('smiercRemoveRegion', id => {
-    delete smiercRegions[id]; saveData(); io.emit('smiercRegionsUpdate', smiercRegions)
-  })
-  socket.on('smiercSaveSnapshot', data => {
-    const snap = { id:'snap_'+Date.now(), name:data.name||'Snapshot', ts:Date.now(),
-      generals:JSON.parse(JSON.stringify(smiercGenerals)),
-      killedGenerals:JSON.parse(JSON.stringify(smiercKilledGenerals)),
-      regions:JSON.parse(JSON.stringify(smiercRegions)) }
-    smiercSnapshots.unshift(snap)
-    if(smiercSnapshots.length>10) smiercSnapshots=smiercSnapshots.slice(0,10)
-    saveData(); io.emit('smiercSnapshotsUpdate', smiercSnapshots)
-  })
-  socket.on('smiercLoadSnapshot', snapId => {
-    const snap = smiercSnapshots.find(s=>s.id===snapId); if(!snap) return
-    smiercGenerals=JSON.parse(JSON.stringify(snap.generals||{}))
-    smiercKilledGenerals=JSON.parse(JSON.stringify(snap.killedGenerals||{}))
-    smiercRegions=JSON.parse(JSON.stringify(snap.regions||{}))
-    saveData()
-    io.emit('smiercGeneralsUpdate',smiercGenerals)
-    io.emit('smiercKilledGeneralsUpdate',smiercKilledGenerals)
-    io.emit('smiercRegionsUpdate',smiercRegions)
-  })
-  socket.on('smiercDeleteSnapshot', snapId => {
-    smiercSnapshots=smiercSnapshots.filter(s=>s.id!==snapId); saveData(); io.emit('smiercSnapshotsUpdate',smiercSnapshots)
-  })
-  socket.on('smiercClearSnapshots', () => {
-    smiercSnapshots=[]; saveData(); io.emit('smiercSnapshotsUpdate',smiercSnapshots)
-  })
-
   /* ── Send state to new client ── */
+  if(maps.attach(socket))return;
+  socket.join("timer-viewers");
   socket.emit('chatHistory', chatMessages)
   socket.emit('update',                    getTimersSnapshot())
   socket.emit('gigWhoUpdate',              gigWho)
   socket.emit('gigQueueUpdate',            gigQueue)
   socket.emit('delegationsUpdate',         delegations)
-  socket.emit('grotaRoutesUpdate', { routes: grotaRoutes, labels: grotaLabels, runners: grotaRunners })
-  socket.emit('grotaGeneralsUpdate',       grotaGenerals)
-  socket.emit('grotaKilledGeneralsUpdate', grotaKilledGenerals)
-  socket.emit('grotaRegionsUpdate',        grotaRegions)
-  socket.emit('grotaSnapshotsUpdate',      grotaSnapshots)
-  socket.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
-  socket.emit('smiercGeneralsUpdate',       smiercGenerals)
-  socket.emit('smiercKilledGeneralsUpdate', smiercKilledGenerals)
-  socket.emit('smiercRegionsUpdate',        smiercRegions)
-  socket.emit('smiercSnapshotsUpdate',      smiercSnapshots)
   socket.emit('gigPingsUpdate',            gigPings)
   socket.emit('gigThresholdsUpdate',       gigThresholds)
 })
@@ -1284,6 +1053,7 @@ async function shutdown(sig) {
       delete gigTimers[id].startedAt
     }
   })
+  await maps.flush()
   await saveNow()
   process.exit(0)
 }

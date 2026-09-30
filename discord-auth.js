@@ -2,7 +2,7 @@ const crypto = require('node:crypto');
 
 // Discord credentials belong in the hosting environment, never in public files.
 module.exports = function installDiscordAuth({app, io, getDb, getUsers, env=process.env, fetchImpl=fetch}) {
-  const origin = (env.PUBLIC_URL || 'https://projekt-sojusz-production.up.railway.app').replace(/\/$/,'');
+  const origin = new URL((env.PUBLIC_URL || 'https://projekt-sojusz-production.up.railway.app').trim()).origin;
   const callback = origin + '/auth/discord/callback';
   const guildId = env.DISCORD_GUILD_ID || '1543972927719080016';
   const adminRole = env.DISCORD_ADMIN_ROLE_ID || '1543979266084044820';
@@ -22,7 +22,21 @@ module.exports = function installDiscordAuth({app, io, getDb, getUsers, env=proc
     if(!response.ok)throw new Error(response.status===404||response.status===403?'membership':'discord');
     return response.json();
   }
+  const sessionCache=new Map(),pendingSessions=new Map();
   async function getSession(req) {
+    const raw=cookies(req).sojusz_session;
+    if(!raw||!/^[a-f0-9]{64}$/.test(raw)||!getDb())return null;
+    const key=hash(raw),cached=sessionCache.get(key),now=Date.now();
+    if(cached&&cached.until>now&&new Date(cached.session.expiresAt).getTime()>now&&now-cached.session.checkedAt<=5*60*1000)return cached.session;
+    if(pendingSessions.has(key))return pendingSessions.get(key);
+    const loading=loadSession(req).then(session=>{
+      if(session){if(sessionCache.size>=1000)sessionCache.delete(sessionCache.keys().next().value);sessionCache.set(key,{session,until:Date.now()+30000});}
+      else sessionCache.delete(key);
+      return session;
+    }).finally(()=>pendingSessions.delete(key));
+    pendingSessions.set(key,loading);return loading;
+  }
+  async function loadSession(req) {
     const raw=cookies(req).sojusz_session;
     if(!raw||!/^[a-f0-9]{64}$/.test(raw)||!getDb())return null;
     const session=await sessions().findOne({_id:hash(raw),expiresAt:{$gt:new Date()}});
@@ -74,7 +88,7 @@ module.exports = function installDiscordAuth({app, io, getDb, getUsers, env=proc
       const user={discordId:profile.id,nick,displayName:member.nick||profile.global_name||profile.username,guild:'Discord',role};
       await getUsers().updateOne({discordId:profile.id},{$set:user,$setOnInsert:{createdAt:new Date()}},{upsert:true});
       const old=cookies(req).sojusz_session;
-      if(old)await sessions().deleteOne({_id:hash(old)});
+      if(old){await sessions().deleteOne({_id:hash(old)});sessionCache.delete(hash(old));}
       const sessionId=random();
       const maxAge=Math.min(12*60*60,Number(token.expires_in)||3600)*1000;
       await sessions().insertOne({_id:hash(sessionId),user,accessToken:token.access_token,checkedAt:Date.now(),expiresAt:new Date(Date.now()+maxAge)});
@@ -88,6 +102,7 @@ module.exports = function installDiscordAuth({app, io, getDb, getUsers, env=proc
     try {
       if(raw) {
         await sessions().deleteOne({_id:hash(raw)});
+        sessionCache.delete(hash(raw));
         for(const socket of io.sockets.sockets.values())if(cookies(socket.request).sojusz_session===raw)socket.disconnect(true);
       }
       res.clearCookie('sojusz_session',cookieOptions);
@@ -110,7 +125,9 @@ module.exports = function installDiscordAuth({app, io, getDb, getUsers, env=proc
   });
   io.use(async(socket,next)=>{
     try {
-      if(socket.handshake.headers.origin!==origin)return next(new Error('Niedozwolone połączenie'));
+      // Same-origin polling GETs may omit Origin. Reject foreign browser origins.
+      const headers=socket.handshake.headers;
+      if(headers.origin ? headers.origin!==origin : headers['sec-fetch-site']==='cross-site'||headers['sec-fetch-site']==='same-site')return next(new Error('Niedozwolone połączenie'));
       const session=await getSession(socket.request);
       if(!session)return next(new Error('Zaloguj się przez Discord'));
       socket.data.user=session.user;next();
