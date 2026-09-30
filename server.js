@@ -195,6 +195,8 @@ app.get('/auth-check', (req, res) => {
 app.use(express.static(path.join(__dirname, "public")))
 
 /* ═══ CLEAN URLs ═══ */
+app.get('/mapa-smierci', (req,res) => res.redirect(301,'/smierc.html'))
+app.get('/smierc', (req,res) => res.redirect(301,'/smierc.html'))
 app.get('/grota',   (req,res) => res.redirect(301,'/grota.html'))
 app.get('/giganty', (req,res) => res.redirect(301,'/giganty.html'))
 app.get('/kalendarz',(req,res)=> res.redirect(301,'/kalendarz.html'))
@@ -208,6 +210,13 @@ let grotaGenerals       = {}
 let grotaKilledGenerals = {}
 let grotaRegions        = {}
 let grotaSnapshots      = []
+let smiercRoutes         = {}  // id -> { id, name, color, points, visible }
+let smiercLabels         = []  // [ { id, x, y, text, color, size } ]
+let smiercRunners        = {}  // routeId -> { ch -> { nick, guild } }
+let smiercGenerals       = {}
+let smiercKilledGenerals = {}
+let smiercRegions        = {}
+let smiercSnapshots      = []
 let gigTimers           = {}
 let gigPings            = { top: {}, bottom: {} }  // section -> { ch -> [{x,y,nick,ts}] }
 let gigRunning          = new Set()
@@ -246,6 +255,13 @@ async function connectDB() {
     grotaKilledGenerals = doc.grotaKilledGenerals || {}
     grotaRegions        = doc.grotaRegions        || {}
     grotaSnapshots      = doc.grotaSnapshots      || []
+    smiercRoutes         = doc.smiercRoutes         || {}
+    smiercLabels         = doc.smiercLabels         || []
+    smiercRunners        = doc.smiercRunners        || {}
+    smiercGenerals       = doc.smiercGenerals       || {}
+    smiercKilledGenerals = doc.smiercKilledGenerals || {}
+    smiercRegions        = doc.smiercRegions        || {}
+    smiercSnapshots      = doc.smiercSnapshots      || []
     // Wczytaj timery - zachowaj kompatybilność ze starym formatem
     const loadedTimers = doc.gigTimers || {}
     gigTimers = {}
@@ -276,6 +292,9 @@ async function connectDB() {
     const cutoff = Date.now() - 9*60*60*1000
     Object.keys(grotaKilledGenerals).forEach(id => {
       if (grotaKilledGenerals[id].killedAt < cutoff) delete grotaKilledGenerals[id]
+    })
+    Object.keys(smiercKilledGenerals).forEach(id => {
+      if (smiercKilledGenerals[id].killedAt < cutoff) delete smiercKilledGenerals[id]
     })
     console.log("✅ State loaded")
   }
@@ -338,6 +357,7 @@ async function saveNow() {
     }
     await col.replaceOne({ _id: "main" }, {
       _id: "main",
+      smiercRoutes, smiercLabels, smiercRunners, smiercGenerals, smiercKilledGenerals, smiercRegions, smiercSnapshots,
       chatMessages, gigPings, grotaRoutes, grotaLabels, grotaRunners, grotaGenerals, grotaKilledGenerals, grotaRegions, grotaSnapshots,
       gigTimers: timersToSave, gigRunning:[...gigRunning], gigWho, delegations,
       savedAt: Date.now()
@@ -1244,6 +1264,110 @@ io.on("connection", async socket => {
     grotaSnapshots=[]; saveData(); io.emit('grotaSnapshotsUpdate',grotaSnapshots)
   })
 
+
+  /* ── Smierc ── */
+  /* ── Trasy ── */
+  socket.on('smiercAddRoute', (route) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    smiercRoutes[route.id] = route
+    saveData()
+    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
+  })
+  socket.on('smiercRemoveRoute', (id) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    delete smiercRoutes[id]
+    delete smiercRunners[id]
+    saveData()
+    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
+  })
+  socket.on('smiercToggleRoute', ({ id, visible }) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    if (smiercRoutes[id]) smiercRoutes[id].visible = visible
+    saveData()
+    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
+  })
+  socket.on('smiercClearRoutes', () => {
+    if (!getUser() || getUser().role !== 'admin') return
+    smiercRoutes = {}; smiercLabels = []; smiercRunners = {}
+    saveData()
+    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
+  })
+  socket.on('smiercAddLabel', (label) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    smiercLabels.push(label)
+    saveData()
+    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
+  })
+  socket.on('smiercRemoveLabel', (id) => {
+    if (!getUser() || getUser().role !== 'admin') return
+    smiercLabels = smiercLabels.filter(l => l.id !== id)
+    saveData()
+    io.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
+  })
+  socket.on('smiercAddRunner', ({ routeId, ch, nick, guild }) => {
+    if (!getUser()) return
+    if (!smiercRunners[routeId]) smiercRunners[routeId] = {}
+    smiercRunners[routeId][ch] = { nick, guild }
+    saveData(); io.emit('smiercRunnersUpdate', smiercRunners)
+  })
+  socket.on('smiercRemoveRunner', ({ routeId, ch }) => {
+    if (smiercRunners[routeId]) delete smiercRunners[routeId][ch]
+    saveData(); io.emit('smiercRunnersUpdate', smiercRunners)
+  })
+
+  /* ── Generałowie ── */
+  socket.on('smiercAddGeneral', data => {
+    const id = 'gen_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
+    smiercGenerals[id] = { id, x:data.x, y:data.y, ch:data.ch, foundAt:Date.now() }
+    saveData(); io.emit('smiercGeneralsUpdate', smiercGenerals)
+  })
+  socket.on('smiercKillGeneral', id => {
+    const gen = smiercGenerals[id]; if(!gen) return
+    delete smiercGenerals[id]
+    const kid = 'killed_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
+    smiercKilledGenerals[kid] = { id:kid, ch:gen.ch, x:gen.x, y:gen.y, killedAt:Date.now() }
+    saveData(); io.emit('smiercGeneralsUpdate', smiercGenerals); io.emit('smiercKilledGeneralsUpdate', smiercKilledGenerals)
+  })
+  socket.on('smiercRemoveKilled', id => {
+    delete smiercKilledGenerals[id]; saveData(); io.emit('smiercKilledGeneralsUpdate', smiercKilledGenerals)
+  })
+  socket.on('smiercRemoveGeneral', id => {
+    delete smiercGenerals[id]; saveData(); io.emit('smiercGeneralsUpdate', smiercGenerals)
+  })
+  socket.on('smiercAddRegion', data => {
+    const id = 'reg_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
+    smiercRegions[id] = { id, x1:data.x1, y1:data.y1, x2:data.x2, y2:data.y2, player:data.player, guild:data.guild, addedAt:Date.now() }
+    saveData(); io.emit('smiercRegionsUpdate', smiercRegions)
+  })
+  socket.on('smiercRemoveRegion', id => {
+    delete smiercRegions[id]; saveData(); io.emit('smiercRegionsUpdate', smiercRegions)
+  })
+  socket.on('smiercSaveSnapshot', data => {
+    const snap = { id:'snap_'+Date.now(), name:data.name||'Snapshot', ts:Date.now(),
+      generals:JSON.parse(JSON.stringify(smiercGenerals)),
+      killedGenerals:JSON.parse(JSON.stringify(smiercKilledGenerals)),
+      regions:JSON.parse(JSON.stringify(smiercRegions)) }
+    smiercSnapshots.unshift(snap)
+    if(smiercSnapshots.length>10) smiercSnapshots=smiercSnapshots.slice(0,10)
+    saveData(); io.emit('smiercSnapshotsUpdate', smiercSnapshots)
+  })
+  socket.on('smiercLoadSnapshot', snapId => {
+    const snap = smiercSnapshots.find(s=>s.id===snapId); if(!snap) return
+    smiercGenerals=JSON.parse(JSON.stringify(snap.generals||{}))
+    smiercKilledGenerals=JSON.parse(JSON.stringify(snap.killedGenerals||{}))
+    smiercRegions=JSON.parse(JSON.stringify(snap.regions||{}))
+    saveData()
+    io.emit('smiercGeneralsUpdate',smiercGenerals)
+    io.emit('smiercKilledGeneralsUpdate',smiercKilledGenerals)
+    io.emit('smiercRegionsUpdate',smiercRegions)
+  })
+  socket.on('smiercDeleteSnapshot', snapId => {
+    smiercSnapshots=smiercSnapshots.filter(s=>s.id!==snapId); saveData(); io.emit('smiercSnapshotsUpdate',smiercSnapshots)
+  })
+  socket.on('smiercClearSnapshots', () => {
+    smiercSnapshots=[]; saveData(); io.emit('smiercSnapshotsUpdate',smiercSnapshots)
+  })
+
   /* ── Send state to new client ── */
   socket.emit('chatHistory', chatMessages)
   socket.emit('update',                    getTimersSnapshot())
@@ -1255,6 +1379,11 @@ io.on("connection", async socket => {
   socket.emit('grotaKilledGeneralsUpdate', grotaKilledGenerals)
   socket.emit('grotaRegionsUpdate',        grotaRegions)
   socket.emit('grotaSnapshotsUpdate',      grotaSnapshots)
+  socket.emit('smiercRoutesUpdate', { routes: smiercRoutes, labels: smiercLabels, runners: smiercRunners })
+  socket.emit('smiercGeneralsUpdate',       smiercGenerals)
+  socket.emit('smiercKilledGeneralsUpdate', smiercKilledGenerals)
+  socket.emit('smiercRegionsUpdate',        smiercRegions)
+  socket.emit('smiercSnapshotsUpdate',      smiercSnapshots)
   socket.emit('gigPingsUpdate',            gigPings)
   socket.emit('gigThresholdsUpdate',       gigThresholds)
 })
