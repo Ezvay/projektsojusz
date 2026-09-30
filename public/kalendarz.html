@@ -307,32 +307,7 @@ body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--text);min
 <div class="bg-overlay"></div>
 <canvas id="particleCanvas"></canvas>
 
-<!-- AUTH MODAL -->
-<div class="modal-overlay" id="authOverlay">
-  <div class="auth-panel">
-    <div class="auth-title">⚔ Projekt Sojusz</div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Zaloguj się</button>
-      <button class="auth-tab" id="tabReg" onclick="switchAuthTab('register')">Zarejestruj</button>
-    </div>
-    <!-- LOGIN -->
-    <div id="loginForm">
-      <div class="form-field"><label>Nick w grze</label><input class="form-input" id="loginNick" placeholder="Twój nick..." autocomplete="username"></div>
-      <div class="form-field"><label>Hasło</label><input class="form-input" type="password" id="loginPass" placeholder="Hasło..." autocomplete="current-password"></div>
-      <button class="form-btn" onclick="doLogin()">→ Zaloguj się</button>
-    </div>
-    <!-- REGISTER -->
-    <div id="registerForm" style="display:none;">
-      <div class="form-field"><label>Nick w grze</label><input class="form-input" id="regNick" placeholder="Twój nick w grze..." autocomplete="username"></div>
-      <div class="form-field"><label>Gildia</label><input class="form-input" id="regGuild" placeholder="Nazwa gildii..."></div>
-      <div class="form-field"><label>Hasło</label><input class="form-input" type="password" id="regPass" placeholder="Min. 4 znaki..." autocomplete="new-password"></div>
-      <div class="form-field"><label>Kod dostępu sojuszu</label><input class="form-input" type="password" id="regCode" placeholder="Zapytaj o kod admina (Ezvay)"></div>
-      <button class="form-btn" onclick="doRegister()">→ Zarejestruj konto</button>
-    </div>
-    <div class="auth-error" id="authError"></div>
-  </div>
-</div>
-
+<div id="authOverlay" style="display:none"></div>
 <!-- RESERVE MODAL -->
 <div class="modal-overlay hidden" id="reserveModal">
   <div class="modal-box">
@@ -546,12 +521,12 @@ let reserveDuration = 1
 let editingSlot = null
 let editDuration = 1
 
-const socket = io({ auth: { token: localStorage.getItem('sojusz_token') } })
+const socket = io({ auth: { token: window.SojuszAuth.getToken() } })
 socket.on('connect', function(){
   document.getElementById('wsDot').className='ws-dot ok'
   document.getElementById('wsLabel').innerText='Na żywo'
   // Po (re)connect - zarejestruj socket jeśli zalogowany
-  var token = localStorage.getItem('sojusz_token')
+  var token = window.SojuszAuth.getToken()
   if(token) {
     socket.emit('auth', token)
     // Sprawdź pending overrides z bazy
@@ -625,57 +600,8 @@ socket.on('overrideRequest', function(data){
 
 
 /* === AUTH === */
-function switchAuthTab(tab) {
-  document.getElementById('loginForm').style.display    = tab==='login' ? '' : 'none'
-  document.getElementById('registerForm').style.display = tab==='register' ? '' : 'none'
-  document.getElementById('tabLogin').classList.toggle('active', tab==='login')
-  document.getElementById('tabReg').classList.toggle('active', tab==='register')
-  document.getElementById('authError').textContent = ''
-}
-
-async function doLogin() {
-  const nick = document.getElementById('loginNick').value.trim()
-  const pass = document.getElementById('loginPass').value
-  if(!nick||!pass) return showAuthError('Wypełnij wszystkie pola')
-  try {
-    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nick,password:pass}) })
-    const d = await r.json()
-    if(!r.ok) return showAuthError(d.error)
-    saveSession(d)
-  } catch(e) { showAuthError('Błąd połączenia') }
-}
-
-async function doRegister() {
-  const nick  = document.getElementById('regNick').value.trim()
-  const guild = document.getElementById('regGuild').value.trim()
-  const pass  = document.getElementById('regPass').value
-  const code  = document.getElementById('regCode').value.trim()
-  if(!nick||!guild||!pass||!code) return showAuthError('Wypełnij wszystkie pola łącznie z kodem dostępu')
-  try {
-    const r = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nick,guild,password:pass,code}) })
-    const d = await r.json()
-    if(!r.ok) return showAuthError(d.error)
-    saveSession(d)
-  } catch(e) { showAuthError('Błąd połączenia') }
-}
-
-function saveSession(data) {
-  localStorage.setItem('sojusz_token', data.token)
-  currentUser = { nick: data.nick, guild: data.guild, role: data.role }
-  socket.auth = { token: data.token }
-  // Wyślij token przez socket żeby zarejestrować usera bez reconnectu
-  socket.emit('auth', data.token)
-  showApp()
-}
-
-function doLogout() {
-  localStorage.removeItem('sojusz_token')
-  currentUser = null
-  document.getElementById('mainApp').style.display = 'none'
-  document.getElementById('authOverlay').style.display = 'flex'
-}
-
-function showAuthError(msg) { document.getElementById('authError').textContent = msg }
+function doLogin(){SojuszAuth.login();}
+function doLogout(){SojuszAuth.logout();}
 
 /* === OVERRIDE UI === */
 function showOverrideRequest(data) {
@@ -786,7 +712,7 @@ function showToast(msg, color) {
 }
 
 async function checkSession() {
-  const token = localStorage.getItem('sojusz_token')
+  const token = window.SojuszAuth.getToken()
   if (!token) return
   try {
     const r = await fetch('/api/me', { headers:{ Authorization:'Bearer '+token } })
@@ -1354,7 +1280,7 @@ async function removeDelegate(section) {
 }
 
 /* === API HELPERS === */
-function getToken() { return localStorage.getItem('sojusz_token') }
+function getToken() { return window.SojuszAuth.getToken() }
 function authHeader() { return { 'Authorization': 'Bearer '+getToken(), 'Content-Type':'application/json' } }
 
 async function apiGet(url) {
@@ -1376,8 +1302,6 @@ function fmtDt(d){ return d.toLocaleDateString('pl-PL',{weekday:'short',day:'2-d
 function fmtTime(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') }
 
 /* === INIT === */
-document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin() })
-document.getElementById('loginNick').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin() })
 document.getElementById('authOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('authOverlay')) {} })
 
 /* === PM (kalendarz) === */
@@ -1483,7 +1407,7 @@ function closeKalPM(){ document.getElementById('kalPmPanel').style.display='none
 function sendKalPM(){
   if(!currentUser||!kalPmTarget) return;
   var inp=document.getElementById('kalPmInput'); var t=inp?inp.value.trim():'';
-  if(!t) return; socket.emit('chatSend',{text:t,toNick:kalPmTarget,token:localStorage.getItem('sojusz_token')}); inp.value=''; inp.focus();
+  if(!t) return; socket.emit('chatSend',{text:t,toNick:kalPmTarget,token:window.SojuszAuth.getToken()}); inp.value=''; inp.focus();
 }
 function renderKalPmMsg(msg){
   var cont=document.getElementById('kalPmMessages'); if(!cont) return;

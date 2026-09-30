@@ -128,31 +128,7 @@ input[type=range]{accent-color:var(--gold);cursor:pointer;width:60px;}
 </head>
 <body>
 
-<!-- LOGIN OVERLAY -->
-<div class="overlay" id="loginOverlay">
-  <div class="login-box">
-    <div class="login-logo"><img src="/logo.png" alt="Projekt Sojusz" style="height:48px;object-fit:contain;"></div>
-    <div class="login-tabs">
-      <div class="login-tab active" onclick="switchTab('login')">Zaloguj się</div>
-      <div class="login-tab" onclick="switchTab('register')">Rejestracja</div>
-    </div>
-    <div class="login-pane active" id="paneLogin">
-      <div class="lfield"><label>Nick</label><input id="lNick" placeholder="Nick..." onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <div class="lfield"><label>Hasło</label><input type="password" id="lPass" placeholder="Hasło..." onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <button class="form-btn" onclick="doLogin()">→ Zaloguj się</button>
-      <div class="form-error" id="loginErr"></div>
-    </div>
-    <div class="login-pane" id="paneRegister">
-      <div class="lfield"><label>Nick w grze</label><input id="rNick" placeholder="Nick..."></div>
-      <div class="lfield"><label>Gildia</label><input id="rGuild" placeholder="Gildia..."></div>
-      <div class="lfield"><label>Hasło</label><input type="password" id="rPass" placeholder="Min. 4 znaki..."></div>
-      <div class="lfield"><label>Kod dostępu sojuszu</label><input type="password" id="rCode" placeholder="Zapytaj Ezvay..."></div>
-      <button class="form-btn" onclick="doRegister()">→ Zarejestruj</button>
-      <div class="form-error" id="registerErr"></div>
-    </div>
-  </div>
-</div>
-
+<div id="loginOverlay" class="hidden"></div>
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
@@ -208,14 +184,14 @@ input[type=range]{accent-color:var(--gold);cursor:pointer;width:60px;}
 </div>
 
 <script>
-const socket = io({ auth: { token: localStorage.getItem('sojusz_token') || '' } });
+const socket = io({ auth: { token: window.SojuszAuth.getToken() || '' } });
 let currentUser = null;
 
 /* ── WS ── */
 socket.on('connect', function(){
   document.getElementById('wsDot').className = 'ws-dot ok';
   document.getElementById('wsLabel').textContent = 'Na żywo';
-  var tok = localStorage.getItem('sojusz_token');
+  var tok = window.SojuszAuth.getToken();
   if(tok) socket.emit('auth', tok);
 });
 socket.on('disconnect', function(){
@@ -224,33 +200,8 @@ socket.on('disconnect', function(){
 });
 
 /* ── AUTH ── */
-function switchTab(t){
-  document.querySelectorAll('.login-tab').forEach(function(el,i){ el.classList.toggle('active',(t==='login'?0:1)===i); });
-  document.getElementById('paneLogin').classList.toggle('active', t==='login');
-  document.getElementById('paneRegister').classList.toggle('active', t==='register');
-}
-async function doLogin(){
-  var nick=document.getElementById('lNick').value.trim(), pass=document.getElementById('lPass').value;
-  if(!nick||!pass) return;
-  var r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick,password:pass})});
-  var d=await r.json();
-  if(d.error){document.getElementById('loginErr').textContent=d.error;return;}
-  localStorage.setItem('sojusz_token',d.token); socket.emit('auth',d.token); currentUser=d; onLoggedIn();
-}
-async function doRegister(){
-  var nick=document.getElementById('rNick').value.trim(), guild=document.getElementById('rGuild').value.trim(),
-      pass=document.getElementById('rPass').value, code=document.getElementById('rCode').value.trim();
-  if(!nick||!guild||!pass||!code){document.getElementById('registerErr').textContent='Wypełnij wszystkie pola';return;}
-  var r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick,guild,password:pass,code})});
-  var d=await r.json();
-  if(d.error){document.getElementById('registerErr').textContent=d.error;return;}
-  document.getElementById('lNick').value=nick; switchTab('login');
-}
-function doLogout(){
-  localStorage.removeItem('sojusz_token'); currentUser=null;
-  document.getElementById('authBar').style.display='none';
-  document.getElementById('loginOverlay').classList.remove('hidden');
-}
+function doLogin(){SojuszAuth.login();}
+function doLogout(){SojuszAuth.logout();}
 function onLoggedIn(){
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('authBar').style.display='flex';
@@ -258,7 +209,7 @@ function onLoggedIn(){
   loadAllSessions();
 }
 async function checkSession(){
-  var tok=localStorage.getItem('sojusz_token'); if(!tok) return;
+  var tok=window.SojuszAuth.getToken(); if(!tok) return;
   try{
     var r=await fetch('/api/me',{headers:{'Authorization':'Bearer '+tok}});
     if(!r.ok) return; currentUser=await r.json(); onLoggedIn();
@@ -291,7 +242,7 @@ function format(sec){
 
 /* ── SESSIONS API ── */
 async function loadAllSessions(){
-  var tok=localStorage.getItem('sojusz_token');
+  var tok=window.SojuszAuth.getToken();
   var r=await fetch('/api/custom-timers',{headers:{'Authorization':'Bearer '+tok}});
   var list=await r.json();
   document.getElementById('emptyState').style.display=list.length?'none':'block';
@@ -299,7 +250,7 @@ async function loadAllSessions(){
 }
 
 async function loadSessionState(id){
-  var tok=localStorage.getItem('sojusz_token');
+  var tok=window.SojuszAuth.getToken();
   var r=await fetch('/api/custom-timers/'+id+'/state',{headers:{'Authorization':'Bearer '+tok}});
   if(!r.ok) return;
   var d=await r.json();
@@ -330,7 +281,7 @@ async function createSession(){
   if(!loc||!obj1){err.textContent='Podaj lokalizację i przynajmniej jeden obiekt';return;}
   if(gMin<=yMin){err.textContent='Zielony musi być większy niż żółty';return;}
   var objects=[obj1]; if(obj2) objects.push(obj2);
-  var tok=localStorage.getItem('sojusz_token');
+  var tok=window.SojuszAuth.getToken();
   var r=await fetch('/api/custom-timers',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
     body:JSON.stringify({name:loc,location:loc,objects,yellowMin:yMin,greenMin:gMin,shared})});
   var d=await r.json();
@@ -346,7 +297,7 @@ async function createSession(){
 
 async function deleteSession(id){
   if(!confirm('Usunąć tę sesję timerów?')) return;
-  var tok=localStorage.getItem('sojusz_token');
+  var tok=window.SojuszAuth.getToken();
   await fetch('/api/custom-timers/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+tok}});
   var el=document.getElementById('sess_'+id); if(el) el.remove();
   delete sessTimers[id]; delete sessConfig[id];
@@ -434,7 +385,7 @@ function createTimerCard(sid,tid,ch){
 }
 
 async function timerAction(sid,tid,action){
-  var tok=localStorage.getItem('sojusz_token');
+  var tok=window.SojuszAuth.getToken();
   await fetch('/api/custom-timers/'+sid+'/action',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({action,timerId:tid})});
 }
 
@@ -503,7 +454,7 @@ socket.on('customSessionDeleted',function(data){
 
 /* ── BACKUP SYNC co 5s ── */
 setInterval(async function(){
-  var tok=localStorage.getItem('sojusz_token'); if(!tok||!currentUser) return;
+  var tok=window.SojuszAuth.getToken(); if(!tok||!currentUser) return;
   for(var id in sessTimers){
     try{
       var r=await fetch('/api/custom-timers/'+id+'/state',{headers:{'Authorization':'Bearer '+tok}});

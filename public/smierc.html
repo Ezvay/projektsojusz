@@ -6,6 +6,7 @@
 <title>Mapa śmierci – Projekt Sojusz</title>
 <link rel="icon" type="image/png" href="/logo.png">
 <script src="/auth.js"></script>
+<script src="/lure-map.js"></script>
 <script src="/login-overlay.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -280,20 +281,6 @@
 </div>
 
 
-<div class="mini-auth" id="miniAuth" style="display:none;">
-  <div id="maOut" style="display:flex;align-items:center;gap:7px;">
-    <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--text-dim);">Zaloguj:</span>
-    <input id="maNick" placeholder="Nick..." onkeydown="if(event.key==='Enter')smiercLogin()">
-    <input id="maPass" type="password" placeholder="Hasło..." onkeydown="if(event.key==='Enter')smiercLogin()">
-    <button class="mini-auth-btn" onclick="smiercLogin()">→ Wejdź</button>
-    <span class="mini-auth-err" id="maErr"></span>
-  </div>
-  <div id="maIn" style="display:none;align-items:center;gap:8px;">
-    <span class="mini-auth-nick" id="maNickShow"></span>
-    <button class="mini-auth-btn" onclick="smiercLogout()">Wyloguj</button>
-  </div>
-</div>
-
 <div class="layout">
   <div class="map-wrap">
     <div class="map-container" id="mapContainer">
@@ -378,7 +365,7 @@
 </div>
 
 <script>
-const socket=io({ auth: { token: localStorage.getItem('sojusz_token')||'' } });
+const socket=io({ auth: { token: window.SojuszAuth.getToken()||'' } });
 
 /* ═══ STATE ═══ */
 let generals       = {};   // aktywne piny na mapie
@@ -421,22 +408,22 @@ function applyMapSize(){mapImg.style.width=Math.round(1080*mapSizePct/100)+'px';
 function setTab(tab){
   currentTab=tab;
   document.getElementById('tabGeneral').className='tab-btn'+(tab==='general'?' active-general':'');
-  document.getElementById('tabRegion').className='tab-btn'+(tab==='region'?' active-region':'');
+  if(document.getElementById('tabRegion'))document.getElementById('tabRegion').className='tab-btn'+(tab==='region'?' active-region':'');
   if(tab==='general'){
     generalLayer.style.display='block';
     regionCanvas.style.display='none';
     drawCanvas.style.display='none';
     document.getElementById('generalPanel').style.display='block';
-    document.getElementById('regionPanel').style.display='none';
+    if(document.getElementById('regionPanel'))document.getElementById('regionPanel').style.display='none';
     document.getElementById('pingSizeWrap').style.display='flex';
-    document.getElementById('mapHint').innerText='⚔ Kliknij mapę aby oznaczyć generała | Kliknij pin aby oznaczyć jako zabitego';
+    document.getElementById('mapHint').innerText='⚔ Kliknij mapę: dodaj generała · Przeciągnij generała na numerek: cel lurowania';
     clickOverlay.style.cursor='crosshair';
   } else {
     generalLayer.style.display='none';
     regionCanvas.style.display='block';
     drawCanvas.style.display='block';
     document.getElementById('generalPanel').style.display='none';
-    document.getElementById('regionPanel').style.display='block';
+    if(document.getElementById('regionPanel'))document.getElementById('regionPanel').style.display='block';
     document.getElementById('pingSizeWrap').style.display='none';
     document.getElementById('mapHint').innerText='📦 Przeciągnij myszką aby zaznaczyć region metinów';
     clickOverlay.style.cursor='crosshair';
@@ -593,6 +580,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePopup();closeK
 
 /* ═══ GENERALS ON MAP ═══ */
 function renderGenerals(){
+  if(lureMap.isDragging())return;
   generalLayer.innerHTML='';
   const el = document.getElementById('genChannelList');
   if (!el) return;
@@ -623,32 +611,32 @@ function renderGenerals(){
       slot.onclick = () => socket.emit('smiercRemoveKilled', killed.id);
     } else {
       slot.className = 'gen-slot';
-      slot.title = 'Kliknij — oznacz jako Znaleziony';
+      slot.title = 'Zaznacz generała, klikając jego pozycję na mapie';
+      slot.style.cursor = 'default';
       slot.innerHTML = '<img src="/general_icon.png" style="opacity:0.25;"><span class="gen-slot-status gen-status-unknown">? Nieznany</span>';
-      const slotCh = ch;
-      slot.onclick = () => {
-        // Oznacz jako znaleziony na tym CH (środek mapy jako domyślna pozycja)
-        const id = 'gen_' + Date.now();
-        socket.emit('smiercAddGeneral', { id, x: 0.5, y: 0.5, ch: slotCh });
-      };
+
     }
     row.appendChild(slot);
     el.appendChild(row);
   }
 }
 
+const lureMap=createLureMap({container:mapContainer,layer:generalLayer,socket,prefix:'smierc',getGenerals:()=>generals,getLabels:()=>smiercLabels,canDrag:()=>curMode==='play',onClick:openKillPopup});
 function placeGeneralPin(g){
+  const destination=smiercLabels.find(l=>l.id===g.lureLabelId)||g;
   const m=document.createElement('div');
   m.className='general-marker';
-  m.style.cssText=`left:${g.x*100}%;top:${g.y*100}%;position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:9;`;
+  m.style.cssText=`left:${destination.x*100}%;top:${destination.y*100}%;position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:9;`;
   const pw=pingSize+'px', ph=(pingSize*1.6)+'px';
   m.innerHTML=`
-    <div class="general-dot" onclick="openKillPopup('${g.id}')" title="Kliknij — generał zabity">
+    <div class="general-dot" title="Przytrzymaj i przeciągnij na numerek strefy. Kliknij — generał zabity">
       <img src="/general_icon.png" style="width:${pw};height:${ph};object-fit:contain;">
       <div class="pin-glow"></div>
       <div class="general-ch-badge">CH ${g.ch}</div>
     </div>`;
   generalLayer.appendChild(m);
+  lureMap.attach(m,g);
+  lureMap.redraw();
 }
 
 function addActiveGeneralSidebar(g){
@@ -695,7 +683,7 @@ function renderKilledGenerals(){
 /* ═══ REGION SIDEBAR ═══ */
 function renderRegionList(){
   for(const id in regionRafs)cancelAnimationFrame(regionRafs[id]);regionRafs={};
-  const list=document.getElementById('regionList'),ids=Object.keys(regions);
+  const list=document.getElementById('regionList'),ids=Object.keys(regions);if(!list)return;
   if(!ids.length){list.innerHTML='<div class="sidebar-empty">Brak aktywnych regionów</div>';return;}
   list.innerHTML='';
   ids.forEach(id=>{
@@ -724,7 +712,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 /* ═══ SNAPSHOTS ═══ */
 function saveSnapshot(){const n=document.getElementById('snapNameInput').value.trim()||'Snapshot';socket.emit('smiercSaveSnapshot',{name:n});document.getElementById('snapNameInput').value='';}
 function renderSnapshots(){
-  const list=document.getElementById('snapList');
+  const list=document.getElementById('snapList');if(!list)return;
   if(!snapshots.length){list.innerHTML='<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 0">Brak snapshotów</div>';return;}
   list.innerHTML='';
   snapshots.forEach(snap=>{
@@ -798,15 +786,7 @@ window._smiercGuild = localStorage.getItem('smiercGuild') || '';
 // smiercRegister -> handled by SojuszOverlay
 
 // smiercLogin -> handled by SojuszOverlay
-function smiercLogout() {
-  window.SojuszAuth.logout();
-  smiercUser = null;
-  document.getElementById('modeBar').classList.remove('show');
-  document.getElementById('drawBar').classList.remove('show');
-  isAdmin = false;
-  curMode = 'play';
-  window.SojuszOverlay.show('Mapa śmierci', true);
-}
+function smiercLogout() { window.SojuszAuth.logout(); }
 function applySmiercUser(user) {
   smiercUser = user;
   window._smiercNick  = user.nick;
@@ -816,8 +796,8 @@ function applySmiercUser(user) {
   // Aktualizuj globalny auth bar
   if (window._saUpdateBar) window._saUpdateBar(user);
   // Wyślij token przez socket żeby serwer mógł autoryzować
-  socket.auth = { token: localStorage.getItem('sojusz_token')||'' };
-  socket.emit('auth', localStorage.getItem('sojusz_token')||'');
+  socket.auth = { token: window.SojuszAuth.getToken()||'' };
+  socket.emit('auth', window.SojuszAuth.getToken()||'');
   if (user.role === 'admin') {
     isAdmin = true;
     document.getElementById('modeBar').classList.add('show');
@@ -1056,6 +1036,7 @@ socket.on('smiercRoutesUpdate', data => {
     setTimeout(function(){ syncRouteCanvases(); }, 500);
   }
   renderRoutesList();
+  renderGenerals();
 });
 socket.on('smiercRunnersUpdate', data => {
   smiercRunners = data; renderRoutesList();

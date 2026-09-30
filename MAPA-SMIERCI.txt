@@ -1,28 +1,3 @@
-DODANA PODSTRONA: MAPA ŚMIERCI
-
-Adres: /smierc.html (również /smierc lub /mapa-smierci).
-Wejście przez menu oraz nowy kafelek na stronie głównej.
-
-Zachowano wygląd i funkcje Groty Wygnańców: piny generałów, timery,
-regiony metinów, trasy, numerki, przypisywanie graczy do kanałów
-oraz mechanizm snapshotów. Dane Mapy śmierci zapisywane są osobno.
-Zasady i czasy timerów pozostają takie jak w Grocie Wygnańców.
-
-Zmienione pliki:
-- server.js
-- public/index.html
-Nowe pliki:
-- public/smierc.html
-- public/smierc_mapa.png
-
-WDROŻENIE
-Podmień te cztery pliki w istniejącym projekcie i uruchom ponownie serwer
-lub wgraj cały projekt z archiwum. Zachowaj dotychczasowe zmienne
-środowiskowe i ustawienia bazy danych. Nie potrzeba nowych zależności.
-Samo wgranie plików HTML bez aktualizacji server.js nie wystarczy.
-
-WERYFIKACJA
-Sprawdzono składnię JavaScript, ścieżki zasobów, obsługę zdarzeń,
-uprawnienia do rysowania tras, niezależność map, piny, timery zabitych,
-regiony, snapshoty i zapis/odczyt stanu z atrapą bazy danych.
-Nie przeprowadzono testu z Twoją działającą bazą ani wdrożenia na serwer.
+Aktualna wersja zawiera Mapę śmierci, lurowanie do stref oraz logowanie Discord.
+Przeczytaj DISCORD-I-LUROWANIE.md przed wdrożeniem.
+Wgraj cały projekt, nie tylko cztery pliki z wcześniejszej wersji.

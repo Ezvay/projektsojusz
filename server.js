@@ -3,8 +3,6 @@ const app             = express()
 const http            = require("http").createServer(app)
 const io              = require("socket.io")(http)
 const { MongoClient, ObjectId } = require("mongodb")
-const bcrypt          = require("bcrypt")
-const jwt             = require("jsonwebtoken")
 const path            = require("path")
 const fs              = require("fs")
 const multer          = require("multer")
@@ -31,12 +29,10 @@ const uploadSound = multer({
 })
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://kawulokdarek8_db_user:6SJushejd5pUueBo@projektsojusz.cxl68tz.mongodb.net/?appName=ProjektSojusz"
-const JWT_SECRET = process.env.JWT_SECRET || "sojusz_secret_2026_hard"
 const DB_NAME   = "projektsojusz"
-const ADMIN_NICK = "Ezvay"
-let REGISTER_CODE = "SojuszProjekt2026"
 
 app.use(express.json())
+const discordAuth = require('./discord-auth')({app,io,getDb:()=>db,getUsers:()=>usersCol})
 
 /* ═══ WŁASNE TIMERY ═══ */
 let customTimerSessions = {}  // in-memory: id -> session
@@ -126,72 +122,6 @@ app.post('/api/custom-timers/:id/action', authMiddleware, (req, res) => {
 })
 
 
-// ─── HASŁO DOSTĘPU DO STRONY ───
-const SITE_PASSWORD = process.env.SITE_PASSWORD || 'MecenologiaMT2'
-
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io') ||
-      req.path.startsWith('/admin/') || req.path === '/auth-check') return next()
-  const cookies = req.headers.cookie || ''
-  const siteAuth = cookies.split(';').map(c => c.trim()).find(c => c.startsWith('site_auth='))
-  if (siteAuth && siteAuth.split('=')[1] === 'ok') return next()
-  if (req.query.pwd === SITE_PASSWORD) {
-    res.setHeader('Set-Cookie', 'site_auth=ok; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax')
-    return res.redirect(req.path)
-  }
-  res.send(`<!DOCTYPE html>
-<html lang="pl">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Projekt Sojusz</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:#090806;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Georgia,serif;}
-.box{background:linear-gradient(160deg,#1e1810,#100d08);border:1px solid rgba(201,168,76,0.4);border-radius:4px;padding:40px 50px;width:360px;text-align:center;box-shadow:0 0 60px rgba(0,0,0,0.9);}
-.logo{font-size:12px;letter-spacing:4px;color:rgba(201,168,76,0.6);text-transform:uppercase;margin-bottom:28px;}
-.title{font-size:22px;color:#c9a84c;margin-bottom:6px;letter-spacing:2px;}
-.sub{font-size:12px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:28px;}
-input{width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(201,168,76,0.25);color:#e8e0d0;font-size:15px;padding:11px 14px;border-radius:2px;outline:none;text-align:center;letter-spacing:2px;margin-bottom:14px;}
-input:focus{border-color:rgba(201,168,76,0.6);}
-button{width:100%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.4);color:#c9a84c;font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:12px;cursor:pointer;border-radius:2px;transition:all 0.2s;}
-button:hover{background:rgba(201,168,76,0.2);}
-.err{color:#e07070;font-size:12px;margin-top:12px;display:none;}
-</style>
-</head>
-<body>
-<div class="box">
-  <div class="logo">⚔ Projekt Sojusz</div>
-  <div class="title">Dostęp zastrzeżony</div>
-  <div class="sub">Metin2 Projekt Hard</div>
-  <input type="password" id="pwd" placeholder="Hasło dostępu..." onkeydown="if(event.key==='Enter')check()">
-  <button onclick="check()">→ Wejdź</button>
-  <div class="err" id="err">Nieprawidłowe hasło</div>
-</div>
-<script>
-function check(){
-  var p=document.getElementById('pwd').value;
-  if(!p) return;
-  fetch('/auth-check?pwd='+encodeURIComponent(p))
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.ok){location.reload();}
-      else{document.getElementById('err').style.display='block';}
-    });
-}
-</script>
-</body>
-</html>`)
-})
-
-app.get('/auth-check', (req, res) => {
-  if (req.query.pwd === SITE_PASSWORD) {
-    res.setHeader('Set-Cookie', 'site_auth=ok; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax')
-    res.json({ ok: true })
-  } else {
-    res.json({ ok: false })
-  }
-})
-
 app.use(express.static(path.join(__dirname, "public")))
 
 /* ═══ CLEAN URLs ═══ */
@@ -232,11 +162,14 @@ async function connectDB() {
   await client.connect()
   db       = client.db(DB_NAME)
   col      = db.collection("state")
-  usersCol = db.collection("users")
+  usersCol = db.collection("discord_users")
   slotsCol = db.collection("slots")
 
   // Indexes
   await usersCol.createIndex({ nick: 1 }, { unique: true })
+  await usersCol.createIndex({ discordId: 1 }, { unique: true })
+  await db.collection('discord_sessions').createIndex({expiresAt:1},{expireAfterSeconds:0})
+  await db.collection('discord_oauth_states').createIndex({expiresAt:1},{expireAfterSeconds:0})
   await slotsCol.createIndex({ startAt: 1 })
   await slotsCol.createIndex({ nick: 1 })
   // Override requests collection
@@ -285,7 +218,6 @@ async function connectDB() {
       }
     }
     gigRunning          = new Set(doc.gigRunning  || [])
-    if (doc.registerCode) REGISTER_CODE = doc.registerCode
     gigWho              = doc.gigWho              || { top:null, bottom:null }
     delegations         = doc.delegations         || {}
     // Clean old killed generals
@@ -299,17 +231,7 @@ async function connectDB() {
     console.log("✅ State loaded")
   }
 
-  // Ensure admin exists and has correct password
-  const adminHash = await bcrypt.hash("Da62534604@", 10)
-  const adminDoc = await usersCol.findOne({ nick: ADMIN_NICK })
-  if (!adminDoc) {
-    await usersCol.insertOne({ nick: ADMIN_NICK, guild: "Sojusz", passwordHash: adminHash, role: "admin", createdAt: new Date() })
-    console.log("✅ Admin created:", ADMIN_NICK)
-  } else {
-    // Always update password and role on startup
-    await usersCol.updateOne({ nick: ADMIN_NICK }, { $set: { passwordHash: adminHash, role: "admin" } })
-    console.log("✅ Admin password updated:", ADMIN_NICK)
-  }
+
 }
 
 // Wyślij wiadomość do konkretnego nicka (wszystkie jego sockety)
@@ -371,12 +293,8 @@ function saveData() {
 
 /* ═══ AUTH MIDDLEWARE ═══ */
 function authMiddleware(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1]
-  if (!token) return res.status(401).json({ error: 'Brak tokenu' })
-  try {
-    req.user = jwt.verify(token, JWT_SECRET)
-    next()
-  } catch(e) { res.status(401).json({ error: 'Nieprawidłowy token' }) }
+  if(req.user)return next();
+  return discordAuth.requireUser(req,res,next);
 }
 
 function adminOnly(req, res, next) {
@@ -385,49 +303,11 @@ function adminOnly(req, res, next) {
 }
 
 /* ═══ AUTH ROUTES ═══ */
-app.post('/api/register', async (req, res) => {
-  const { nick, guild, password, code } = req.body
-  if (!code || code.trim() !== REGISTER_CODE) return res.status(403).json({ error: 'Nieprawidłowy kod dostępu' })
-  if (!nick || !guild || !password) return res.status(400).json({ error: 'Wszystkie pola wymagane' })
-  if (nick.length < 2 || nick.length > 30) return res.status(400).json({ error: 'Nick 2-30 znaków' })
-  if (password.length < 4) return res.status(400).json({ error: 'Hasło min. 4 znaki' })
-  try {
-    const hash = await bcrypt.hash(password, 10)
-    const role = nick === ADMIN_NICK ? 'admin' : 'player'
-    await usersCol.insertOne({ nick, guild, passwordHash: hash, role, createdAt: new Date() })
-    const token = jwt.sign({ nick, guild, role }, JWT_SECRET, { expiresIn: '7d' })
-    res.json({ token, nick, guild, role })
-  } catch(e) {
-    if (e.code === 11000) res.status(409).json({ error: 'Nick już zajęty' })
-    else res.status(500).json({ error: 'Błąd serwera' })
-  }
-})
-
-app.post('/api/login', async (req, res) => {
-  const { nick, password } = req.body
-  if (!nick || !password) return res.status(400).json({ error: 'Wymagane nick i hasło' })
-  const user = await usersCol.findOne({ nick })
-  if (!user) return res.status(401).json({ error: 'Nieprawidłowy nick lub hasło' })
-  const ok = await bcrypt.compare(password, user.passwordHash)
-  if (!ok) return res.status(401).json({ error: 'Nieprawidłowy nick lub hasło' })
-  const token = jwt.sign({ nick: user.nick, guild: user.guild, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
-  res.json({ token, nick: user.nick, guild: user.guild, role: user.role })
-})
-
 app.get('/api/me', authMiddleware, (req, res) => res.json(req.user))
 
 app.get('/api/users', authMiddleware, async (req, res) => {
   const users = await usersCol.find({}, { projection: { passwordHash:0 } }).toArray()
   res.json(users)
-})
-
-// Zmień kod rejestracyjny
-app.post('/api/admin/register-code', authMiddleware, adminOnly, async (req, res) => {
-  const { newCode } = req.body
-  if (!newCode || newCode.trim().length < 4) return res.status(400).json({ error: 'Kod min. 4 znaki' })
-  REGISTER_CODE = newCode.trim()
-  if (col) await col.updateOne({ _id: "main" }, { $set: { registerCode: REGISTER_CODE } }, { upsert: true })
-  res.json({ ok: true })
 })
 
 // Progi timerów (żółty/zielony) - synchronizowane przez socket do wszystkich
@@ -550,7 +430,6 @@ app.post('/admin/play-sound', authMiddleware, adminOnly, async (req, res) => {
 })
 
 app.delete('/api/users/:nick', authMiddleware, adminOnly, async (req, res) => {
-  if (req.params.nick === ADMIN_NICK) return res.status(400).json({ error: 'Nie można usunąć admina' })
   await usersCol.deleteOne({ nick: req.params.nick })
   await slotsCol.deleteMany({ nick: req.params.nick })
   res.json({ ok: true })
@@ -1002,11 +881,7 @@ const userSockets = {}
 
 io.on("connection", async socket => {
   /* ── Auth helper ── */
-  function getUser() {
-    const token = socket.handshake.auth?.token || socket._authToken
-    if (!token) return null
-    try { return jwt.verify(token, JWT_SECRET) } catch { return null }
-  }
+  function getUser() { return socket.data.user || null }
 
   // Zarejestruj socket dla zalogowanego użytkownika
   const initUser = getUser()
@@ -1017,17 +892,7 @@ io.on("connection", async socket => {
   }
 
   // Klient może zaktualizować token po zalogowaniu bez reconnectu
-  socket.on('auth', (token) => {
-    try {
-      const u = jwt.verify(token, JWT_SECRET)
-      socket._authToken = token
-      if (!userSockets[u.nick]) userSockets[u.nick] = new Set()
-      userSockets[u.nick].add(socket.id)
-      console.log("Auth update for socket:", u.nick)
-      // Wyślij pending overrides po zalogowaniu
-      sendPendingOverrides(socket, u.nick)
-    } catch(e) {}
-  })
+  socket.on('auth', () => { const u=getUser(); if(u)sendPendingOverrides(socket,u.nick); })
 
   /* ── Pingi na mapie ── */
   socket.on('gigAddPing', (data) => {
@@ -1070,7 +935,7 @@ io.on("connection", async socket => {
     let user = getUser()
     if (!user && data.token) {
       // Klient może wysłać token inline
-      try { user = jwt.verify(data.token, JWT_SECRET) } catch(e) {}
+      user = getUser()
     }
     if (!user) {
       console.log('chatSend: no user, socket._authToken=', !!socket._authToken, 'handshake.auth=', !!socket.handshake.auth?.token)
@@ -1212,7 +1077,17 @@ io.on("connection", async socket => {
   })
 
   /* ── Generałowie ── */
+  socket.on('grotaSetLure', data => {
+    if(!getUser() || !data || typeof data.id!=='string' || typeof data.labelId!=='string') return;
+    const general=grotaGenerals[data.id];
+    const label=grotaLabels.find(l=>l.id===data.labelId);
+    if(!general || !label) return;
+    general.lureLabelId=label.id;
+    saveData();io.emit('grotaGeneralsUpdate',grotaGenerals);
+  });
   socket.on('grotaAddGeneral', data => {
+    if(!getUser() || !data || !Number.isFinite(data.x) || !Number.isFinite(data.y) || data.x<0 || data.x>1 || data.y<0 || data.y>1 || !Number.isInteger(data.ch) || data.ch<1 || data.ch>8) return;
+    if(Object.values(grotaGenerals).some(g=>g.ch===data.ch)) return;
     const id = 'gen_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
     grotaGenerals[id] = { id, x:data.x, y:data.y, ch:data.ch, foundAt:Date.now() }
     saveData(); io.emit('grotaGeneralsUpdate', grotaGenerals)
@@ -1316,7 +1191,17 @@ io.on("connection", async socket => {
   })
 
   /* ── Generałowie ── */
+  socket.on('smiercSetLure', data => {
+    if(!getUser() || !data || typeof data.id!=='string' || typeof data.labelId!=='string') return;
+    const general=smiercGenerals[data.id];
+    const label=smiercLabels.find(l=>l.id===data.labelId);
+    if(!general || !label) return;
+    general.lureLabelId=label.id;
+    saveData();io.emit('smiercGeneralsUpdate',smiercGenerals);
+  });
   socket.on('smiercAddGeneral', data => {
+    if(!getUser() || !data || !Number.isFinite(data.x) || !Number.isFinite(data.y) || data.x<0 || data.x>1 || data.y<0 || data.y>1 || !Number.isInteger(data.ch) || data.ch<1 || data.ch>8) return;
+    if(Object.values(smiercGenerals).some(g=>g.ch===data.ch)) return;
     const id = 'gen_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)
     smiercGenerals[id] = { id, x:data.x, y:data.y, ch:data.ch, foundAt:Date.now() }
     saveData(); io.emit('smiercGeneralsUpdate', smiercGenerals)

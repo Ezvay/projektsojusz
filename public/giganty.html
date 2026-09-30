@@ -746,7 +746,7 @@
         <div class="map-corner-bl"></div>
         <div class="map-inner-border">
           <div class="map-frame" id="pingFrameTop" style="overflow:visible;">
-            <img src="/giganty_mapa.jpg" alt="CH 1–4" id="pingImgTop" style="filter:brightness(0.88) saturate(0.92) contrast(1.05);cursor:crosshair;display:block;" onload="redrawPingsSVG('top')" onclick="onPingMapClickNew(event,'top')">
+            <img src="/giganty_mapa.jpg" alt="CH 1–4" id="pingImgTop" style="filter:brightness(0.88) saturate(0.92) contrast(1.05);cursor:crosshair;display:block;" onload="if(typeof redrawPingsSVG==='function')redrawPingsSVG('top')" onclick="onPingMapClickNew(event,'top')">
 
             <svg id="pingSvgTop" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:10;"></svg>
           </div>
@@ -780,7 +780,7 @@
         <div class="map-corner-bl"></div>
         <div class="map-inner-border">
           <div class="map-frame" id="pingFrameBot" style="overflow:visible;">
-            <img src="/giganty_mapa.jpg" alt="CH 5–8" id="pingImgBot" style="filter:brightness(0.88) saturate(0.7) contrast(1.05) hue-rotate(200deg);cursor:crosshair;display:block;" onload="redrawPingsSVG('bottom')" onclick="onPingMapClickNew(event,'bottom')">
+            <img src="/giganty_mapa.jpg" alt="CH 5–8" id="pingImgBot" style="filter:brightness(0.88) saturate(0.7) contrast(1.05) hue-rotate(200deg);cursor:crosshair;display:block;" onload="if(typeof redrawPingsSVG==='function')redrawPingsSVG('bottom')" onclick="onPingMapClickNew(event,'bottom')">
 
             <svg id="pingSvgBot" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:10;"></svg>
           </div>
@@ -841,28 +841,7 @@
 </div>
 
 
-<!-- AUTH MINI BAR -->
-<div class="auth-mini" id="authMiniLogin">
-  <span class="auth-mini-title">Konto:</span>
-  <button class="auth-mini-tab active" id="authTabLogin" onclick="switchMiniTab('login')">Zaloguj</button>
-  <button class="auth-mini-tab" id="authTabReg" onclick="switchMiniTab('register')">Rejestracja</button>
-  <span class="auth-mini-sep">|</span>
-  <!-- Login fields -->
-  <div id="miniLoginFields" style="display:flex;align-items:center;gap:6px;">
-    <input class="auth-mini-input" id="miniLoginNick" placeholder="Nick..." style="width:120px;" autocomplete="username">
-    <input class="auth-mini-input" type="password" id="miniLoginPass" placeholder="Hasło..." style="width:110px;" autocomplete="current-password">
-    <button class="auth-mini-btn" onclick="doMiniLogin()">→ Zaloguj</button>
-  </div>
-  <!-- Register fields -->
-  <div id="miniRegFields" style="display:none;align-items:center;gap:6px;">
-    <input class="auth-mini-input" id="miniRegNick" placeholder="Nick w grze..." style="width:130px;">
-    <input class="auth-mini-input" id="miniRegGuild" placeholder="Gildia..." style="width:110px;">
-    <input class="auth-mini-input" type="password" id="miniRegPass" placeholder="Hasło (min.4)..." style="width:130px;">
-    <button class="auth-mini-btn" onclick="doMiniRegister()">→ Zarejestruj</button>
-  </div>
-  <span class="auth-mini-error" id="authMiniError"></span>
-</div>
-
+<div id="authMiniLogin" class="hidden"></div>
 <!-- LOGGED IN BAR -->
 <div class="auth-mini hidden" id="authMiniLogged">
   <span class="auth-mini-user" id="authMiniUserInfo"></span>
@@ -957,69 +936,12 @@ let calSlots    = [];  // slots from calendar API
 let activeSlotTop = null;
 let activeSlotBot = null;
 
-function getToken(){ return localStorage.getItem('sojusz_token'); }
+function getToken(){ return window.SojuszAuth.getToken(); }
 function authH(){ return { 'Authorization':'Bearer '+getToken(), 'Content-Type':'application/json' }; }
 
 /* ═══ AUTH MINI BAR ═══ */
-function switchMiniTab(tab){
-  document.getElementById('miniLoginFields').style.display = tab==='login'?'flex':'none';
-  document.getElementById('miniRegFields').style.display   = tab==='register'?'flex':'none';
-  document.getElementById('authTabLogin').classList.toggle('active', tab==='login');
-  document.getElementById('authTabReg').classList.toggle('active', tab==='register');
-  document.getElementById('authMiniError').textContent='';
-}
-
-async function doMiniLogin(){
-  const nick = document.getElementById('miniLoginNick').value.trim();
-  const pass = document.getElementById('miniLoginPass').value;
-  if(!nick||!pass) return showMiniError('Wypełnij pola');
-  try{
-    const r = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick,password:pass})});
-    const d = await r.json();
-    if(!r.ok) return showMiniError(d.error);
-    saveMiniSession(d);
-  }catch(e){ showMiniError('Błąd połączenia'); }
-}
-
-async function doMiniRegister(){
-  const nick  = document.getElementById('miniRegNick').value.trim();
-  const guild = document.getElementById('miniRegGuild').value.trim();
-  const pass  = document.getElementById('miniRegPass').value;
-  if(!nick||!guild||!pass) return showMiniError('Wypełnij wszystkie pola');
-  try{
-    const r = await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick,guild,password:pass})});
-    const d = await r.json();
-    if(!r.ok) return showMiniError(d.error);
-    saveMiniSession(d);
-  }catch(e){ showMiniError('Błąd połączenia'); }
-}
-
-function saveMiniSession(d){
-  localStorage.setItem('sojusz_token', d.token);
-  currentUser = { nick:d.nick, guild:d.guild, role:d.role };
-  socket.auth = { token: d.token };
-  // Wyślij token przez socket - nie rozłączaj
-  socket.emit('auth', d.token);
-  showLoggedInBar();
-  loadCalSlots();
-  checkGigPendingOverrides();
-}
-
-function doMiniLogout(){
-  localStorage.removeItem('sojusz_token');
-  currentUser = null;
-  document.getElementById('authMiniLogin').classList.remove('hidden');
-  document.getElementById('authMiniLogged').classList.add('hidden');
-  // Ukryj timery
-  document.getElementById('sectionTop').style.display = 'none';
-  document.getElementById('sectionBottom').style.display = 'none';
-  document.getElementById('loginRequiredMsg').style.display = '';
-  document.getElementById('adminFab').style.display = 'none';
-  document.getElementById('adminPanelBox').classList.add('hidden');
-  updateTimerLocks();
-}
-
-function showMiniError(msg){ document.getElementById('authMiniError').textContent=msg; setTimeout(()=>document.getElementById('authMiniError').textContent='',3000); }
+function doMiniLogin(){SojuszAuth.login();}
+function doMiniLogout(){SojuszAuth.logout();}
 
 function showLoggedInBar(){
   document.getElementById('authMiniLogin').classList.add('hidden');
@@ -1205,7 +1127,7 @@ const socket = io({ auth: { token: getToken()||'' } });
 socket.on('connect', function(){
   document.getElementById('wsDot').className='ws-dot ok';
   document.getElementById('wsLabel').innerText='Na żywo';
-  var token = localStorage.getItem('sojusz_token');
+  var token = window.SojuszAuth.getToken();
   if(token) {
     socket.emit('auth', token);
     // Daj czas na auth i checkMiniSession
@@ -1386,8 +1308,6 @@ function renderWho(section){
 }
 
 /* ═══ INIT ═══ */
-document.getElementById('miniLoginPass').addEventListener('keydown',function(e){ if(e.key==='Enter') doMiniLogin(); });
-document.getElementById('miniLoginNick').addEventListener('keydown',function(e){ if(e.key==='Enter') doMiniLogin(); });
 
 /* === OVERRIDE POPUP (giganty) === */
 var pendingOverrideId = null;
@@ -2225,7 +2145,7 @@ socket.on('gigPingsUpdate', function(data) {
 });
 
 socket.on('connect', function(){
-  var tok = typeof getToken === 'function' ? getToken() : localStorage.getItem('sojusz_token');
+  var tok = typeof getToken === 'function' ? getToken() : window.SojuszAuth.getToken();
   if (tok) socket.emit('auth', tok);
 });
 

@@ -1,51 +1,10 @@
-/* ═══════════════════════════════════════════════
-   WSPÓLNY MODUŁ AUTH — Projekt Sojusz
-   Używany przez: index, grota, giganty, kalendarz, timery
-═══════════════════════════════════════════════ */
-
-window.SojuszAuth = (function() {
-
-  const KEY = 'sojusz_token';
-
-  function getToken() { return localStorage.getItem(KEY); }
-
-  async function getUser() {
-    const tok = getToken();
-    if (!tok) return null;
-    try {
-      const r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + tok } });
-      if (!r.ok) { localStorage.removeItem(KEY); return null; }
-      return await r.json();
-    } catch(e) { return null; }
-  }
-
-  async function login(nick, pass) {
-    const r = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nick, password: pass })
-    });
-    const d = await r.json();
-    if (d.error) throw new Error(d.error);
-    localStorage.setItem(KEY, d.token);
-    return d;
-  }
-
-  async function register(nick, guild, pass, code) {
-    const r = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nick, guild, password: pass, code })
-    });
-    const d = await r.json();
-    if (d.error) throw new Error(d.error);
-    return d;
-  }
-
-  function logout() {
-    localStorage.removeItem(KEY);
-    window.dispatchEvent(new Event('sojusz:logout'));
-  }
-
-  return { getToken, getUser, login, register, logout };
+/* Authentication is held in an HttpOnly server session cookie. */
+window.SojuszAuth = (() => {
+  localStorage.removeItem('sojusz_token');
+  function getToken(){return 'discord-session';} // Compatibility for existing request guards; not a credential.
+  async function getUser(){try{const r=await fetch('/api/me',{credentials:'same-origin'});return r.ok?await r.json():null;}catch{return null;}}
+  function login(){location.href='/auth/discord?returnTo='+encodeURIComponent(location.pathname);}
+  let loggingOut=false;
+  async function logout(){if(loggingOut)return;loggingOut=true;try{const r=await fetch('/api/logout',{method:'POST'});if(!r.ok)throw Error();localStorage.removeItem('sojusz_token');location.href='/auth/discord';}catch{loggingOut=false;alert('Nie udało się wylogować. Spróbuj ponownie.');}}
+  return {getToken,getUser,login,logout};
 })();
