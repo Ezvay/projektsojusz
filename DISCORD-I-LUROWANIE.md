@@ -38,15 +38,13 @@ Stare hasła i tokeny nie umożliwiają logowania. Nowe profile powstają w kole
 
 Zmiana działa w **Mapie śmierci** i **Grocie Wygnańców**.
 
-1. Administrator włącza rysowanie i dodaje numerek lub nazwę strefy, np. A1.
-2. W trybie gry kliknij miejsce znalezienia generała na mapie i wybierz kanał.
-3. Przytrzymaj ikonę generała i przeciągnij ją na oznaczenie strefy.
-4. Ikona wskaże cel, a przerywana linia połączy go z pierwotnym miejscem znalezienia.
+1. W trybie gry kliknij miejsce znalezienia generała na mapie i wybierz kanał.
+2. Przytrzymaj ikonę generała i przeciągnij ją w dowolne miejsce mapy.
+3. Po zapisie ikona wskaże cel, a przerywana linia połączy go z pierwotnym miejscem znalezienia.
 
-Cel jest zapisywany na serwerze i widoczny dla pozostałych zalogowanych graczy. Można przeciągnąć generała do kolejnej strefy. Upuszczenie poza oznaczeniem nie zmienia celu. Usunięcie numerka strefy usuwa jej widoczne połączenie i przywraca ikonę na pozycję znalezienia. Krótkie kliknięcie ikony nadal otwiera potwierdzenie zabicia.
+Nie trzeba dodawać numerków ani stref. Położenie celu jest zapisywane w bazie i widoczne na żywo dla pozostałych graczy. Można zmieniać cel kolejnymi przeciągnięciami. Upuszczenie poza mapą anuluje ruch. Kasowanie tras i numerków nie usuwa tak wybranego celu. Krótkie kliknięcie ikony nadal otwiera potwierdzenie zabicia.
 
-Pole **Nieznany** w sidebarze nie dodaje już generała. Dodawanie odbywa się na mapie. Pozostałe dotychczasowe działania sidebara (zbicie, usunięcie historii) zostały zachowane.
-
+Pole **Nieznany** w sidebarze nie dodaje generała. Dodawanie odbywa się na mapie.
 ## Sprawdzenie po wdrożeniu
 
 Zaloguj się kontem z serwera Discord i sprawdź rysowanie kontem z rolą administratora. Następnie w dwóch oknach sprawdź dodanie generała i przeciągnięcie do numerka oraz odświeżenie strony. Sprawdź też odmowę dostępu dla konta spoza serwera.

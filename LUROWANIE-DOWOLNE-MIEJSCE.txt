@@ -1,0 +1,21 @@
+LUROWANIE W DOWOLNE MIEJSCE
+
+Wgraj projekt z paczki na Railway i odśwież stronę przez Ctrl+F5.
+Zmienne Discorda i MongoDB zostają takie jak wcześniej.
+
+Zmienione pliki działania strony:
+- map-state.js
+- public/lure-map.js
+- public/grota.html
+- public/smierc.html
+
+Przytrzymaj generała i przeciągnij go w dowolne miejsce mapy.
+Po zapisie cel zobaczą wszyscy oglądający tę mapę. Linia zaczyna się
+w pierwotnym miejscu znalezienia. Numerki i strefy nie są wymagane.
+Upuszczenie poza mapą anuluje przesunięcie.
+
+Zachowano wcześniejsze zapisane cele przy strefach. Kolejne przeciągnięcie
+zapisze cel jako niezależny punkt. Nowy cel pozostaje po usunięciu numerków.
+
+Testy: dwie przeglądarki, przesuwanie, synchronizacja live, odświeżenie,
+restart serwera, zapis na obu mapach, anulowanie poza mapą i awaria zapisu.

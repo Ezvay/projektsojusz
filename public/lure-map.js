@@ -14,21 +14,12 @@ window.createLureMap = function({container, layer, socket, prefix, getGenerals, 
     const r=container.getBoundingClientRect();
     return {x:Math.max(0,Math.min(1,(event.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(event.clientY-r.top)/r.height))};
   }
-  function nearest(event) {
+  function dropPoint(event) {
     const r=container.getBoundingClientRect();
     if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)return null;
-    let best=null, distance=Infinity;
-    for(const label of getLabels()) {
-      const fontSize=Number(label.size)||18;
-      const x=r.left+label.x*r.width, y=r.top+label.y*r.height;
-      const width=Math.max(fontSize,String(label.text).length*fontSize*.65);
-      const dx=Math.max(x-event.clientX,0,event.clientX-(x+width));
-      const dy=Math.max(y-fontSize-event.clientY,0,event.clientY-y);
-      const d=Math.hypot(dx,dy);
-      if(d<24&&d<distance){best=label;distance=d;}
-    }
-    return best;
+    return point(event);
   }
+  function destination(g) { return g.lureTarget || getLabels().find(l=>l.id===g.lureLabelId); }
   function line(g,target,preview=false) {
     const el=document.createElementNS(svg.namespaceURI,'line');
     for(const [k,v] of Object.entries({x1:g.x*1000,y1:g.y*1000,x2:target.x*1000,y2:target.y*1000,stroke:preview?'#fff':'#f0d080','stroke-width':3,'stroke-dasharray':'9 7','vector-effect':'non-scaling-stroke'}))el.setAttribute(k,v);
@@ -41,7 +32,7 @@ window.createLureMap = function({container, layer, socket, prefix, getGenerals, 
     if(svg.parentNode!==layer)layer.prepend(svg);
     svg.replaceChildren();
     for(const g of Object.values(getGenerals())) {
-      const target=getLabels().find(l=>l.id===g.lureLabelId);
+      const target=destination(g);
       if(target&&active?.g.id!==g.id)line(g,target);
     }
     if(active?.dragging)line(active.g,active.target||active.pos,true);
@@ -64,7 +55,7 @@ window.createLureMap = function({container, layer, socket, prefix, getGenerals, 
         if(ev.pointerId!==drag.pointerId)return;
         if(!drag.dragging&&Math.hypot(ev.clientX-start.x,ev.clientY-start.y)>6)begin();
         if(!drag.dragging)return;
-        ev.preventDefault();drag.pos=point(ev);drag.target=nearest(ev);
+        ev.preventDefault();drag.pos=point(ev);drag.target=dropPoint(ev);
         marker.style.left=drag.pos.x*100+'%';marker.style.top=drag.pos.y*100+'%';
         redraw();
       };
@@ -75,12 +66,12 @@ window.createLureMap = function({container, layer, socket, prefix, getGenerals, 
         active=null;
         if(marker.hasPointerCapture(ev.pointerId))marker.releasePointerCapture(ev.pointerId);
         const cancelled=ev.type!=='pointerup';
-        const target=nearest(ev);
-        const original=getLabels().find(l=>l.id===g.lureLabelId)||g;
+        const target=dropPoint(ev);
+        const original=destination(g)||g;
         marker.style.left=original.x*100+'%';marker.style.top=original.y*100+'%';marker.style.cursor='grab';
         if(drag.dragging&&!cancelled) {
-          if(target) {socket.emit(prefix+'SetLure',{id:g.id,labelId:target.id});tell('Cel lurowania: '+target.text);}
-          else tell('Upuść generała na numerku strefy. Cel nie został zmieniony.');
+          if(target) {socket.emit(prefix+'SetLure',{id:g.id,x:target.x,y:target.y},ok=>{if(ok)tell('Zapisano cel lurowania');});}
+          else tell('Upuść generała w obrębie mapy. Cel nie został zmieniony.');
         } else if(!cancelled)onClick(g.id);
         redraw();
       };

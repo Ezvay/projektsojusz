@@ -417,7 +417,7 @@ function setTab(tab){
     document.getElementById('generalPanel').style.display='block';
     if(document.getElementById('regionPanel'))document.getElementById('regionPanel').style.display='none';
     document.getElementById('pingSizeWrap').style.display='flex';
-    document.getElementById('mapHint').innerText='⚔ Kliknij mapę: dodaj generała · Przeciągnij generała na numerek: cel lurowania';
+    document.getElementById('mapHint').innerText='⚔ Kliknij mapę: dodaj generała · Przeciągnij generała w dowolne miejsce: cel lurowania';
     clickOverlay.style.cursor='crosshair';
   } else {
     generalLayer.style.display='none';
@@ -623,13 +623,13 @@ function renderGenerals(){
 
 const lureMap=createLureMap({container:mapContainer,layer:generalLayer,socket,prefix:'grota',getGenerals:()=>generals,getLabels:()=>grotaLabels,canDrag:()=>curMode==='play'&&socket.canEdit(),onClick:openKillPopup});
 function placeGeneralPin(g){
-  const destination=grotaLabels.find(l=>l.id===g.lureLabelId)||g;
+  const destination=g.lureTarget||grotaLabels.find(l=>l.id===g.lureLabelId)||g;
   const m=document.createElement('div');
   m.className='general-marker';
   m.style.cssText=`left:${destination.x*100}%;top:${destination.y*100}%;position:absolute;transform:translate(-50%,-50%);pointer-events:all;z-index:9;`;
   const pw=pingSize+'px', ph=(pingSize*1.6)+'px';
   m.innerHTML=`
-    <div class="general-dot" title="Przytrzymaj i przeciągnij na numerek strefy. Kliknij — generał zabity">
+    <div class="general-dot" title="Przytrzymaj i przeciągnij w dowolne miejsce mapy. Kliknij — generał zabity">
       <img src="/general_icon.png" style="width:${pw};height:${ph};object-fit:contain;">
       <div class="pin-glow"></div>
       <div class="general-ch-badge">CH ${g.ch}</div>

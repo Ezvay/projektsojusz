@@ -74,7 +74,20 @@ module.exports=function createMapState(io){
   on('AddRunner',false,(s,d,u)=>{check(d&&validId(d.routeId)&&s.routes[d.routeId]&&Number.isInteger(d.ch)&&d.ch>=1&&d.ch<=8);s.runners[d.routeId]??={};s.runners[d.routeId][d.ch]={nick:u.nick,guild:u.guild||'',displayName:u.displayName||u.nick};return ['runners'];});
   on('RemoveRunner',false,(s,d)=>{check(d&&validId(d.routeId));if(s.runners[d.routeId])delete s.runners[d.routeId][d.ch];return ['runners'];});
   on('AddGeneral',false,(s,d)=>{check(point(d)&&Number.isInteger(d.ch)&&d.ch>=1&&d.ch<=8);check(!Object.values(s.generals).some(g=>g.ch===d.ch),'Na tym kanale generał jest już zaznaczony');const id='gen_'+randomUUID();s.generals[id]={id,x:d.x,y:d.y,ch:d.ch,foundAt:Date.now()};for(const id in s.killedGenerals)if(s.killedGenerals[id].ch===d.ch)delete s.killedGenerals[id];return ['generals','killedGenerals'];});
-  on('SetLure',false,(s,d)=>{check(d&&validId(d.id)&&validId(d.labelId)&&s.generals[d.id]&&s.labels.some(l=>l.id===d.labelId),'Nie znaleziono generała lub strefy');s.generals[d.id].lureLabelId=d.labelId;return ['generals'];});
+  on('SetLure',false,(s,d)=>{
+   check(d&&validId(d.id)&&s.generals[d.id],'Nie znaleziono generała');
+   if('x' in d || 'y' in d){
+    check(point(d),'Cel lurowania musi znajdować się na mapie');
+    s.generals[d.id].lureTarget={x:d.x,y:d.y};
+    delete s.generals[d.id].lureLabelId;
+   }else{
+    // Compatibility for clients opened before this update.
+    check(validId(d.labelId)&&s.labels.some(l=>l.id===d.labelId),'Nie znaleziono strefy');
+    s.generals[d.id].lureLabelId=d.labelId;
+    delete s.generals[d.id].lureTarget;
+   }
+   return ['generals'];
+  });
   on('KillGeneral',false,(s,id)=>{check(validId(id)&&s.generals[id],'Nie znaleziono generała');const gen=s.generals[id];delete s.generals[id];const kid='killed_'+randomUUID();s.killedGenerals[kid]={id:kid,ch:gen.ch,x:gen.x,y:gen.y,killedAt:Date.now()};return ['generals','killedGenerals'];});
   on('RemoveGeneral',false,(s,id)=>{check(validId(id));delete s.generals[id];return ['generals'];});
   on('RemoveKilled',false,(s,id)=>{check(validId(id));delete s.killedGenerals[id];return ['killedGenerals'];});
