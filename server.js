@@ -129,6 +129,8 @@ app.use(express.static(path.join(__dirname, "public"),{setHeaders(res,file){
 }}))
 
 /* ═══ CLEAN URLs ═══ */
+app.get('/grota-v2', (req,res) => res.redirect(301,'/grota_v2.html'))
+app.get('/grota_v2', (req,res) => res.redirect(301,'/grota_v2.html'))
 app.get('/mapa-smierci', (req,res) => res.redirect(301,'/smierc.html'))
 app.get('/smierc', (req,res) => res.redirect(301,'/smierc.html'))
 app.get('/grota',   (req,res) => res.redirect(301,'/grota.html'))

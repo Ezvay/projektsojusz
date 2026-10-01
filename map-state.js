@@ -16,7 +16,7 @@ module.exports=function createMapState(io){
  }
  async function init(db,legacy={}){
   collection=db.collection('map_states');
-  for(const prefix of ['grota','smierc']){
+  for(const prefix of ['grota','smierc','grota_v2']){
    let stored=await collection.findOne({_id:prefix});
    if(!stored){
     const migrated=empty();for(const f of fields){const old=legacy[prefix+f[0].toUpperCase()+f.slice(1)];if(old!==undefined)migrated[f]=old;}
@@ -29,7 +29,7 @@ module.exports=function createMapState(io){
  }
  function attach(socket){
   const prefix=socket.handshake.auth?.map;
-  if(!['grota','smierc'].includes(prefix))return false;
+  if(!['grota','smierc','grota_v2'].includes(prefix))return false;
   if(!maps.has(prefix)){socket.emit('mapError','Baza map nie jest jeszcze dostępna. Edycja jest wstrzymana. Odśwież stronę za chwilę.');return true;}
   const map=maps.get(prefix),room='map:'+prefix;
   socket.join(room);

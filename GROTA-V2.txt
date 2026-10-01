@@ -1,0 +1,24 @@
+GROTA WYGNAŃCÓW V2
+
+Nowa podstrona: /grota_v2.html (również /grota-v2).
+Wejście przez nowy kafelek i menu na stronie głównej.
+
+Wykorzystano przesłany obraz lZuAGoq.png bez zmian.
+Funkcje są takie jak w Mapie śmierci: generałowie, lurowanie w dowolne
+miejsce z przerywaną linią, trasy, numerki, zapis MongoDB i synchronizacja live.
+Każda z trzech map ma osobne dane. Dotychczasowe mapy pozostają dostępne.
+
+Wgraj cały projekt z paczki i wykonaj wdrożenie Railway.
+Zachowaj obecne Variables Discorda i bazy. Odśwież stronę przez Ctrl+F5.
+
+Pliki dodane:
+- public/grota_v2.html
+- public/grota_v2_mapa.png
+Pliki zmienione względem poprzedniej paczki:
+- public/index.html
+- map-state.js
+- server.js
+
+Testy: dwa okna przeglądarki, dodawanie generała, rysowanie tras i numerków,
+lurowanie, synchronizacja live, odświeżenie, restart, niezależność map
+oraz zachowanie przy awarii zapisu. Baza testowa zastępowała MongoDB.
